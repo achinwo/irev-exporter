@@ -3,6 +3,7 @@ const cheerio = require('cheerio');
 const axios = require('axios');
 const _ = require('lodash');
 const puppeteer = require('puppeteer');
+const fs = require('node:fs/promises');
 
 const TOKEN = process.env.SESSION_TOKEN;
 
@@ -12,10 +13,12 @@ const LOCALS = {
     undefined: process.env.SESSION_SPA_UNDEFINED,
 };
 
-const TIMEOUT = 20000;
+const TIMEOUT = 30000;
+
+const BASE_URL = 'https://www.inecelectionresults.ng';
 
 exports.exportIrev = async function exportIrev() {
-    const stateIds = [25,];
+    const stateIds = [33,];
 
     const headers = {
         Origin: 'https://www.inecelectionresults.ng',
@@ -27,12 +30,6 @@ exports.exportIrev = async function exportIrev() {
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
         Authorization: `Bearer ${TOKEN}`
     }
-
-    //const uu2 = 'https://irev-v2.herokuapp.com/api/v1/election-reports/election/63f8f25b594e164f8146a213';
-    const baseUrl = 'https://www.inecelectionresults.ng';
-
-    // const r = await axios.get(uu2, {headers});
-    // console.log(r.data);
 
     const browser = await puppeteer.launch();
 
@@ -47,10 +44,9 @@ exports.exportIrev = async function exportIrev() {
             await request.continue({
                 headers
             });
-
         });
 
-        await page.goto(baseUrl);
+        await page.goto(BASE_URL);
         await page.evaluate((locals) => {
 
             for (const key in locals) {
@@ -59,103 +55,122 @@ exports.exportIrev = async function exportIrev() {
 
         }, LOCALS);
 
-        //await page.goto('https://www.inecelectionresults.ng/elections/63f8f25b594e164f8146a213?state=25');
         console.log('Waiting for page to refresh...');
         const refreshed = await waitRefresh(page, {timeout: TIMEOUT});
         console.log('Refreshed:', refreshed);
 
-        //const puUrl = 'https://www.inecelectionresults.ng/elections/63f8f25b594e164f8146a213/context/pus/lga/5f0f399d4d89fc3a883de2ba/ward/5f0f3d8f8f77bb3acad0a423';
+        const states = await getStates(page);
+        const statesFiltered = _.isEmpty(stateIds) ? states : states.filter(s => _.includes(stateIds, s.id));
 
-        const lgaUrl = 'https://www.inecelectionresults.ng/elections/63f8f25b594e164f8146a213/context/ward/lga/5f0f399d4d89fc3a883de2b9'
+        console.log('States:', statesFiltered);
 
-        // for (const stateId of stateIds) {
-        //     for (const lgaEleman of lgaElemen) {
-        //
-        //     }
-        // }
-        
-        const lgas = await getWards(lgaUrl, page);
+        for (const state of statesFiltered) {
+            const lgaInfos = await getLgas(state.id, page);
 
-        for (const puInfo of lgas.puUrls) {
-            const puUrl = puInfo.url;
-            const visitedPus = [];
-            const pus = [];
-            const allPuInfos = await getPuInfos(puUrl, page);
-            console.log(`Got ${allPuInfos.pus.length} PUs for ${puUrl}`);
-            for (const pu of allPuInfos.pus) {
+            for (const lgaInfo of lgaInfos) {
+                const wards = await getWards(lgaInfo.url, page);
 
-                if(!pu.isResultAvailable){
-                    console.log(`No results ready for "${pu.name}" (${pu.id})`);
-                    continue;
+                for (const puInfo of wards.puUrls) {
+                    const puUrl = puInfo.url;
+                    const visitedPus = [];
+                    const pus = [];
+                    const allPuInfos = await getPuInfos(puUrl, page);
+                    console.log(`Got ${allPuInfos.pus.length} PUs for ${puUrl}`);
+
+                    for (const pu of allPuInfos.pus) {
+
+                        if(!pu.isResultAvailable){
+                            console.log(`No results ready for "${pu.name}" (${pu.id})`);
+                            continue;
+                        }
+
+                        const res = await _getDocData(puUrl, visitedPus, page);
+
+                        _.assign(pu, res, {
+                            state: state.name,
+                            stateId: state.id,
+                            lga: lgaInfo.name,
+                        });
+                        //console.log(res);
+
+                        visitedPus.push(pu.name);
+                        pus.push(pu);
+                    }
+
+                    console.log(lgaInfo.url, pus);
+
+                    await saveResults(allPuInfos.pus.map(p => _.omit(p, ['element'])));
                 }
-
-                const res = await _getDocData(puUrl, visitedPus, page);
-
-                _.assign(pu, res);
-                //console.log(res);
-
-                visitedPus.push(pu.name);
-                pus.push(pu);
             }
-
-            console.log(lgaUrl, pus);
         }
 
         await page.close();
 
-        if(false) {
-            //const btn = await page.waitForSelector("div.bg-light button.btn-success");
-
-            // Click
-
-
-            //await page.screenshot({ path: "example.png" });
-
-            //console.log(html);
-            //PU
-            // for (const a of $('div.bg-light')) {
-            //     const text = $(a).prop('innerText');
-            //     console.log(`PU=${text}`);
-            // }
-
-            //WARD
-            //for (const a of $('a[href^="/elections/63f8f25b594e164f8146a213/context/ward/lga/"]')) {
-            // for (const a of $('a[href^="/elections/63f8f25b594e164f8146a213/context/ward/lga/"]')) {
-            //     const text = $(a).prop('innerText');
-            //     const href = a.attribs.href;
-            //     console.log(`WARD=${text}, path=${href}`);
-            // }
-
-            // for (const a of $('a[href^="/elections/63f8f25b594e164f8146a213/context/ward/lga/"]')) {
-            //     const text = $(a).prop('innerText');
-            //     const href = a.attribs.href;
-            //     console.log(`LGA=${text}, path=${href}`);
-            // }
-
-            // const html = await page.content();
-            // const $ = cheerio.load(html, null, false);
-            //
-            // // await fs.writeFile("angular.html", html);
-            // // console.log(html);
-            //
-            // for (const a of $('a[href^="/elections/"]')) {
-            //     const text = $(a).prop('innerText');
-            //     const href = a.attribs.href;
-            //     console.log(`state=${text}, path=${href}`);
-            // }
-        }
     } finally {
         await browser.close();
     }
 
 }
 
-async function getLgas(url, page){
+const TOTALS = {};
 
+async function saveResults(array){
+    for (const arrayElement of array) {
+        TOTALS[arrayElement.id] = arrayElement;
+    }
+
+    await fs.writeFile('irev_data.json', JSON.stringify(TOTALS, null, 2));
+}
+
+async function getLgas(stateId, page){
+    const url = `${BASE_URL}/elections/63f8f25b594e164f8146a213?state=${stateId}`;
+
+    await page.goto(url,{waitUntil: 'networkidle0'});
+
+    await waitRefresh(page, {timeout: TIMEOUT});
+    const $ = cheerio.load(await page.content());
+    const lgas = [];
+
+    // for (const a of $('a[href^="/elections/63f8f25b594e164f8146a213/context/ward/lga/"]')) {
+    //     const text = $(a).prop('innerText');
+    //     const href = a.attribs.href;
+    //     console.log(`WARD=${text}, path=${href}`);
+    // }
+
+    for (const a of $('a[href^="/elections/63f8f25b594e164f8146a213/context/ward/lga/"]')) {
+        const text = $(a).prop('innerText');
+        const href = a.attribs.href;
+        const fullUrl = `${BASE_URL}${href}`;
+
+        lgas.push({name: text, url: fullUrl});
+    }
+
+    return lgas;
+}
+
+async function getStates(page){
+    const url = `${BASE_URL}/pres/elections/63f8f25b594e164f8146a213?type=pres`;
+    await page.goto(url,{waitUntil: 'networkidle0'});
+
+    await waitRefresh(page, {timeout: TIMEOUT});
+
+    const $ = cheerio.load(await page.content());
+
+    const states = [];
+    for (const a of $('a[href^="/elections/"]')) {
+        const text = $(a).prop('innerText');
+        const href = a.attribs.href;
+        const fullUrl = `${BASE_URL}${href}`;
+        const myURL = new URL(fullUrl);
+
+        states.push({name: text, url: fullUrl, id: _.toInteger(myURL.searchParams.get('state'))});
+    }
+
+    return states;
 }
 
 async function getWards(url, page){
-    const lgas = [];
+    const wards = [];
     const currentUrl = await page.evaluate(() => document.location.href);
 
     if(currentUrl !== url) await page.goto(url,{waitUntil: 'networkidle0'});
@@ -171,13 +186,13 @@ async function getWards(url, page){
     for (const a of $('a[href^="/elections/63f8f25b594e164f8146a213/context/"]')) {
         const text = $(a).prop('innerText');
         const href = a.attribs.href;
-        console.log(`LGA=${text}, path=${href}`);
-        lgas.push({
+        console.log(`Ward=${text}, path=${href}`);
+        wards.push({
             url: `https://www.inecelectionresults.ng${href}`,
             name: text,
         });
     }
-    return {puUrls: lgas};
+    return {puUrls: wards};
 }
 
 async function getPuInfos(url, page){
