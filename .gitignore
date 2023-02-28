@@ -7,6 +7,21 @@ yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
 
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
 irev_data.json
 
 .idea

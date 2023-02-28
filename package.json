@@ -4,7 +4,10 @@
   "description": "INEC IReV site exporter",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
   },
   "author": "",
   "license": "MIT",
@@ -13,6 +16,15 @@
     "cheerio": "^1.0.0-rc.12",
     "gulp": "^4.0.2",
     "lodash": "^4.17.21",
-    "puppeteer": "^19.7.2"
+    "next": "12.1.2",
+    "puppeteer": "^19.7.2",
+    "@emotion/react": "11.7.1",
+    "@emotion/styled": "11.6.0",
+    "@material-ui/core": "4.12.3",
+    "@mui/material": "5.4.0",
+    "react": "17.0.2",
+    "react-dom": "17.0.2",
+    "react-infinite-scroll-component": "6.1.0",
+    "react-scripts": "4.0.0"
   }
 }

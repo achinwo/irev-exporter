@@ -13,7 +13,7 @@ const LOCALS = {
     undefined: process.env.SESSION_SPA_UNDEFINED,
 };
 
-const TIMEOUT = 30000;
+const TIMEOUT = 0;
 
 const BASE_URL = 'https://www.inecelectionresults.ng';
 
@@ -112,6 +112,8 @@ exports.exportIrev = async function exportIrev() {
 
 }
 
+exports.default = exports.exportIrev;
+
 const TOTALS = {};
 
 async function saveResults(array){
@@ -125,7 +127,7 @@ async function saveResults(array){
 async function getLgas(stateId, page){
     const url = `${BASE_URL}/elections/63f8f25b594e164f8146a213?state=${stateId}`;
 
-    await page.goto(url,{waitUntil: 'networkidle0'});
+    await page.goto(url,{waitUntil: 'networkidle0', timeout: TIMEOUT});
 
     await waitRefresh(page, {timeout: TIMEOUT});
     const $ = cheerio.load(await page.content());
@@ -150,7 +152,7 @@ async function getLgas(stateId, page){
 
 async function getStates(page){
     const url = `${BASE_URL}/pres/elections/63f8f25b594e164f8146a213?type=pres`;
-    await page.goto(url,{waitUntil: 'networkidle0'});
+    await page.goto(url,{waitUntil: 'networkidle0', timeout: TIMEOUT});
 
     await waitRefresh(page, {timeout: TIMEOUT});
 
@@ -173,7 +175,7 @@ async function getWards(url, page){
     const wards = [];
     const currentUrl = await page.evaluate(() => document.location.href);
 
-    if(currentUrl !== url) await page.goto(url,{waitUntil: 'networkidle0'});
+    if(currentUrl !== url) await page.goto(url,{waitUntil: 'networkidle0', timeout: TIMEOUT});
 
     await waitRefresh(page, {timeout: TIMEOUT});
 
@@ -198,7 +200,7 @@ async function getWards(url, page){
 async function getPuInfos(url, page){
     const currentUrl = await page.evaluate(() => document.location.href);
 
-    if(currentUrl !== url) await page.goto(url,{waitUntil: 'networkidle0'});
+    if(currentUrl !== url) await page.goto(url,{waitUntil: 'networkidle0', timeout: TIMEOUT});
 
     await waitRefresh(page, {timeout: TIMEOUT});
 
@@ -285,7 +287,7 @@ function waitRefresh(page, opts={contains: 'refreshing...', timeout: 5000}) {
                 const html = await page.content();
                 resolve(html);
             }, 500);
-        })
+        });
     }
 
     return new Promise(async (resolve, reject) => {
@@ -297,7 +299,8 @@ function waitRefresh(page, opts={contains: 'refreshing...', timeout: 5000}) {
             isRefreshed = !_.includes(c, opts.contains || 'refreshing...');
 
             const now = new Date().getTime();
-            if((now - startTime) > opts.timeout){
+
+            if(opts.timeout && (now - startTime) > opts.timeout){
                 reject(new Error('Timeout!'))
             }
         }
