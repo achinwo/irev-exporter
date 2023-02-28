@@ -4,6 +4,7 @@ const axios = require('axios');
 const _ = require('lodash');
 const puppeteer = require('puppeteer');
 const fs = require('node:fs/promises');
+const path = require('path');
 
 const TOKEN = process.env.SESSION_TOKEN;
 
@@ -113,6 +114,24 @@ exports.exportIrev = async function exportIrev() {
 }
 
 exports.default = exports.exportIrev;
+
+exports.exportLgas = async function() {
+
+    //await fs.mkdir('build');
+
+    let stateId = 8;
+    while (stateId < 38){
+        const url = `https://lv001-g.inecelectionresults.ng/api/v1/elections/63f8f25b594e164f8146a213/lga/state/${stateId}`;
+        console.log('Fetching url:', url);
+
+        const res = await axios.get(url);
+
+        await fs.writeFile(`build/data_lgas_${stateId}.json`, JSON.stringify(res.data, null, 2));
+        stateId += 1;
+    }
+
+    console.log('Done!');
+}
 
 const TOTALS = {};
 
