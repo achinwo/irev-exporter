@@ -9,7 +9,7 @@ import {
 } from "@material-ui/core";
 import {
     CircularProgress, Collapse,
-    LinearProgress,
+    LinearProgress, Link,
     List,
     ListItem,
     ListItemButton,
@@ -148,16 +148,27 @@ const App = () => {
   const renderCards = (pu, pokemonIndex) => {
     //className={classes.pokemonImage}
     return (
-        <Grid key={pu._id} item xs={12} sm={12} md={12} lg={12}>
-          <Card elevation={1} className={classes.pokemonCard}>
-            <CardContent align="center" >
+        <Grid key={pu._id} item xs={12} sm={12} md={12} lg={12} style={{maxWidth: "100%", minHeight: '70vh'}} key={pokemonIndex}>
+          <Card elevation={1} className={classes.pokemonCard} style={{maxWidth: "100%", minHeight: '70vh'}}>
+            <CardContent align="center" style={{maxWidth: "100%", minHeight: '70vh'}}>
               <Typography>{"Name: " + capitalize(`${pu.name}`)}</Typography>
               <Typography>{`PU Code: ${pu.pu_code}`}</Typography>
-              <CardMedia style={{maxWidth: "100%", minHeight: '50vh'}}>
-                <div style={{maxWidth: "100%", minHeight: '100%'}}>
-                  <iframe  width={'100%'} height={'100%'} src={pu.document?.url} frameBorder={0} seamless style={{height: '100%'}}/>
-                </div>
-              </CardMedia>
+              <Typography>{`Updated: ${pu.updated_at}`}</Typography>
+                {pu.document?.url ?
+                    <>
+                        <Link href={pu.document?.url} rel="noopener noreferrer" target="_blank" sx={{mb: 4}}>Document Link</Link>
+                        <CardMedia style={{maxWidth: "100%", minHeight: '70vh'}}>
+                            <div style={{maxWidth: "100%", height: '100%', position: 'relative'}}>
+                                <iframe  width={'100%'} height={'100%'} src={pu.document?.url} frameBorder={0} seamless style={{height: '100%'}}/>
+                            </div>
+                        </CardMedia>
+                    </>
+                    :
+                    <>
+                        <Typography>No Document</Typography>
+                    </>
+                }
+
             </CardContent>
           </Card>
         </Grid>
@@ -170,9 +181,9 @@ const App = () => {
               <Item style={{position: 'fixed', overflowY: 'scroll', height: '100vh'}}>
                   <List subheader={<ListSubheader component="div" id="nested-list-subheader">States</ListSubheader>}>
                       {
-                          states.map((state) => {
+                          states.map((state, idx) => {
                               return (
-                                  <ListItem>
+                                  <ListItem key={idx}>
                                       <ListItemButton selected={stateId === state.id} onClick={() => setStateId( stateId === state.id ? null : state.id)}>
                                           <ListItemText primary={state.name} />
                                       </ListItemButton>
@@ -192,15 +203,15 @@ const App = () => {
                       <Item style={{position: 'fixed', overflowY: 'scroll', height: '100vh'}}>
                           <List subheader={<ListSubheader component="div" id="nested-list-subheader">LGAs</ListSubheader>}>
                               {
-                                  selectedState.lgas.data.map((lga) => {
+                                  selectedState.lgas.data.map((lga, idx) => {
                                       return (
                                           <>
-                                              <ListItemButton onClick={() => setSelectedLga(lga)}>
+                                              <ListItemButton onClick={() => setSelectedLga(lga)} key={idx}>
                                                   <ListItemText primary={lga.lga.name} />
                                                   {lga.lga.lga_id === selectedLga?.lga.lga_id ? <ExpandLess /> : <ExpandMore />}
                                               </ListItemButton>
 
-                                              <Collapse in={lga.lga.lga_id === selectedLga?.lga.lga_id} timeout="auto" unmountOnExit>
+                                              <Collapse in={lga.lga.lga_id === selectedLga?.lga.lga_id} timeout="auto" unmountOnExit key={idx}>
                                                   <List component="div" disablePadding>
 
                                                       {
@@ -252,11 +263,12 @@ const App = () => {
                               </InfiniteScroll>
                           </>
                       ) : (
-                          <CircularProgress
-                              color={"success"}
-                              className={classes.progress}
-                              size={200}
-                          />
+                          // <CircularProgress
+                          //     color={"success"}
+                          //     className={classes.progress}
+                          //     size={200}
+                          // />
+                          <Typography sx={{mt: 12}}>Select Polling Unit</Typography>
                       )}
                   </>
               </Item>
