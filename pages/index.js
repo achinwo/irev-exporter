@@ -17,7 +17,7 @@ import {
     ListItem,
     ListItemButton,
     ListItemIcon,
-    ListItemText, ListSubheader, Tab, Tabs, TextField, Toolbar
+    ListItemText, ListSubheader, Stack, Tab, Tabs, TextField, Toolbar
 } from "@mui/material";
 import {makeStyles} from "@material-ui/styles";
 import axios from "axios";
@@ -30,6 +30,7 @@ import _ from 'lodash';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import MenuIcon from '@mui/icons-material/Menu';
 import ExpandMore from '@mui/icons-material/ExpandMore';
+import CloseIcon from '@mui/icons-material/Close';
 
 const Item = styled(Paper)(({theme}) => ({
     backgroundColor: theme.palette.mode === 'dark' ? '#1A2027' : '#fff',
@@ -163,20 +164,31 @@ const App = () => {
 
     const drawer = (
         <Box onClick={handleDrawerToggle} sx={{ textAlign: 'center' }}>
-            <Typography variant="h6" sx={{ my: 2 }}>
-                {selectedState?.name}
-            </Typography>
+
+            <Box display="flex" alignItems="center">
+                <Box flexGrow={1} >
+                    <Typography variant="h6" sx={{ my: 2 }}>
+                        {selectedState?.name}
+                    </Typography>
+                </Box>
+                <Box>
+                    <IconButton onClick={handleDrawerToggle}>
+                        <CloseIcon />
+                    </IconButton>
+                </Box>
+            </Box>
+
             <Divider />
                 <List subheader={<ListSubheader component="div" id="nested-list-subheader">LGAs</ListSubheader>}>
                     {
                         (selectedState?.lgas?.data || []).map((lga, idx) => {
                             return (
                                 <>
-                                    <ListItemButton onClick={() => setSelectedLga(lga)} key={idx}>
+                                    <ListItem onClick={() => setSelectedLga(lga)} key={idx}>
                                         <ListItemText primary={lga.lga.name}/>
                                         {lga.lga.lga_id === selectedLga?.lga.lga_id ? <ExpandLess/> :
                                             <ExpandMore/>}
-                                    </ListItemButton>
+                                    </ListItem>
 
                                     <Collapse in={lga.lga.lga_id === selectedLga?.lga.lga_id}
                                               timeout="auto" unmountOnExit key={idx}>
@@ -250,7 +262,7 @@ const App = () => {
     return (
             <Box sx={{ display: 'flex' }}>
                 <CssBaseline />
-                <AppBar component="nav" color="success">
+                <AppBar component="nav">
                     <Toolbar>
                         <IconButton
                             color="inherit"
@@ -261,20 +273,21 @@ const App = () => {
                         >
                             <MenuIcon />
                         </IconButton>
-                        <Box sx={{ display: { xs: 'block', sm: 'block' } }}>
+                        <Box sx={{ display: { xs: 'block', sm: 'block' } }} style={{maxWidth: '80vw'}}>
                             {
                                 <Tabs
                                     value={stateId ? stateId - 1 : null}
                                     onChange={(event, newValue) => setStateId(newValue + 1)}
                                     variant="scrollable"
-                                    scrollButtons="auto"
+                                    scrollButtons
+                                    allowScrollButtonsMobile
                                     textColor="secondary"
                                     indicatorColor="secondary"
                                     aria-label="scrollable auto tabs example"
                                 >
                                     {
                                         states.map((state, idx) => {
-                                            return <Tab id={_.toString(state.id - 1)} label={state.name} key={idx}/>
+                                            return <Tab id={_.toString(state.id - 1)} label={state.name} key={`tab-${idx}`}/>
                                         })
                                     }
 
@@ -285,11 +298,15 @@ const App = () => {
                 </AppBar>
                 <Box component="nav">
                     <Drawer
-                        variant="persistent"
+                        variant="temporary"
+                        anchor="left"
                         open={mobileOpen}
-                        onClose={handleDrawerToggle}
+                        onClose={() => {
+                            console.log(arguments);
+                        }}
                         ModalProps={{
                             keepMounted: true, // Better open performance on mobile.
+                            onBackdropClick: handleDrawerToggle
                         }}
                         sx={{
                             display: { xs: 'block', sm: 'block' },
@@ -317,7 +334,7 @@ const App = () => {
                                         style={{overflow: "unset"}}
                                     >
                                         <Grid container spacing={2} className={classes.pokemonCardsArea}>
-                                            {selectedPu?.data?.map((pu, index) => PollingUnitView({pollingUnit: pu}))}
+                                            {selectedPu?.data?.map((pu, index) => PollingUnitView({pollingUnit: pu, key: index}))}
                                         </Grid>
                                     </InfiniteScroll>
                                 </>
