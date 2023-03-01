@@ -7,10 +7,33 @@ import {
   CardMedia,
   capitalize
 } from "@material-ui/core";
-import { CircularProgress, LinearProgress } from "@mui/material";
+import {
+    CircularProgress, Collapse,
+    LinearProgress,
+    List,
+    ListItem,
+    ListItemButton,
+    ListItemIcon,
+    ListItemText, ListSubheader
+} from "@mui/material";
 import { makeStyles } from "@material-ui/styles";
 import axios from "axios";
 import InfiniteScroll from "react-infinite-scroll-component";
+import { styled } from '@mui/material/styles';
+import Box from '@mui/material/Box';
+import Paper from '@mui/material/Paper';
+import {InboxIcon} from "@heroicons/react/24/outline";
+import _ from 'lodash';
+import ExpandLess from '@mui/icons-material/ExpandLess';
+import ExpandMore from '@mui/icons-material/ExpandMore';
+
+const Item = styled(Paper)(({ theme }) => ({
+    backgroundColor: theme.palette.mode === 'dark' ? '#1A2027' : '#fff',
+    ...theme.typography.body2,
+    padding: theme.spacing(1),
+    textAlign: 'center',
+    color: theme.palette.text.secondary,
+}));
 
 const useStyles = makeStyles({
   pokemonCardsArea: {
@@ -35,79 +58,104 @@ const useStyles = makeStyles({
 const App = () => {
   const classes = useStyles();
   const [pokemonData, setPokemonData] = useState();
+  const [states, setStates] = useState([]);
+  const [stateId, setStateId] = useState(null);
+  const [selectedState, setSelectedState] = useState(null);
+  const [selectedLga, setSelectedLga] = useState(null);
+  const [selectedWard, setWard] = useState(null);
+  const [selectedPu, setSelectedPu] = useState(null);
 
   // Setting up states for InfiniteScroll
   const [scrollData, setScrollData] = useState();
   const [hasMoreValue, setHasMoreValue] = useState(true);
 
-  // When user is close enough to the bottom of the page, this function gonna be triggered
-  // , new scrollData (data to be rendered) will be created
   const loadScrollData = async () => {
     try {
-      setScrollData(pokemonData.slice(0, scrollData.length + 8));
+      setScrollData([]);
     } catch (err) {
       console.log(err);
     }
   };
 
-  // Handler function. Not only scrollData will be set up, but also hasMoreValue's value
-  // Loader depends on it's value (show loader/ not show loader)
   const handleOnRowsScrollEnd = () => {
-    if (scrollData.length < pokemonData.length) {
-      setHasMoreValue(true);
-      loadScrollData();
-    } else {
       setHasMoreValue(false);
-    }
   };
 
   const fetchPrimaryPokemonData = async () => {
     try {
-      await axios
-          .get("https://pokeapi.co/api/v2/pokemon?limit=649")
-          .then((response) => {
-            const data = response.data.results;
-            const newPokemonData = [];
-            data.forEach((pokemon, index) => {
-              newPokemonData.push({
-                id: index + 1,
-                name: pokemon.name,
-                imgUrl: `https://unpkg.com/pokeapi-sprites@2.0.2/sprites/pokemon/other/dream-world/${
-                    index + 1
-                }.svg`
-              });
-            });
-            setPokemonData(newPokemonData);
-            // Let's set up primary array of items to render in InfiniteScroll
-            setScrollData(newPokemonData.slice(0, 20));
-          });
+      // await axios
+      //     .get("https://pokeapi.co/api/v2/pokemon?limit=649")
+      //     .then((response) => {
+      //       const data = response.data.results;
+      //       const newPokemonData = [];
+      //       data.forEach((pokemon, index) => {
+      //         newPokemonData.push({
+      //           id: index + 1,
+      //           name: pokemon.name,
+      //           imgUrl: `https://unpkg.com/pokeapi-sprites@2.0.2/sprites/pokemon/other/dream-world/${
+      //               index + 1
+      //           }.svg`
+      //         });
+      //       });
+      //       setPokemonData(newPokemonData);
+      //       // Let's set up primary array of items to render in InfiniteScroll
+      //       setScrollData(newPokemonData.slice(0, 16));
+      //     });
     } catch (err) {
       console.log(err);
     }
   };
 
-  useEffect(() => {
-    fetchPrimaryPokemonData();
+  const fetchStates = async () => {
+    const response = await axios.get('/api/states');
+    setStates(response.data);
+  }
+
+  useEffect(async () => {
+        await fetchPrimaryPokemonData();
+        await fetchStates();
   }, []);
 
-  const renderCards = (pokemonIndex) => {
-    const { name, id, imgUrl } = pokemonData[pokemonIndex];
+    useEffect(async () => {
+        console.log('fetching for ', stateId);
+        if(!stateId) {
+            setSelectedState(null);
+            return;
+        }
 
+        const response = await axios.get(`/api/states/${stateId}`);
+        //console.log('LGA', response.data);
+
+        setSelectedState(response.data);
+
+    }, [stateId]);
+
+    useEffect(async () => {
+        console.log('fetching for Ward:', selectedWard);
+
+        if(!selectedWard) {
+            setWard(null);
+            return;
+        }
+
+        const response = await axios.get(`/api/pus/${selectedWard._id}`);
+        console.log('PUS', response.data);
+
+        setSelectedPu(response.data);
+
+    }, [selectedWard]);
+
+  const renderCards = (pu, pokemonIndex) => {
+    //className={classes.pokemonImage}
     return (
-        <Grid key={pokemonIndex} item xs={12} sm={6} md={4} lg={3}>
-          <Card elevation={20} className={classes.pokemonCard}>
-            <CardContent align="center">
-              <Typography>{"Name: " + capitalize(`${name}`)}</Typography>
-              <Typography>{`ID: ${id}`}</Typography>
-              <CardMedia>
-                <div
-                    style={{
-                      borderRadius: "50%",
-                      backgroundColor: "#F2F5C8",
-                      maxWidth: "90%"
-                    }}
-                >
-                  <img className={classes.pokemonImage} alt="" src={imgUrl} />
+        <Grid key={pu._id} item xs={12} sm={12} md={12} lg={12}>
+          <Card elevation={1} className={classes.pokemonCard}>
+            <CardContent align="center" >
+              <Typography>{"Name: " + capitalize(`${pu.name}`)}</Typography>
+              <Typography>{`PU Code: ${pu.pu_code}`}</Typography>
+              <CardMedia style={{maxWidth: "100%", minHeight: '50vh'}}>
+                <div style={{maxWidth: "100%", minHeight: '100%'}}>
+                  <iframe  width={'100%'} height={'100%'} src={pu.document?.url} frameBorder={0} seamless style={{height: '100%'}}/>
                 </div>
               </CardMedia>
             </CardContent>
@@ -117,31 +165,105 @@ const App = () => {
   };
 
   return (
-      <>
-        {scrollData ? (
-            <>
-              <InfiniteScroll
-                  dataLength={scrollData.length}
-                  next={handleOnRowsScrollEnd}
-                  hasMore={hasMoreValue}
-                  scrollThreshold={1}
-                  loader={<LinearProgress />}
-                  // Let's get rid of second scroll bar
-                  style={{ overflow: "unset" }}
-              >
-                <Grid container spacing={4} className={classes.pokemonCardsArea}>
-                  {scrollData.map((pokemon, index) => renderCards(index))}
-                </Grid>
-              </InfiniteScroll>
-            </>
-        ) : (
-            <CircularProgress
-                color={"success"}
-                className={classes.progress}
-                size={200}
-            />
-        )}
-      </>
+      <Grid container spacing={2} style={{maxWidth: '100%', maxHeight: '100%'}}>
+          <Grid xs={_.isEmpty(selectedState?.lgas) ? 4 : 2} style={{position: 'relative'}}>
+              <Item style={{position: 'fixed', overflowY: 'scroll', height: '100vh'}}>
+                  <List subheader={<ListSubheader component="div" id="nested-list-subheader">States</ListSubheader>}>
+                      {
+                          states.map((state) => {
+                              return (
+                                  <ListItem>
+                                      <ListItemButton selected={stateId === state.id} onClick={() => setStateId( stateId === state.id ? null : state.id)}>
+                                          <ListItemText primary={state.name} />
+                                      </ListItemButton>
+                                  </ListItem>
+                              )
+                          })
+                      }
+                  </List>
+              </Item>
+          </Grid>
+
+          {
+              _.isEmpty(selectedState?.lgas) ?
+                  null
+                  :
+                  <Grid xs={2} style={{position: 'relative'}}>
+                      <Item style={{position: 'fixed', overflowY: 'scroll', height: '100vh'}}>
+                          <List subheader={<ListSubheader component="div" id="nested-list-subheader">LGAs</ListSubheader>}>
+                              {
+                                  selectedState.lgas.data.map((lga) => {
+                                      return (
+                                          <>
+                                              <ListItemButton onClick={() => setSelectedLga(lga)}>
+                                                  <ListItemText primary={lga.lga.name} />
+                                                  {lga.lga.lga_id === selectedLga?.lga.lga_id ? <ExpandLess /> : <ExpandMore />}
+                                              </ListItemButton>
+
+                                              <Collapse in={lga.lga.lga_id === selectedLga?.lga.lga_id} timeout="auto" unmountOnExit>
+                                                  <List component="div" disablePadding>
+
+                                                      {
+                                                          lga.wards.map((ward) => {
+                                                              return (
+                                                                  <ListItemButton sx={{ pl: 4 }} onClick={() => setWard(ward) } selected={ward._id === selectedWard?._id}>
+                                                                      <ListItemText
+                                                                          primary={ward.name}
+                                                                          secondary={`Ward Number: ${ward.code}`}/>
+                                                                  </ListItemButton>
+                                                              )
+                                                          })
+                                                      }
+                                                  </List>
+                                              </Collapse>
+                                          </>
+
+
+                                          // <ListItem>
+                                          //     <ListItemButton selected={lga.lga.lga_id === selectedLga?.lga.lga_id} onClick={() => setSelectedLga(lga)}>
+                                          //         <ListItemText primary={lga.lga.name} />
+                                          //     </ListItemButton>
+                                          // </ListItem>
+                                      )
+                                  })
+                              }
+                          </List>
+                      </Item>
+                  </Grid>
+          }
+
+          <Grid xs={8}>
+              <Item sx={{}} style={{maxHeight: '100%'}}>
+                  <>
+                      {selectedPu?.data ? (
+                          <>
+                              <InfiniteScroll
+                                  dataLength={selectedPu?.data?.length}
+                                  next={handleOnRowsScrollEnd}
+                                  hasMore={hasMoreValue}
+                                  scrollThreshold={1}
+                                  loader={<LinearProgress />}
+                                  // Let's get rid of second scroll bar
+                                  style={{ overflow: "unset" }}
+                              >
+                                  <Grid container spacing={2} className={classes.pokemonCardsArea}>
+                                      {selectedPu?.data?.map((pu, index) => renderCards(pu, index))}
+                                  </Grid>
+                              </InfiniteScroll>
+                          </>
+                      ) : (
+                          <CircularProgress
+                              color={"success"}
+                              className={classes.progress}
+                              size={200}
+                          />
+                      )}
+                  </>
+              </Item>
+          </Grid>
+      </Grid>
+
+
   );
 };
 

@@ -119,7 +119,7 @@ exports.exportLgas = async function() {
 
     //await fs.mkdir('build');
 
-    let stateId = 8;
+    let stateId = 18;
     while (stateId < 38){
         const url = `https://lv001-g.inecelectionresults.ng/api/v1/elections/63f8f25b594e164f8146a213/lga/state/${stateId}`;
         console.log('Fetching url:', url);
