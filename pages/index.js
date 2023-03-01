@@ -8,15 +8,16 @@ import {
     capitalize
 } from "@material-ui/core";
 import {
+    AppBar,
     Button,
     Checkbox,
-    CircularProgress, Collapse, Divider, FormControlLabel,
+    CircularProgress, Collapse, CssBaseline, Divider, Drawer, FormControlLabel, IconButton,
     LinearProgress, Link,
     List,
     ListItem,
     ListItemButton,
     ListItemIcon,
-    ListItemText, ListSubheader, TextField
+    ListItemText, ListSubheader, Tab, Tabs, TextField, Toolbar
 } from "@mui/material";
 import {makeStyles} from "@material-ui/styles";
 import axios from "axios";
@@ -27,6 +28,7 @@ import Paper from '@mui/material/Paper';
 import {InboxIcon} from "@heroicons/react/24/outline";
 import _ from 'lodash';
 import ExpandLess from '@mui/icons-material/ExpandLess';
+import MenuIcon from '@mui/icons-material/Menu';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 
 const Item = styled(Paper)(({theme}) => ({
@@ -156,23 +158,52 @@ const App = () => {
         setMobileOpen((prevState) => !prevState);
     };
 
-    // const drawer = (
-    //     <Box onClick={handleDrawerToggle} sx={{ textAlign: 'center' }}>
-    //         <Typography variant="h6" sx={{ my: 2 }}>
-    //             MUI
-    //         </Typography>
-    //         <Divider />
-    //         <List>
-    //             {navItems.map((item) => (
-    //                 <ListItem key={item} disablePadding>
-    //                     <ListItemButton sx={{ textAlign: 'center' }}>
-    //                         <ListItemText primary={item} />
-    //                     </ListItemButton>
-    //                 </ListItem>
-    //             ))}
-    //         </List>
-    //     </Box>
-    // );
+    const drawerWidth = 240;
+    const navItems = ['Home', 'About', 'Contact'];
+
+    const drawer = (
+        <Box onClick={handleDrawerToggle} sx={{ textAlign: 'center' }}>
+            <Typography variant="h6" sx={{ my: 2 }}>
+                {selectedState?.name}
+            </Typography>
+            <Divider />
+                <List subheader={<ListSubheader component="div" id="nested-list-subheader">LGAs</ListSubheader>}>
+                    {
+                        selectedState.lgas.data.map((lga, idx) => {
+                            return (
+                                <>
+                                    <ListItemButton onClick={() => setSelectedLga(lga)} key={idx}>
+                                        <ListItemText primary={lga.lga.name}/>
+                                        {lga.lga.lga_id === selectedLga?.lga.lga_id ? <ExpandLess/> :
+                                            <ExpandMore/>}
+                                    </ListItemButton>
+
+                                    <Collapse in={lga.lga.lga_id === selectedLga?.lga.lga_id}
+                                              timeout="auto" unmountOnExit key={idx}>
+                                        <List component="div" disablePadding>
+
+                                            {
+                                                lga.wards.map((ward) => {
+                                                    return (
+                                                        <ListItemButton sx={{pl: 4}}
+                                                                        onClick={() => setWard(ward)}
+                                                                        selected={ward._id === selectedWard?._id}>
+                                                            <ListItemText
+                                                                primary={ward.name}
+                                                                secondary={`Ward Number: ${ward.code}`}/>
+                                                        </ListItemButton>
+                                                    )
+                                                })
+                                            }
+                                        </List>
+                                    </Collapse>
+                                </>
+                            )
+                        })
+                    }
+                </List>
+        </Box>
+    );
 
     const handleOnRowsScrollEnd = () => {
         setHasMoreValue(false);
@@ -217,78 +248,62 @@ const App = () => {
     }, [selectedWard]);
 
     return (
-        <>
-
-
-            <Grid container spacing={1} style={{maxWidth: '100%', height: '100vh'}}>
-                <Grid xs={_.isEmpty(selectedState?.lgas) ? 4 : 2} style={{position: 'relative'}}>
-                    <Item style={{position: 'fixed', overflowY: 'scroll', height: '100vh'}}>
-                        <List subheader={<ListSubheader component="div"
-                                                        id="nested-list-subheader">States</ListSubheader>}>
+            <Box sx={{ display: 'flex' }}>
+                <CssBaseline />
+                <AppBar component="nav" color="success">
+                    <Toolbar>
+                        <IconButton
+                            color="inherit"
+                            aria-label="open drawer"
+                            edge="start"
+                            onClick={handleDrawerToggle}
+                            sx={{ mr: 2, display: { sm: 'block' } }}
+                        >
+                            <MenuIcon />
+                        </IconButton>
+                        <Box sx={{ display: { xs: 'block', sm: 'block' } }}>
                             {
-                                states.map((state, idx) => {
-                                    return (
-                                        <ListItem key={idx}>
-                                            <ListItemButton selected={stateId === state.id}
-                                                            onClick={() => setStateId(stateId === state.id ? null : state.id)}>
-                                                <ListItemText primary={state.name}/>
-                                            </ListItemButton>
-                                        </ListItem>
-                                    )
-                                })
-                            }
-                        </List>
-                    </Item>
-                </Grid>
-
-                {
-                    _.isEmpty(selectedState?.lgas) ?
-                        null
-                        :
-                        <Grid xs={2} style={{position: 'relative'}}>
-                            <Item style={{position: 'fixed', overflowY: 'scroll', height: '100vh'}}>
-                                <List subheader={<ListSubheader component="div"
-                                                                id="nested-list-subheader">LGAs</ListSubheader>}>
+                                <Tabs
+                                    value={stateId ? stateId - 1 : null}
+                                    onChange={(event, newValue) => setStateId(newValue + 1)}
+                                    variant="scrollable"
+                                    scrollButtons="auto"
+                                    textColor="secondary"
+                                    indicatorColor="secondary"
+                                    aria-label="scrollable auto tabs example"
+                                >
                                     {
-                                        selectedState.lgas.data.map((lga, idx) => {
-                                            return (
-                                                <>
-                                                    <ListItemButton onClick={() => setSelectedLga(lga)} key={idx}>
-                                                        <ListItemText primary={lga.lga.name}/>
-                                                        {lga.lga.lga_id === selectedLga?.lga.lga_id ? <ExpandLess/> :
-                                                            <ExpandMore/>}
-                                                    </ListItemButton>
-
-                                                    <Collapse in={lga.lga.lga_id === selectedLga?.lga.lga_id}
-                                                              timeout="auto" unmountOnExit key={idx}>
-                                                        <List component="div" disablePadding>
-
-                                                            {
-                                                                lga.wards.map((ward) => {
-                                                                    return (
-                                                                        <ListItemButton sx={{pl: 4}}
-                                                                                        onClick={() => setWard(ward)}
-                                                                                        selected={ward._id === selectedWard?._id}>
-                                                                            <ListItemText
-                                                                                primary={ward.name}
-                                                                                secondary={`Ward Number: ${ward.code}`}/>
-                                                                        </ListItemButton>
-                                                                    )
-                                                                })
-                                                            }
-                                                        </List>
-                                                    </Collapse>
-                                                </>
-                                            )
+                                        states.map((state, idx) => {
+                                            return <Tab id={_.toString(state.id - 1)} label={state.name} key={idx}/>
                                         })
                                     }
-                                </List>
-                            </Item>
-                        </Grid>
-                }
 
-                <Grid xs={8}>
-                    <Item sx={{}} style={{maxHeight: '100%'}}>
+                                </Tabs>
+                            }
+                        </Box>
+                    </Toolbar>
+                </AppBar>
+                <Box component="nav">
+                    <Drawer
+                        variant="persistent"
+                        open={mobileOpen}
+                        onClose={handleDrawerToggle}
+                        ModalProps={{
+                            keepMounted: true, // Better open performance on mobile.
+                        }}
+                        sx={{
+                            display: { xs: 'block', sm: 'block' },
+                            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+                        }}
+                    >
+                        {drawer}
+                    </Drawer>
+                </Box>
+
+            <Grid container spacing={1} sx={{}} style={{maxWidth: '100%', height: '90vh'}}>
+
+                <Grid xs={12}>
+                    <Box sx={{mt: 18}} style={{maxHeight: '100%'}}>
                         <>
                             {selectedPu?.data ? (
                                 <>
@@ -315,11 +330,11 @@ const App = () => {
                                 <Typography sx={{mt: 12}}>Select Polling Unit</Typography>
                             )}
                         </>
-                    </Item>
+                    </Box>
                 </Grid>
             </Grid>
 
-        </>
+        </Box>
     );
 };
 
