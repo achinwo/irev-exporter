@@ -159,7 +159,7 @@ const App = () => {
                         <Link href={pu.document?.url} rel="noopener noreferrer" target="_blank" sx={{mb: 4}}>Document Link</Link>
                         <CardMedia style={{maxWidth: "100%", minHeight: '70vh'}}>
                             <div style={{maxWidth: "100%", height: '100%', position: 'relative'}}>
-                                <iframe  width={'100%'} height={'100%'} src={pu.document?.url} frameBorder={0} seamless style={{height: '100%'}}/>
+                                <iframe  width={'100%'} height={'70vh'} src={pu.document?.url} frameBorder={0} seamless style={{height: '70vh'}}/>
                             </div>
                         </CardMedia>
                     </>
