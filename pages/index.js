@@ -16,29 +16,17 @@ import {
     List,
     ListItem,
     ListItemButton,
-    ListItemIcon,
     ListItemText, ListSubheader, Stack, Tab, Tabs, TextField, Toolbar
 } from "@mui/material";
 import {makeStyles} from "@material-ui/styles";
 import axios from "axios";
 import InfiniteScroll from "react-infinite-scroll-component";
-import {styled} from '@mui/material/styles';
 import Box from '@mui/material/Box';
-import Paper from '@mui/material/Paper';
-import {InboxIcon} from "@heroicons/react/24/outline";
 import _ from 'lodash';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import MenuIcon from '@mui/icons-material/Menu';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import CloseIcon from '@mui/icons-material/Close';
-
-const Item = styled(Paper)(({theme}) => ({
-    backgroundColor: theme.palette.mode === 'dark' ? '#1A2027' : '#fff',
-    ...theme.typography.body2,
-    padding: theme.spacing(1),
-    textAlign: 'center',
-    color: theme.palette.text.secondary,
-}));
 
 const useStyles = makeStyles({
     pokemonCardsArea: {
@@ -142,13 +130,13 @@ const PollingUnitView = ({pollingUnit}) => {
 
 const App = () => {
     const classes = useStyles();
-    const [pokemonData, setPokemonData] = useState();
     const [states, setStates] = useState([]);
     const [stateId, setStateId] = useState(null);
     const [selectedState, setSelectedState] = useState(null);
     const [selectedLga, setSelectedLga] = useState(null);
     const [selectedWard, setWard] = useState(null);
     const [selectedPu, setSelectedPu] = useState(null);
+    const [isLoadingPuData, setIsLoadingPuData] = useState(false);
 
     // Setting up states for InfiniteScroll
     const [scrollData, setScrollData] = useState();
@@ -160,60 +148,59 @@ const App = () => {
     };
 
     const drawerWidth = 240;
-    const navItems = ['Home', 'About', 'Contact'];
 
     const drawer = (
-        <Box onClick={handleDrawerToggle} sx={{ textAlign: 'center' }}>
+        <Box onClick={handleDrawerToggle} sx={{textAlign: 'center'}}>
 
             <Box display="flex" alignItems="center">
-                <Box flexGrow={1} >
-                    <Typography variant="h6" sx={{ my: 2 }}>
+                <Box flexGrow={1}>
+                    <Typography variant="h6" sx={{my: 2}}>
                         {selectedState?.name}
                     </Typography>
                 </Box>
                 <Box>
                     <IconButton onClick={handleDrawerToggle}>
-                        <CloseIcon />
+                        <CloseIcon/>
                     </IconButton>
                 </Box>
             </Box>
 
-            <Divider />
-                <List subheader={<ListSubheader component="div" id="nested-list-subheader">LGAs</ListSubheader>}>
-                    {
-                        (selectedState?.lgas?.data || []).map((lga, idx) => {
-                            return (
-                                <>
-                                    <ListItem onClick={() => setSelectedLga(lga)} key={idx}>
-                                        <ListItemText primary={lga.lga.name}/>
-                                        {lga.lga.lga_id === selectedLga?.lga.lga_id ? <ExpandLess/> :
-                                            <ExpandMore/>}
-                                    </ListItem>
+            <Divider/>
+            <List subheader={<ListSubheader component="div" id="nested-list-subheader">LGAs</ListSubheader>}>
+                {
+                    (selectedState?.lgas?.data || []).map((lga, idx) => {
+                        return (
+                            <>
+                                <ListItem onClick={() => setSelectedLga(lga)} key={idx}>
+                                    <ListItemText primary={lga.lga.name}/>
+                                    {lga.lga.lga_id === selectedLga?.lga.lga_id ? <ExpandLess/> :
+                                        <ExpandMore/>}
+                                </ListItem>
 
-                                    <Collapse in={lga.lga.lga_id === selectedLga?.lga.lga_id}
-                                              timeout="auto" unmountOnExit key={idx}>
-                                        <List component="div" disablePadding>
+                                <Collapse in={lga.lga.lga_id === selectedLga?.lga.lga_id}
+                                          timeout="auto" unmountOnExit key={idx}>
+                                    <List component="div" disablePadding>
 
-                                            {
-                                                lga.wards.map((ward) => {
-                                                    return (
-                                                        <ListItemButton sx={{pl: 4}}
-                                                                        onClick={() => setWard(ward)}
-                                                                        selected={ward._id === selectedWard?._id}>
-                                                            <ListItemText
-                                                                primary={ward.name}
-                                                                secondary={`Ward Number: ${ward.code}`}/>
-                                                        </ListItemButton>
-                                                    )
-                                                })
-                                            }
-                                        </List>
-                                    </Collapse>
-                                </>
-                            )
-                        })
-                    }
-                </List>
+                                        {
+                                            lga.wards.map((ward) => {
+                                                return (
+                                                    <ListItemButton sx={{pl: 4}}
+                                                                    onClick={() => setWard(ward)}
+                                                                    selected={ward._id === selectedWard?._id}>
+                                                        <ListItemText
+                                                            primary={ward.name}
+                                                            secondary={`Ward Number: ${ward.code}`}/>
+                                                    </ListItemButton>
+                                                )
+                                            })
+                                        }
+                                    </List>
+                                </Collapse>
+                            </>
+                        )
+                    })
+                }
+            </List>
         </Box>
     );
 
@@ -252,101 +239,129 @@ const App = () => {
             return;
         }
 
-        const response = await axios.get(`/api/pus/${selectedWard._id}`);
-        console.log('PUS', response.data);
+        try{
+            setIsLoadingPuData(true);
+            const response = await axios.get(`/api/pus/${selectedWard._id}`);
+            console.log('PUS', response.data);
 
-        setSelectedPu(response.data);
+            setSelectedPu(response.data);
+        }finally {
+            setIsLoadingPuData(false);
+        }
+
 
     }, [selectedWard]);
 
     return (
-            <Box sx={{ display: 'flex' }}>
-                <CssBaseline />
-                <AppBar component="nav">
-                    <Toolbar>
-                        <IconButton
-                            color="inherit"
-                            aria-label="open drawer"
-                            edge="start"
-                            onClick={handleDrawerToggle}
-                            sx={{ mr: 2, display: { sm: 'block' } }}
-                        >
-                            <MenuIcon />
-                        </IconButton>
-                        <Box sx={{ display: { xs: 'block', sm: 'block' } }} style={{maxWidth: '80vw'}}>
-                            {
-                                <Tabs
-                                    value={stateId ? stateId - 1 : null}
-                                    onChange={(event, newValue) => setStateId(newValue + 1)}
-                                    variant="scrollable"
-                                    scrollButtons
-                                    allowScrollButtonsMobile
-                                    textColor="secondary"
-                                    indicatorColor="secondary"
-                                    aria-label="scrollable auto tabs example"
-                                >
-                                    {
-                                        states.map((state, idx) => {
-                                            return <Tab id={_.toString(state.id - 1)} label={state.name} key={`tab-${idx}`}/>
-                                        })
-                                    }
-
-                                </Tabs>
-                            }
-                        </Box>
-                    </Toolbar>
-                </AppBar>
-                <Box component="nav">
-                    <Drawer
-                        variant="temporary"
-                        anchor="left"
-                        open={mobileOpen}
-                        onClose={() => {
-                            console.log(arguments);
-                        }}
-                        ModalProps={{
-                            keepMounted: true, // Better open performance on mobile.
-                            onBackdropClick: handleDrawerToggle
-                        }}
-                        sx={{
-                            display: { xs: 'block', sm: 'block' },
-                            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
-                        }}
+        <Box sx={{display: 'flex'}}>
+            <CssBaseline/>
+            <AppBar component="nav">
+                <Toolbar>
+                    <IconButton
+                        color="inherit"
+                        aria-label="open drawer"
+                        edge="start"
+                        onClick={handleDrawerToggle}
+                        sx={{mr: 2, display: {sm: 'block'}}}
                     >
-                        {drawer}
-                    </Drawer>
-                </Box>
+                        <MenuIcon/>
+                    </IconButton>
+                    <Box sx={{display: {xs: 'block', sm: 'block'}, ml: globalThis?.window?.screen?.width < 600 ? '1em' : '10em'}} style={{maxWidth: '80vw'}}>
+                        {
+                            <Tabs
+                                value={stateId ? stateId - 1 : null}
+                                onChange={(event, newValue) => setStateId(newValue + 1)}
+                                variant="scrollable"
+                                xs={{}}
+                                scrollButtons
+                                allowScrollButtonsMobile
+                                textColor="secondary"
+                                indicatorColor="secondary"
+                                aria-label="scrollable auto tabs example"
+                            >
+                                {
+                                    states.map((state, idx) => {
+                                        return <Tab id={_.toString(state.id - 1)} label={state.name}
+                                                    key={`tab-${idx}`}/>
+                                    })
+                                }
+
+                            </Tabs>
+                        }
+                    </Box>
+                </Toolbar>
+            </AppBar>
+            <Box component="nav">
+                <Drawer
+                    variant="temporary"
+                    anchor="left"
+                    open={mobileOpen}
+                    container={globalThis?.window?.document?.body}
+                    onClose={() => {
+                        console.log(arguments);
+                    }}
+                    ModalProps={{
+                        keepMounted: true, // Better open performance on mobile.
+                        onBackdropClick: handleDrawerToggle
+                    }}
+                    sx={{
+                        display: {xs: 'block', sm: 'none'},
+                        '& .MuiDrawer-paper': {boxSizing: 'border-box', width: drawerWidth},
+                    }}>
+                    {drawer}
+                </Drawer>
+                <Drawer
+                    variant="permanent"
+                    sx={{
+                        display: {xs: 'none', sm: 'block'},
+                        '& .MuiDrawer-paper': {boxSizing: 'border-box', width: drawerWidth},
+                    }}
+                    open
+                >
+                    {drawer}
+                </Drawer>
+            </Box>
 
             <Grid container spacing={1} sx={{}} style={{maxWidth: '100%', height: '90vh'}}>
 
                 <Grid xs={12}>
                     <Box sx={{mt: 18}} style={{maxHeight: '100%'}}>
-                        <>
-                            {selectedPu?.data ? (
-                                <>
-                                    <InfiniteScroll
-                                        dataLength={selectedPu?.data?.length}
-                                        next={handleOnRowsScrollEnd}
-                                        hasMore={hasMoreValue}
-                                        scrollThreshold={1}
-                                        loader={<LinearProgress/>}
-                                        // Let's get rid of second scroll bar
-                                        style={{overflow: "unset"}}
-                                    >
-                                        <Grid container spacing={2} className={classes.pokemonCardsArea}>
-                                            {selectedPu?.data?.map((pu, index) => PollingUnitView({pollingUnit: pu, key: index}))}
-                                        </Grid>
-                                    </InfiniteScroll>
-                                </>
-                            ) : (
-                                // <CircularProgress
-                                //     color={"success"}
-                                //     className={classes.progress}
-                                //     size={200}
-                                // />
-                                <Typography sx={{mt: 12}}>Select Polling Unit</Typography>
-                            )}
-                        </>
+                        {isLoadingPuData ?
+                            <CircularProgress
+                                color={"success"}
+                                className={classes.progress}
+                                size={200}
+                            />
+                            :
+                            selectedPu?.data ? (
+                            <>
+                                <InfiniteScroll
+                                    dataLength={selectedPu?.data?.length}
+                                    next={handleOnRowsScrollEnd}
+                                    hasMore={hasMoreValue}
+                                    scrollThreshold={1}
+                                    loader={<LinearProgress/>}
+                                    // Let's get rid of second scroll bar
+                                    style={{overflow: "unset"}}
+                                >
+                                    <Grid container spacing={2} className={classes.pokemonCardsArea}>
+                                        {selectedPu?.data?.map((pu, index) => PollingUnitView({
+                                            pollingUnit: pu,
+                                            key: index
+                                        }))}
+                                    </Grid>
+                                </InfiniteScroll>
+                            </>
+                        ) : (
+                            <Box sx={{ml: 50}}>
+                                <Card style={{width: '50vw'}}>
+                                    <CardContent>
+                                        <Typography variant={'h6'} style={{color: 'gray'}} sx={{mt: 12}}>Select a State
+                                            and then a polling unit from the left panel</Typography>
+                                    </CardContent>
+                                </Card>
+                            </Box>
+                        )}
                     </Box>
                 </Grid>
             </Grid>
