@@ -169,7 +169,7 @@ const App = () => {
             <Divider />
                 <List subheader={<ListSubheader component="div" id="nested-list-subheader">LGAs</ListSubheader>}>
                     {
-                        selectedState.lgas.data.map((lga, idx) => {
+                        (selectedState?.lgas?.data || []).map((lga, idx) => {
                             return (
                                 <>
                                     <ListItemButton onClick={() => setSelectedLga(lga)} key={idx}>
