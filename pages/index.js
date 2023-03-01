@@ -176,7 +176,7 @@ const App = () => {
   };
 
   return (
-      <Grid container spacing={2} style={{maxWidth: '100%', maxHeight: '100%'}}>
+      <Grid container spacing={1} style={{maxWidth: '100%', height: '100vh'}}>
           <Grid xs={_.isEmpty(selectedState?.lgas) ? 4 : 2} style={{position: 'relative'}}>
               <Item style={{position: 'fixed', overflowY: 'scroll', height: '100vh'}}>
                   <List subheader={<ListSubheader component="div" id="nested-list-subheader">States</ListSubheader>}>
