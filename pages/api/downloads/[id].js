@@ -26,34 +26,36 @@ export default async function userHandler(req, res) {
 
             const fileName = `output_${query.id}.zip`;
             const destPath = path.join(process.cwd(), fileName);
-            const output = fs.createWriteStream(destPath);
+
+            res.setHeader('Content-Disposition', `attachment; filename=${fileName}`);
+            res.setHeader('Content-Type', 'application/zip');
+            //res.setHeader('Content-Length', );
+            res.writeHead(200, {
+                'Content-Type': 'application/zip',
+                'Content-Disposition': `attachment; filename=${fileName}`,
+                //'Content-Length': stat.size
+            });
+
+            //const output = new MemoryStream([], {writable: true, readable: true});
             const archive = archiver('zip');
 
-            output.on('close', async function() {
-                console.log('archiver has been finalized and the output file descriptor has closed.');
-                const stat = fs.statSync(destPath);
+            // output.on('close', async function() {
+            //     console.log('archiver has been finalized and the output file descriptor has closed.');
+            //     // const stat = fs.statSync(destPath);
+            //     //
+            //     //
+            //     //readable
+            //     // await pipeline(fileStream, res);
+            //
+            //
+            // });
+            //
+            // output.on('error', function(err) {
+            //     console.log(err.stack);
+            //     return
+            // });
 
-                res.setHeader('Content-Disposition', `attachment; filename=${fileName}`);
-                res.setHeader('Content-Type', 'application/zip');
-                res.setHeader('Content-Length', stat.size);
-                res.writeHead(200, {
-                    'Content-Type': 'application/zip',
-                    'Content-Disposition': `attachment; filename=${fileName}`,
-                    'Content-Length': stat.size
-                });
-
-                let fileStream = fs.createReadStream(destPath);
-                await pipeline(fileStream, res);
-
-                fs.unlinkSync(destPath);
-            });
-
-            output.on('error', function(err) {
-                console.log(err.stack);
-                return
-            });
-
-            archive.pipe(output);
+            archive.pipe(res);
 
             for (const resp of await Promise.all(proms)) {
 
@@ -65,14 +67,19 @@ export default async function userHandler(req, res) {
                 archive.append(resp.body, {name: fileName});
             }
 
-            await archive.finalize(function(err, bytes) {
-                if (err) {
-                    console.log(err.stack);
-                    return;
-                }
+            const r = await archive.finalize();
 
-                console.log(bytes + ' total bytes');
-            });
+
+            console.log('Finalized', r);
+            //     function(err, bytes) {
+            //     if (err) {
+            //         console.log(err.stack);
+            //         return;
+            //     }
+            //
+            //     console.log(bytes + ' total bytes');
+            //     output.end();
+            // });
 
             break
         default:
