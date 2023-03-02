@@ -25,7 +25,7 @@ import {
     Link,
     List,
     ListItem,
-    ListItemButton,
+    ListItemButton, ListItemSecondaryAction,
     ListItemText,
     ListSubheader,
     MenuItem,
@@ -202,7 +202,7 @@ const App = () => {
     const drawerWidth = 240;
 
     const drawer = (
-        <Box onClick={handleDrawerToggle} sx={{textAlign: 'center'}}>
+        <Box sx={{textAlign: 'center'}}>
 
             <Box display="flex" alignItems="center">
                 <Box flexGrow={1}>
@@ -237,7 +237,10 @@ const App = () => {
                                             lga.wards.map((ward) => {
                                                 return (
                                                     <ListItemButton sx={{pl: 4}}
-                                                                    onClick={() => setWard(ward)}
+                                                                    onClick={() => {
+                                                                        setWard(ward);
+                                                                        handleDrawerToggle();
+                                                                    }}
                                                                     selected={ward._id === selectedWard?._id}>
                                                         <ListItemText
                                                             primary={ward.name}
@@ -329,10 +332,9 @@ const App = () => {
                             </Box>
                             <Box>
                                 <FormControl sx={{ m: 1, minWidth: 120 }} size="small">
-                                    <InputLabel id="demo-simple-select-helper-label">State</InputLabel>
+                                    <InputLabel>State</InputLabel>
                                     <Select
                                         labelId="demo-simple-select-helper-label"
-                                        id="demo-simple-select-helper"
                                         value={stateId ? stateId - 1 : null}
                                         onChange={(event) => setStateId(event.target.value === "" ? null : _.toInteger(event.target.value) + 1)}
                                         label="State">
