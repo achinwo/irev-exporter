@@ -49,7 +49,8 @@ export default async function userHandler(req, res) {
             });
 
             output.on('error', function(err) {
-                throw err;
+                console.log(err.stack);
+                return
             });
 
             archive.pipe(output);
@@ -66,7 +67,8 @@ export default async function userHandler(req, res) {
 
             await archive.finalize(function(err, bytes) {
                 if (err) {
-                    throw err;
+                    console.log(err.stack);
+                    return;
                 }
 
                 console.log(bytes + ' total bytes');
