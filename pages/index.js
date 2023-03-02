@@ -11,12 +11,30 @@ import {
     AppBar,
     Button,
     Checkbox,
-    CircularProgress, Collapse, CssBaseline, Divider, Drawer, FormControlLabel, IconButton,
-    LinearProgress, Link,
+    CircularProgress,
+    Collapse,
+    CssBaseline,
+    Divider,
+    Drawer,
+    FormControl,
+    FormControlLabel,
+    FormHelperText,
+    IconButton,
+    InputLabel,
+    LinearProgress,
+    Link,
     List,
     ListItem,
     ListItemButton,
-    ListItemText, ListSubheader, Stack, Tab, Tabs, TextField, Toolbar
+    ListItemText,
+    ListSubheader,
+    MenuItem,
+    Select,
+    Stack,
+    Tab,
+    Tabs,
+    TextField,
+    Toolbar
 } from "@mui/material";
 import {makeStyles} from "@material-ui/styles";
 import axios from "axios";
@@ -48,7 +66,9 @@ const useStyles = makeStyles({
     }
 });
 
-const PollingUnitView = ({pollingUnit}) => {
+
+const PollingUnitView = ({pollingUnit, isResultLegible, setIsResultLegible, values, setValues, isPuNameCorrect, setIsPuNameCorrect}) => {
+
     const options = {
         weekday: 'long',
         year: 'numeric',
@@ -58,9 +78,19 @@ const PollingUnitView = ({pollingUnit}) => {
         minute: '2-digit'
     };
     const pu = pollingUnit;
+
+    const submitPollingData = async () => {
+        const url = `/api/pus/${pu._id}`;
+        console.log('submitted pu data url:', url);
+
+        const resp = await axios.post(url, {pu, puData: {isResultLegible, isPuNameCorrect, ...values}});
+        console.log('submitted pu data', resp);
+    }
+
+    //<Grid key={pu._id} item xs={12} sm={12} md={12} lg={12} style={{maxWidth: "100%"}}>
     return (
-        <Grid key={pu._id} item xs={12} sm={12} md={12} lg={12} style={{maxWidth: "100%"}}>
-            <Card elevation={1} style={{maxWidth: "100%"}}>
+
+            <Card elevation={4} xs={{mt: 20}} style={{maxWidth: "100%"}}>
                 <CardContent align="center" style={{maxWidth: "100%"}}>
                     <Typography>{capitalize(`${pu.name}`)}</Typography>
                     <Typography>{`PU Code: ${pu.pu_code}`}</Typography>
@@ -71,7 +101,7 @@ const PollingUnitView = ({pollingUnit}) => {
                                 Link</Link>
                             <CardMedia style={{maxWidth: "100%", minHeight: '70vh'}}>
                                 <div style={{maxWidth: "100%", height: '100%', position: 'relative'}}>
-                                    <iframe width={'100%'} height={'70vh'} src={pu.document?.url} frameBorder={0}
+                                    <iframe width={'80%'} height={'70vh'} src={pu.document?.url} frameBorder={0}
                                             seamless style={{height: '70vh', marginTop: '1em'}}/>
                                 </div>
 
@@ -84,8 +114,14 @@ const PollingUnitView = ({pollingUnit}) => {
                                     autoComplete="off"
                                 >
                                     {
-                                        ['LP', 'PDP', 'APC', 'NNPP'].map((tag) => {
-                                            return <TextField label={tag}
+                                        ['Lp', 'Pdp', 'Apc', 'Nnpp'].map((tag, key) => {
+                                            return <TextField label={tag.toUpperCase()}
+                                                              key={key}
+                                                              value={values[`votes${tag}`]}
+                                                              onChange={(evt) => {
+                                                                  values[`votes${tag}`] = evt.target.value;
+                                                                  setValues({...values});
+                                                              }}
                                                               inputProps={{inputMode: 'numeric', pattern: '[0-9]*'}}
                                                               variant="filled"/>
                                         })
@@ -95,8 +131,9 @@ const PollingUnitView = ({pollingUnit}) => {
                                         label="Is PU name correct?"
                                         control={
                                             <Checkbox
-                                                checked={true}
-                                                onChange={() => {
+                                                checked={isPuNameCorrect}
+                                                onChange={(evt) => {
+                                                    setIsPuNameCorrect(evt.target.value);
                                                 }}
                                             />
                                         }
@@ -105,14 +142,17 @@ const PollingUnitView = ({pollingUnit}) => {
                                         label="Is result legible?"
                                         control={
                                             <Checkbox
-                                                checked={true}
-                                                onChange={() => {
+                                                checked={isResultLegible}
+                                                onChange={(evt) => {
+                                                    setIsResultLegible(evt.target.value);
                                                 }}
                                             />
                                         }
                                     />
                                     <br/>
-                                    <Button variant="text">Submit</Button>
+                                    <Button variant="text"
+                                            onClick={() => submitPollingData()}
+                                    >Submit</Button>
                                 </Box>
                             </CardMedia>
                         </>
@@ -124,7 +164,6 @@ const PollingUnitView = ({pollingUnit}) => {
 
                 </CardContent>
             </Card>
-        </Grid>
     );
 }
 
@@ -204,9 +243,7 @@ const App = () => {
         </Box>
     );
 
-    const handleOnRowsScrollEnd = () => {
-        setHasMoreValue(false);
-    };
+
 
     const fetchStates = async () => {
         const response = await axios.get('/api/states');
@@ -218,8 +255,9 @@ const App = () => {
     }, []);
 
     useEffect(async () => {
-        console.log('fetching for ', stateId);
+        console.log('fetching for state:', stateId);
         if (!stateId) {
+            setSelectedPu(null);
             setSelectedState(null);
             return;
         }
@@ -236,6 +274,7 @@ const App = () => {
 
         if (!selectedWard) {
             setWard(null);
+            setSelectedPu(null);
             return;
         }
 
@@ -252,6 +291,8 @@ const App = () => {
 
     }, [selectedWard]);
 
+
+
     return (
         <Box sx={{display: 'flex'}}>
             <CssBaseline/>
@@ -266,29 +307,37 @@ const App = () => {
                     >
                         <MenuIcon/>
                     </IconButton>
-                    <Box sx={{display: {xs: 'block', sm: 'block'}, ml: mobileCheck() < 600 ? '1em' : '10em'}} style={{maxWidth: '80vw'}}>
-                        {
-                            <Tabs
-                                value={stateId ? stateId - 1 : null}
-                                onChange={(event, newValue) => setStateId(newValue + 1)}
-                                variant="scrollable"
-                                xs={{}}
-                                scrollButtons
-                                allowScrollButtonsMobile
-                                textColor="secondary"
-                                indicatorColor="secondary"
-                                aria-label="scrollable auto tabs example"
-                            >
-                                {
-                                    states.map((state, idx) => {
-                                        return <Tab id={_.toString(state.id - 1)} label={state.name}
-                                                    key={`tab-${idx}`}/>
-                                    })
-                                }
 
-                            </Tabs>
-                        }
-                    </Box>
+                        <Box display="flex" alignItems="center" style={{width:'100%'}}>
+                            <Box flexGrow={1}>
+                                <Typography variant="h6" sx={{my: 2}}>
+                                    {selectedState?.name}
+                                </Typography>
+                            </Box>
+                            <Box>
+                                <FormControl sx={{ m: 1, minWidth: 120 }} size="small">
+                                    <InputLabel id="demo-simple-select-helper-label">State</InputLabel>
+                                    <Select
+                                        labelId="demo-simple-select-helper-label"
+                                        id="demo-simple-select-helper"
+                                        value={stateId ? stateId - 1 : null}
+                                        onChange={(event) => setStateId(event.target.value === "" ? null : _.toInteger(event.target.value) + 1)}
+                                        label="State">
+                                        <MenuItem value="">
+                                            <em>None</em>
+                                        </MenuItem>
+
+                                        {
+                                            states.map((state, idx) => {
+                                                return <MenuItem value={_.toString(state.id - 1)} key={`tab-${idx}`}>{state.name}</MenuItem>
+                                            })
+                                        }
+                                    </Select>
+                                    <FormHelperText>Select a state</FormHelperText>
+                                </FormControl>
+                            </Box>
+                        </Box>
+
                 </Toolbar>
             </AppBar>
             <Box component="nav">
@@ -322,53 +371,65 @@ const App = () => {
                 </Drawer>
             </Box>
 
-            <Grid container spacing={1} sx={{}} style={{maxWidth: '100%', height: '100vh', overflowY: 'scroll'}}>
-
-                <Grid xs={12}>
-                    <Box sx={{mt: 18}} style={{maxHeight: '100%'}}>
-                        {isLoadingPuData ?
-                            <CircularProgress
-                                color={"success"}
-                                className={classes.progress}
-                                size={200}
-                            />
-                            :
-                            selectedPu?.data ? (
-                            <>
-                                <InfiniteScroll
-                                    dataLength={selectedPu?.data?.length}
-                                    next={handleOnRowsScrollEnd}
-                                    hasMore={hasMoreValue}
-                                    scrollThreshold={1}
-                                    loader={<LinearProgress/>}
-                                    // Let's get rid of second scroll bar
-                                    style={{overflow: "unset"}}
-                                >
-                                    <Grid container spacing={2} className={classes.pokemonCardsArea}>
-                                        {selectedPu?.data?.map((pu, index) => PollingUnitView({
-                                            pollingUnit: pu,
-                                            key: index
-                                        }))}
-                                    </Grid>
-                                </InfiniteScroll>
-                            </>
-                        ) : (
-                            <Box sx={{ml: mobileCheck() ? 15 : 50}}>
-                                <Card style={{width: '50vw'}}>
-                                    <CardContent>
-                                        <Typography variant={'h6'} style={{color: 'gray'}} sx={{mt: 12}}>Select a State
-                                            and then a polling unit from the left panel</Typography>
-                                    </CardContent>
-                                </Card>
-                            </Box>
-                        )}
-                    </Box>
-                </Grid>
+            <Grid container spacing={1} sx={{pb: 18}} alignItems="center"
+                  justify="center" style={{maxWidth: '100%', height: '100vh', overflowY: 'scroll'}}>
+                <Box style={{width: '100%', height: '100%'}} sx={{mt: 18}}>
+                    <MainBody isLoadingPuData={isLoadingPuData} selectedPu={selectedPu}/>
+                </Box>
             </Grid>
 
         </Box>
     );
 };
+
+function MainBody({isLoadingPuData, selectedPu}) {
+    const classes = useStyles();
+
+
+    const [isResultLegible, setIsResultLegible] = useState(false);
+    const [values, setValues] = useState({votesLp: undefined, votesNnpp: undefined, votesPdp: undefined, votesApc: undefined});
+
+    const [isPuNameCorrect, setIsPuNameCorrect] = useState(false);
+
+    if (isLoadingPuData) {
+        return <CircularProgress
+            color={"success"}
+            className={classes.progress}
+            size={200}
+        />
+    }
+
+    if (selectedPu?.data) {
+     return <Grid xs={12} sx={{mt: 18}} style={{maxHeight: '100%'}}>
+         <InfiniteScroll
+             dataLength={selectedPu?.data?.length}
+             next={() => null}
+             hasMore={false}
+             scrollThreshold={1}
+             loader={<LinearProgress/>}
+             // Let's get rid of second scroll bar
+             style={{overflow: "unset"}}>
+             {selectedPu?.data?.map((pu, index) => {
+                 return PollingUnitView({
+                     pollingUnit: pu,
+                     key: `pus-${index}`,
+                     isResultLegible: isResultLegible, setIsResultLegible: setIsResultLegible,
+                     values: values, setValues: setValues,
+                     isPuNameCorrect: isPuNameCorrect, setIsPuNameCorrect: setIsPuNameCorrect
+                 });
+             })}
+         </InfiniteScroll>
+     </Grid>
+
+    } else {
+        return <Card style={{width: '50vw'}}>
+            <CardContent>
+                <Typography variant={'h6'} style={{color: 'gray'}} sx={{mt: 12}}>Select a State
+                    and then a polling unit from the left panel</Typography>
+            </CardContent>
+        </Card>
+    }
+}
 
 function mobileCheck() {
     let check = false;
