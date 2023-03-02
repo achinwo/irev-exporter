@@ -67,7 +67,7 @@ const useStyles = makeStyles({
 });
 
 
-const PollingUnitView = ({pollingUnit, isResultLegible, setIsResultLegible, values, setValues, isPuNameCorrect, setIsPuNameCorrect}) => {
+const PollingUnitView = ({pollingUnit, puData, setPuDataById}) => {
 
     const options = {
         weekday: 'long',
@@ -83,7 +83,8 @@ const PollingUnitView = ({pollingUnit, isResultLegible, setIsResultLegible, valu
         const url = `/api/pus/${pu._id}`;
         console.log('submitted pu data url:', url);
 
-        const resp = await axios.post(url, {pu, puData: {isResultLegible, isPuNameCorrect, ...values}});
+        const data = puData[pu._id] || {votesLp: undefined, votesNnpp: undefined, votesPdp: undefined, votesApc: undefined};
+        const resp = await axios.post(url, {pu, puData: data});
         console.log('submitted pu data', resp);
     }
 
@@ -115,12 +116,16 @@ const PollingUnitView = ({pollingUnit, isResultLegible, setIsResultLegible, valu
                                 >
                                     {
                                         ['Lp', 'Pdp', 'Apc', 'Nnpp'].map((tag, key) => {
+                                            const values = puData[pu._id] || {};
                                             return <TextField label={tag.toUpperCase()}
                                                               key={key}
                                                               value={values[`votes${tag}`]}
                                                               onChange={(evt) => {
                                                                   values[`votes${tag}`] = evt.target.value;
-                                                                  setValues({...values});
+                                                                  setPuDataById((prev) => {
+                                                                      prev[pu._id] = _.assign(prev[pu._id], values);
+                                                                      return prev;
+                                                                  });
                                                               }}
                                                               inputProps={{inputMode: 'numeric', pattern: '[0-9]*'}}
                                                               variant="filled"/>
@@ -131,9 +136,13 @@ const PollingUnitView = ({pollingUnit, isResultLegible, setIsResultLegible, valu
                                         label="Is PU name correct?"
                                         control={
                                             <Checkbox
-                                                checked={isPuNameCorrect}
+                                                checked={(puData[pu._id] || {}).isPuNameCorrect}
                                                 onChange={(evt) => {
-                                                    setIsPuNameCorrect(evt.target.value);
+                                                    setPuDataById((prev) => {
+                                                        prev[pu._id] = prev[pu._id] || {};
+                                                        prev[pu._id].isPuNameCorrect = evt.target.value;
+                                                        return prev;
+                                                    });
                                                 }}
                                             />
                                         }
@@ -142,9 +151,13 @@ const PollingUnitView = ({pollingUnit, isResultLegible, setIsResultLegible, valu
                                         label="Is result legible?"
                                         control={
                                             <Checkbox
-                                                checked={isResultLegible}
+                                                checked={(puData[pu._id] || {}).isResultLegible}
                                                 onChange={(evt) => {
-                                                    setIsResultLegible(evt.target.value);
+                                                    setPuDataById((prev) => {
+                                                        prev[pu._id] = prev[pu._id] || {};
+                                                        prev[pu._id].isResultLegible = evt.target.value;
+                                                        return prev;
+                                                    });
                                                 }}
                                             />
                                         }
@@ -372,10 +385,8 @@ const App = () => {
             </Box>
 
             <Grid container spacing={1} sx={{pb: 18}} alignItems="center"
-                  justify="center" style={{maxWidth: '100%', height: '100vh', overflowY: 'scroll'}}>
-                <Box style={{width: '100%', height: '100%'}} sx={{mt: 18}}>
+                  justifyContent={'center'} style={{maxWidth: '100%', height: '100vh', overflowY: 'scroll'}}>
                     <MainBody isLoadingPuData={isLoadingPuData} selectedPu={selectedPu}/>
-                </Box>
             </Grid>
 
         </Box>
@@ -385,11 +396,13 @@ const App = () => {
 function MainBody({isLoadingPuData, selectedPu}) {
     const classes = useStyles();
 
-
-    const [isResultLegible, setIsResultLegible] = useState(false);
-    const [values, setValues] = useState({votesLp: undefined, votesNnpp: undefined, votesPdp: undefined, votesApc: undefined});
-
-    const [isPuNameCorrect, setIsPuNameCorrect] = useState(false);
+    const [puData, setPuDataById] = useState({
+        votesLp: undefined,
+        isResultLegible: false,
+        isPuNameCorrect: false,
+        votesNnpp: undefined,
+        votesPdp: undefined,
+        votesApc: undefined})
 
     if (isLoadingPuData) {
         return <CircularProgress
@@ -400,34 +413,36 @@ function MainBody({isLoadingPuData, selectedPu}) {
     }
 
     if (selectedPu?.data) {
-     return <Grid xs={12} sx={{mt: 18}} style={{maxHeight: '100%'}}>
+     return <Grid xs={12} sm={10} lg={8} style={{maxHeight: '100%'}}>
          <InfiniteScroll
+
              dataLength={selectedPu?.data?.length}
              next={() => null}
              hasMore={false}
              scrollThreshold={1}
              loader={<LinearProgress/>}
              // Let's get rid of second scroll bar
-             style={{overflow: "unset"}}>
+             style={{overflow: "unset", marginTop: '8em'}}>
              {selectedPu?.data?.map((pu, index) => {
-                 return PollingUnitView({
-                     pollingUnit: pu,
-                     key: `pus-${index}`,
-                     isResultLegible: isResultLegible, setIsResultLegible: setIsResultLegible,
-                     values: values, setValues: setValues,
-                     isPuNameCorrect: isPuNameCorrect, setIsPuNameCorrect: setIsPuNameCorrect
-                 });
+                 return <Box style={{height: '100%', width: '100%'}} sx={{mb: 5}}>
+                     <PollingUnitView
+                     pollingUnit={pu}
+                     key={`pus-${index}`}
+                     puData={puData} setPuDataById={setPuDataById}/>
+                 </Box>
              })}
          </InfiniteScroll>
      </Grid>
 
     } else {
-        return <Card style={{width: '50vw'}}>
+        return <Grid sm={3} sx={{mt: 18}} style={{maxHeight: '100%'}}>
+        <Card style={{width: '50vw'}}>
             <CardContent>
                 <Typography variant={'h6'} style={{color: 'gray'}} sx={{mt: 12}}>Select a State
                     and then a polling unit from the left panel</Typography>
             </CardContent>
         </Card>
+            </Grid>
     }
 }
 
