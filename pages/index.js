@@ -45,6 +45,7 @@ import ExpandLess from '@mui/icons-material/ExpandLess';
 import MenuIcon from '@mui/icons-material/Menu';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import CloseIcon from '@mui/icons-material/Close';
+import DownloadRoundedIcon from '@mui/icons-material/DownloadRounded';
 
 const useStyles = makeStyles({
     pokemonCardsArea: {
@@ -234,14 +235,15 @@ const App = () => {
                                     <List component="div" disablePadding>
 
                                         {
-                                            lga.wards.map((ward) => {
+                                            lga.wards.map((ward, idx) => {
                                                 return (
-                                                    <ListItemButton sx={{pl: 4}}
+                                                    <ListItemButton key={idx} sx={{pl: 4}}
                                                                     onClick={() => {
                                                                         setWard(ward);
                                                                         handleDrawerToggle();
                                                                     }}
                                                                     selected={ward._id === selectedWard?._id}>
+
                                                         <ListItemText
                                                             primary={ward.name}
                                                             secondary={`Ward Number: ${ward.code}`}/>
@@ -350,6 +352,23 @@ const App = () => {
                                     </Select>
                                     <FormHelperText>Select a state</FormHelperText>
                                 </FormControl>
+
+                                {
+                                    selectedPu ?
+                                        // <IconButton sx={{m: 2}} aria-label="delete" color="primary" onClick={() => {
+                                        //     const docUrls = selectedPu.data.map(pu => pu.document.url);
+                                        //     console.log('The button was clicked', docUrls, selectedPu.data);
+                                        //
+                                        //
+                                        // }}>
+                                        //     <DownloadRoundedIcon/>
+                                        // </IconButton>
+                                            <Link href={`/api/downloads/${selectedPu.wards[0]._id}`} >
+                                                <DownloadRoundedIcon sx={{m: 2, ml: 2}}/>
+                                            </Link>
+                                        : null
+                                }
+
                             </Box>
                         </Box>
 
