@@ -4,7 +4,7 @@ import {Button, Checkbox, FormControlLabel, Link, TextField} from "@mui/material
 import Box from "@mui/material/Box";
 import _ from "lodash";
 import React from "react";
-import {KEY_CONTRIBUTOR} from "./index";
+import {KEY_CONTRIBUTOR} from "../pages";
 
 
 export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuDataById}) => {

@@ -8,7 +8,7 @@ import {
     capitalize
 } from "@material-ui/core";
 import { generateUsername } from "unique-username-generator";
-import {PollingUnitView} from "./polling_unit_view";
+import {PollingUnitView} from "../src/polling_unit_view";
 import {
     AppBar, Avatar,
     Button,
