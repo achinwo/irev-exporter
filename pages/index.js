@@ -46,6 +46,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import CloseIcon from '@mui/icons-material/Close';
 import DownloadRoundedIcon from '@mui/icons-material/DownloadRounded';
+import { Analytics } from '@vercel/analytics/react';
 
 const useStyles = makeStyles({
     pokemonCardsArea: {
@@ -312,19 +313,20 @@ const App = () => {
 
 
     return (
-        <Box sx={{display: 'flex'}}>
-            <CssBaseline/>
-            <AppBar component="nav">
-                <Toolbar>
-                    <IconButton
-                        color="inherit"
-                        aria-label="open drawer"
-                        edge="start"
-                        onClick={handleDrawerToggle}
-                        sx={{mr: 2, display: {sm: 'block'}}}
-                    >
-                        <MenuIcon/>
-                    </IconButton>
+        <>
+            <Box sx={{display: 'flex'}}>
+                <CssBaseline/>
+                <AppBar component="nav">
+                    <Toolbar>
+                        <IconButton
+                            color="inherit"
+                            aria-label="open drawer"
+                            edge="start"
+                            onClick={handleDrawerToggle}
+                            sx={{mr: 2, display: {sm: 'block'}}}
+                        >
+                            <MenuIcon/>
+                        </IconButton>
 
                         <Box display="flex" alignItems="center" style={{width:'100%'}}>
                             <Box flexGrow={1}>
@@ -363,54 +365,57 @@ const App = () => {
                                         // }}>
                                         //     <DownloadRoundedIcon/>
                                         // </IconButton>
-                                            <Link href={`/api/downloads/${selectedPu.wards[0]._id}`} >
-                                                <DownloadRoundedIcon sx={{m: 2, ml: 2}}/>
-                                            </Link>
+                                        <Link href={`/api/downloads/${selectedPu.wards[0]._id}`} >
+                                            <DownloadRoundedIcon sx={{m: 2, ml: 2}}/>
+                                        </Link>
                                         : null
                                 }
 
                             </Box>
                         </Box>
 
-                </Toolbar>
-            </AppBar>
-            <Box component="nav">
-                <Drawer
-                    variant="temporary"
-                    anchor="left"
-                    open={mobileOpen}
-                    container={globalThis?.window?.document?.body}
-                    onClose={() => {
-                        console.log(arguments);
-                    }}
-                    ModalProps={{
-                        keepMounted: true, // Better open performance on mobile.
-                        onBackdropClick: handleDrawerToggle
-                    }}
-                    sx={{
-                        display: {xs: 'block', sm: 'none'},
-                        '& .MuiDrawer-paper': {boxSizing: 'border-box', width: drawerWidth},
-                    }}>
-                    {drawer}
-                </Drawer>
-                <Drawer
-                    variant="permanent"
-                    sx={{
-                        display: {xs: 'none', sm: 'block'},
-                        '& .MuiDrawer-paper': {boxSizing: 'border-box', width: drawerWidth},
-                    }}
-                    open
-                >
-                    {drawer}
-                </Drawer>
-            </Box>
+                    </Toolbar>
+                </AppBar>
+                <Box component="nav">
+                    <Drawer
+                        variant="temporary"
+                        anchor="left"
+                        open={mobileOpen}
+                        container={globalThis?.window?.document?.body}
+                        onClose={() => {
+                            console.log(arguments);
+                        }}
+                        ModalProps={{
+                            keepMounted: true, // Better open performance on mobile.
+                            onBackdropClick: handleDrawerToggle
+                        }}
+                        sx={{
+                            display: {xs: 'block', sm: 'none'},
+                            '& .MuiDrawer-paper': {boxSizing: 'border-box', width: drawerWidth},
+                        }}>
+                        {drawer}
+                    </Drawer>
+                    <Drawer
+                        variant="permanent"
+                        sx={{
+                            display: {xs: 'none', sm: 'block'},
+                            '& .MuiDrawer-paper': {boxSizing: 'border-box', width: drawerWidth},
+                        }}
+                        open
+                    >
+                        {drawer}
+                    </Drawer>
+                </Box>
 
-            <Grid container spacing={1} sx={{pb: 18}} alignItems="center"
-                  justifyContent={'center'} style={{maxWidth: '100%', height: '100vh', overflowY: 'scroll'}}>
+                <Grid container spacing={1} sx={{pb: 18}} alignItems="center"
+                      justifyContent={'center'} style={{maxWidth: '100%', height: '100vh', overflowY: 'scroll'}}>
                     <MainBody isLoadingPuData={isLoadingPuData} selectedPu={selectedPu}/>
-            </Grid>
+                </Grid>
 
-        </Box>
+            </Box>
+            <Analytics />
+        </>
+
     );
 };
 
