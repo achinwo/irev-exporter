@@ -1,9 +1,12 @@
 import axios from "axios";
 const https = require('https');
+import {STATES} from "../states";
+import _ from 'lodash';
 
 const BASE_URL_KVDB = process.env.BASE_URL_KVDB;
 
 export const CACHE = {};
+
 
 export async function fetchWardData(wardId, opts={includePuData: true}) {
     let data = CACHE[wardId];
@@ -22,7 +25,10 @@ export async function fetchWardData(wardId, opts={includePuData: true}) {
     if(opts?.includePuData){
         const endpoint = `${BASE_URL_KVDB}/api/polling-data`;
         try{
-            data['polling_data'] = await axios.get(`${endpoint}/${wardId}`);
+            const resp = await axios.get(`${endpoint}/${wardId}`, {httpsAgent: new https.Agent({
+                    rejectUnauthorized: false,//endpoint.indexOf('localhost') > -1
+                })});
+            data['polling_data'] = resp.data;
         }catch (e) {
             console.log('Unable to fetch polling data:', e.stack);
         }
@@ -37,10 +43,6 @@ export async function fetchWardData(wardId, opts={includePuData: true}) {
 export default async function userHandler(req, res) {
     const { query, method, body } = req;
 
-    const agent = new https.Agent({
-        rejectUnauthorized: false
-    });
-
     switch (method) {
         case 'GET':
             const wardId = query.id;
@@ -49,8 +51,11 @@ export default async function userHandler(req, res) {
             break
         case 'POST':
             const endpoint = `${BASE_URL_KVDB}/api/polling-data`;
+            body.pu.ward.state_name = _.find(STATES, (s) => s.id === body.pu.ward.state_id)?.name;
             console.log('body', body);
-            const resp = await axios.post(endpoint, body, { httpsAgent: agent });
+            const resp = await axios.post(endpoint, body, {httpsAgent: new https.Agent({
+                        rejectUnauthorized: false//endpoint.indexOf('localhost') > -1,
+                    })});
             res.status(200).json(resp.data);
             break;
         default:

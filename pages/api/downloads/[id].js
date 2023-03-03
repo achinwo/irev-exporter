@@ -7,7 +7,7 @@ import fetch from 'node-fetch';
 import url from 'url';
 import _ from 'lodash';
 import archiver from 'archiver';
-const pipeline = promisify(stream.pipeline);
+//const pipeline = promisify(stream.pipeline);
 
 export default async function userHandler(req, res) {
     const { query, method } = req;
@@ -25,7 +25,6 @@ export default async function userHandler(req, res) {
             }
 
             const fileName = `output_${query.id}.zip`;
-            const destPath = path.join(process.cwd(), fileName);
 
             res.setHeader('Content-Disposition', `attachment; filename=${fileName}`);
             res.setHeader('Content-Type', 'application/zip');
@@ -36,24 +35,7 @@ export default async function userHandler(req, res) {
                 //'Content-Length': stat.size
             });
 
-            //const output = new MemoryStream([], {writable: true, readable: true});
             const archive = archiver('zip');
-
-            // output.on('close', async function() {
-            //     console.log('archiver has been finalized and the output file descriptor has closed.');
-            //     // const stat = fs.statSync(destPath);
-            //     //
-            //     //
-            //     //readable
-            //     // await pipeline(fileStream, res);
-            //
-            //
-            // });
-            //
-            // output.on('error', function(err) {
-            //     console.log(err.stack);
-            //     return
-            // });
 
             archive.pipe(res);
 
@@ -67,20 +49,9 @@ export default async function userHandler(req, res) {
                 archive.append(resp.body, {name: fileName});
             }
 
-            const r = await archive.finalize();
+            await archive.finalize();
 
-
-            console.log('Finalized', r);
-            //     function(err, bytes) {
-            //     if (err) {
-            //         console.log(err.stack);
-            //         return;
-            //     }
-            //
-            //     console.log(bytes + ' total bytes');
-            //     output.end();
-            // });
-
+            console.log(`finalized archive: ${fileName}`);
             break
         default:
             res.setHeader('Allow', ['GET', 'PUT'])
