@@ -5,33 +5,42 @@ import Box from "@mui/material/Box";
 import _ from "lodash";
 import React from "react";
 import {KEY_CONTRIBUTOR} from "../pages";
+import url from "url";
+import LoadingButton from "@mui/lab/LoadingButton";
 
 
-export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuDataById}) => {
+export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, isSubmitting, setIsSubmitting, setAlert}) => {
     const pu = pollingUnit;
 
     const submitPollingData = async () => {
         const url = `/api/pus/${pu._id}`;
-        console.log('submitted pu data url:', url);
+        console.log('submitted pu data url:', url, puData);
 
-        const data = puData[pu._id] || {votesLp: undefined, votesNnpp: undefined, votesPdp: undefined, votesApc: undefined};
-        const resp = await axios.post(url, {pu, puData: data, contributor: globalThis?.localStorage?.getItem(KEY_CONTRIBUTOR)});
-        console.log('submitted pu data', resp);
+        setIsSubmitting(true);
+
+        try{
+            const data = puData || {votesLp: undefined, votesNnpp: undefined, votesPdp: undefined, votesApc: undefined};
+            const resp = await axios.post(url, {pu, puData: data, contributor: globalThis?.localStorage?.getItem(KEY_CONTRIBUTOR)});
+            console.log('submitted pu data', resp);
+
+            setAlert({type: 'success', message: `Submitted numbers for unit "${pu.pu_code}" successfully!`});
+        } catch (e) {
+            setAlert({type: 'error', message: `Error occurred while submitting for "${pu.pu_code}"!`});
+        }finally {
+            setIsSubmitting(false);
+        }
     }
 
     return <Box component="form" sx={{'& > :not(style)': {m: 1, width: '25ch'},}} noValidate autoComplete="off">
         {
             ['Apc', 'Lp', 'Nnpp', 'Pdp'].map((tag, key) => {
-                const values = puData[pu._id] || {};
                 return <TextField label={tag.toUpperCase()}
                                   key={key}
-                                  value={values[`votes${tag}`]}
+                                  value={puData[`votes${tag}`]}
                                   onChange={(evt) => {
-                                      values[`votes${tag}`] = evt.target.value;
-                                      setPuDataById((prev) => {
-                                          prev[pu._id] = _.assign(prev[pu._id], values);
-                                          return prev;
-                                      });
+                                      const tagKey = `votes${tag}`;
+                                      console.log(`setting ${tagKey} to:`, evt.target.value);
+                                      setPuData({[tagKey]: evt.target.value});
                                   }}
                                   inputProps={{inputMode: 'numeric', pattern: '[0-9]*'}}
                                   variant="filled"/>
@@ -42,13 +51,9 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuDataBy
             label="Is PU name correct?"
             control={
                 <Checkbox
-                    checked={(puData[pu._id] || {}).isPuNameCorrect}
+                    checked={puData.isPuNameCorrect}
                     onChange={(evt) => {
-                        setPuDataById((prev) => {
-                            prev[pu._id] = prev[pu._id] || {};
-                            prev[pu._id].isPuNameCorrect = evt.target.value;
-                            return prev;
-                        });
+                        setPuData({isPuNameCorrect: evt.target.value});
                     }}
                 />
             }
@@ -57,25 +62,29 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuDataBy
             label="Is result legible?"
             control={
                 <Checkbox
-                    checked={(puData[pu._id] || {}).isResultLegible}
+                    checked={puData.isResultLegible}
                     onChange={(evt) => {
-                        setPuDataById((prev) => {
-                            prev[pu._id] = prev[pu._id] || {};
-                            prev[pu._id].isResultLegible = evt.target.value;
-                            return prev;
-                        });
+                        setPuData({isResultLegible: evt.target.value});
                     }}
                 />
             }
         />
         <br/>
-        <Button variant="text"
-                onClick={() => submitPollingData()}
-        >Submit</Button>
+
+        <LoadingButton
+            size="small"
+            color="secondary"
+            onClick={() => submitPollingData()}
+            loading={isSubmitting}
+            loadingPosition="start"
+            variant="text"
+        >
+            <span>Submit</span>
+        </LoadingButton>
     </Box>;
 }
 
-export const PollingUnitView = ({pollingUnit, puData, setPuDataById}) => {
+export const PollingUnitView = ({pollingUnit, puData, setPuData, isSubmitting, setIsSubmitting, setAlert}) => {
 
     const options = {
         weekday: 'long',
@@ -95,7 +104,7 @@ export const PollingUnitView = ({pollingUnit, puData, setPuDataById}) => {
                 <Typography>{capitalize(`${pu.name}`)}</Typography>
                 <Typography>{`PU Code: ${pu.pu_code}`}</Typography>
                 <Typography>{`Updated: ${new Date(pu.updated_at).toLocaleDateString("en-US", options)}`}</Typography>
-                {pu.document?.url ?
+                {pu.document?.url && (_.trim(url.parse(pu.document.url).pathname) !== '/') ?
                     <>
                         <Link href={pu.document?.url} rel="noopener noreferrer" target="_blank" sx={{mb: 4}}>Document
                             Link</Link>
@@ -104,7 +113,8 @@ export const PollingUnitView = ({pollingUnit, puData, setPuDataById}) => {
                                 <iframe width={'80%'} height={'70vh'} src={pu.document?.url} frameBorder={0}
                                         seamless style={{height: '70vh', marginTop: '1em'}}/>
                             </div>
-                            <PollingResultQuestionnaireView pollingUnit={pu} puData={puData} setPuDataById={setPuDataById} />
+                            <PollingResultQuestionnaireView pollingUnit={pu} puData={puData} setPuData={setPuData}
+                                                            isSubmitting={isSubmitting} setIsSubmitting={setIsSubmitting} setAlert={setAlert} />
                         </CardMedia>
                     </>
                     :

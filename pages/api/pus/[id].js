@@ -29,7 +29,9 @@ export async function fetchWardData(wardId, opts={includePuData: true}) {
             const resp = await axios.get(`${endpoint}/${wardId}`, {httpsAgent: new https.Agent({
                     rejectUnauthorized: false,//endpoint.indexOf('localhost') > -1
                 })});
-            data['polling_data'] = resp.data;
+            data['polling_data'] = _.transform(resp.data.puData, (result, item) => {
+                result[item.puCode] = item;
+            }, {});
         }catch (e) {
             console.log('Unable to fetch polling data:', e.stack);
         }

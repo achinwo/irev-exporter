@@ -31,7 +31,7 @@ import {
     ListItemText,
     ListSubheader,
     MenuItem,
-    Select,
+    Select, Snackbar,
     Stack,
     Tab,
     Tabs,
@@ -50,6 +50,8 @@ import CloseIcon from '@mui/icons-material/Close';
 import DownloadRoundedIcon from '@mui/icons-material/DownloadRounded';
 import { Analytics } from '@vercel/analytics/react';
 import PersonIcon from '@mui/icons-material/Person';
+import LoadingButton from '@mui/lab/LoadingButton';
+import {Alert} from "@mui/lab";
 
 const useStyles = makeStyles({
     pokemonCardsArea: {
@@ -359,15 +361,38 @@ const App = () => {
 };
 
 function MainBody({isLoadingPuData, selectedPu}) {
-    const classes = useStyles();
+    //const classes = useStyles();
 
-    const [puData, setPuDataById] = useState({
-        votesLp: undefined,
-        isResultLegible: false,
-        isPuNameCorrect: false,
-        votesNnpp: undefined,
-        votesPdp: undefined,
-        votesApc: undefined})
+    let [puData, setPuData] = useState({});
+    let [isSubmitting, setIsSubmitting] = useState(false);
+    const [open, setOpen] = React.useState(false);
+    const [alert, setAlert] = React.useState({});
+
+
+    useEffect(() => {
+        if(!alert || !alert.message){
+            setOpen(false);
+        } else {
+            setOpen(true);
+        }
+    }, [alert])
+
+    const handleClick = () => {
+        setOpen(true);
+    };
+
+    const handleClose = (event, reason) => {
+        if (reason === 'clickaway') {
+            return;
+        }
+
+        setAlert(null);
+    };
+
+
+    useEffect(() => {
+        setPuData(_.isEmpty(selectedPu) ? puData : _.cloneDeep(selectedPu.polling_data))
+    }, [selectedPu]);
 
     if (isLoadingPuData) {
         return <CircularProgress
@@ -388,14 +413,32 @@ function MainBody({isLoadingPuData, selectedPu}) {
              // Let's get rid of second scroll bar
              style={{overflow: "unset", marginTop: '8em'}}>
              {selectedPu?.data?.map((pu, index) => {
+
+                 const setPuDataById = (res) => {
+                     setPuData((prev) => {
+                         prev[pu.pu_code] = _.assign(prev[pu.pu_code] || {}, res);
+                         return {...prev};
+                     });
+                 }
+
                  return <Box style={{height: '100%', width: '100%'}} sx={{mb: 5}}>
                      <PollingUnitView
                      pollingUnit={pu}
                      key={`pus-${index}`}
-                     puData={puData} setPuDataById={setPuDataById}/>
+                     puData={puData[pu.pu_code] || {puCode: pu.pu_code}}
+                     setPuData={setPuDataById}
+                     isSubmitting={isSubmitting}
+                     setIsSubmitting={setIsSubmitting}
+                     setAlert={setAlert}
+                     />
                  </Box>
              })}
          </InfiniteScroll>
+         <Snackbar open={open} autoHideDuration={6000} onClose={handleClose}>
+             <Alert onClose={handleClose} severity={alert?.severity || 'success'} sx={{ width: '100%' }}>
+                 {alert?.message || ""}
+             </Alert>
+         </Snackbar>
      </Grid>
 
     } else {
