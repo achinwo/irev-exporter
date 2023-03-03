@@ -7,13 +7,15 @@ import {
     CardMedia,
     capitalize
 } from "@material-ui/core";
+import { generateUsername } from "unique-username-generator";
+
 import {
-    AppBar,
+    AppBar, Avatar,
     Button,
     Checkbox,
     CircularProgress,
     Collapse,
-    CssBaseline,
+    CssBaseline, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
     Divider,
     Drawer,
     FormControl,
@@ -24,7 +26,7 @@ import {
     LinearProgress,
     Link,
     List,
-    ListItem,
+    ListItem, ListItemAvatar,
     ListItemButton, ListItemSecondaryAction,
     ListItemText,
     ListSubheader,
@@ -47,6 +49,7 @@ import ExpandMore from '@mui/icons-material/ExpandMore';
 import CloseIcon from '@mui/icons-material/Close';
 import DownloadRoundedIcon from '@mui/icons-material/DownloadRounded';
 import { Analytics } from '@vercel/analytics/react';
+import PersonIcon from '@mui/icons-material/Person';
 
 const useStyles = makeStyles({
     pokemonCardsArea: {
@@ -86,7 +89,7 @@ const PollingUnitView = ({pollingUnit, puData, setPuDataById}) => {
         console.log('submitted pu data url:', url);
 
         const data = puData[pu._id] || {votesLp: undefined, votesNnpp: undefined, votesPdp: undefined, votesApc: undefined};
-        const resp = await axios.post(url, {pu, puData: data});
+        const resp = await axios.post(url, {pu, puData: data, contributor: globalThis?.localStorage?.getItem(KEY_CONTRIBUTOR)});
         console.log('submitted pu data', resp);
     }
 
@@ -117,7 +120,7 @@ const PollingUnitView = ({pollingUnit, puData, setPuDataById}) => {
                                     autoComplete="off"
                                 >
                                     {
-                                        ['Lp', 'Pdp', 'Apc', 'Nnpp'].map((tag, key) => {
+                                        ['Apc', 'Lp', 'Nnpp', 'Pdp'].map((tag, key) => {
                                             const values = puData[pu._id] || {};
                                             return <TextField label={tag.toUpperCase()}
                                                               key={key}
@@ -182,6 +185,8 @@ const PollingUnitView = ({pollingUnit, puData, setPuDataById}) => {
     );
 }
 
+export const KEY_CONTRIBUTOR = 'contributor-name';
+
 const App = () => {
     const classes = useStyles();
     const [states, setStates] = useState([]);
@@ -196,6 +201,10 @@ const App = () => {
     const [scrollData, setScrollData] = useState();
     const [hasMoreValue, setHasMoreValue] = useState(true);
     const [mobileOpen, setMobileOpen] = React.useState(false);
+    const [contributorName, setContributorName] = React.useState(globalThis?.localStorage?.getItem(KEY_CONTRIBUTOR) || generateUsername());
+
+    const emails = ['username@gmail.com', 'user02@gmail.com'];
+    const [isOpen, setIsOpen] = useState(false);
 
     const handleDrawerToggle = () => {
         setMobileOpen((prevState) => !prevState);
@@ -262,14 +271,25 @@ const App = () => {
         </Box>
     );
 
-
-
     const fetchStates = async () => {
         const response = await axios.get('/api/states');
         setStates(response.data);
     }
 
+    function saveContributorName(newValue) {
+        localStorage.setItem(KEY_CONTRIBUTOR, newValue);
+        console.log('saved contributor name:', contributorName);
+    }
+
     useEffect(async () => {
+
+        const contributor = localStorage.getItem(KEY_CONTRIBUTOR);
+
+        if(!contributor){
+            saveContributorName(contributorName);
+            console.log('initialized contributor name:', contributorName);
+        }
+
         await fetchStates();
     }, []);
 
@@ -310,7 +330,10 @@ const App = () => {
 
     }, [selectedWard]);
 
-
+    const handleClose = () => {
+        setIsOpen(false);
+        setContributorName(localStorage.getItem(KEY_CONTRIBUTOR));
+    };
 
     return (
         <>
@@ -334,7 +357,24 @@ const App = () => {
                                     {selectedState?.name}
                                 </Typography>
                             </Box>
-                            <Box>
+                            <Stack direction={'row'}>
+
+                                {
+                                    selectedPu ?
+                                        // <IconButton sx={{m: 2}} aria-label="delete" color="primary" onClick={() => {
+                                        //     const docUrls = selectedPu.data.map(pu => pu.document.url);
+                                        //     console.log('The button was clicked', docUrls, selectedPu.data);
+                                        //
+                                        //
+                                        // }}>
+                                        //     <DownloadRoundedIcon/>
+                                        // </IconButton>
+                                        <Link href={`/api/downloads/${selectedPu.wards[0]._id}`} color={'secondary'} >
+                                            <DownloadRoundedIcon sx={{mt: 2, mr: 2}}/>
+                                        </Link>
+                                        : null
+                                }
+
                                 <FormControl sx={{ m: 1, minWidth: 120 }} size="small">
                                     <InputLabel>State</InputLabel>
                                     <Select
@@ -352,26 +392,14 @@ const App = () => {
                                             })
                                         }
                                     </Select>
-                                    <FormHelperText>Select a state</FormHelperText>
+                                    {/*<FormHelperText>Select a state</FormHelperText>*/}
                                 </FormControl>
 
-                                {
-                                    selectedPu ?
-                                        // <IconButton sx={{m: 2}} aria-label="delete" color="primary" onClick={() => {
-                                        //     const docUrls = selectedPu.data.map(pu => pu.document.url);
-                                        //     console.log('The button was clicked', docUrls, selectedPu.data);
-                                        //
-                                        //
-                                        // }}>
-                                        //     <DownloadRoundedIcon/>
-                                        // </IconButton>
-                                        <Link href={`/api/downloads/${selectedPu.wards[0]._id}`} >
-                                            <DownloadRoundedIcon sx={{m: 2, ml: 2}}/>
-                                        </Link>
-                                        : null
-                                }
+                                <IconButton onClick={() => setIsOpen(!isOpen)} sx={{mt: 1, ml: 1, mr: 1}}>
+                                    <PersonIcon />
+                                </IconButton>
 
-                            </Box>
+                            </Stack>
                         </Box>
 
                     </Toolbar>
@@ -412,6 +440,31 @@ const App = () => {
                     <MainBody isLoadingPuData={isLoadingPuData} selectedPu={selectedPu}/>
                 </Grid>
 
+                <Dialog onClose={handleClose} open={isOpen}>
+                    <DialogTitle>Polling Data Contributor</DialogTitle>
+                    <DialogContent>
+                        <DialogContentText>
+                            Setting a contributor username ascribes all result data entry to you.
+                        </DialogContentText>
+                        <TextField
+                            autoFocus
+                            margin="dense"
+                            id="name"
+                            label="Contributor Username"
+                            fullWidth
+                            value={contributorName}
+                            variant="standard"
+                            onChange={(evt) => setContributorName(evt.target.value)}
+                        />
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={() => setIsOpen(false)}>Cancel</Button>
+                        <Button onClick={() => {
+                            saveContributorName(contributorName);
+                            setIsOpen(false);
+                        }}>Update</Button>
+                    </DialogActions>
+                </Dialog>
             </Box>
             <Analytics />
         </>
@@ -433,7 +486,6 @@ function MainBody({isLoadingPuData, selectedPu}) {
     if (isLoadingPuData) {
         return <CircularProgress
             color={"success"}
-            className={classes.progress}
             size={200}
         />
     }
