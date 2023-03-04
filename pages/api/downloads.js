@@ -5,7 +5,7 @@ import {promisify} from 'util';
 import fetch from 'node-fetch';
 import writeXlsxFile from 'write-excel-file/node'
 import axios from "axios";
-import {BASE_URL_KVDB, fetchWardData, STATES} from "../../../src/utils";
+import {BASE_URL_KVDB} from "../../src/utils";
 
 const pipeline = promisify(stream.pipeline);
 
