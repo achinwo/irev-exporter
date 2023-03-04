@@ -1,9 +1,7 @@
 import axios from "axios";
 const https = require('https');
-import {STATES} from "../states";
 import _ from 'lodash';
-import {BASE_URL_KVDB, fetchWardData} from "../../../src/utils";
-import {KEY_CONTRIBUTOR} from "../../index";
+import {BASE_URL_KVDB, fetchWardData, STATES} from "../../../src/utils";
 
 export default async function userHandler(req, res) {
     const { query, method, body } = req;
