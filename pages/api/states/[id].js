@@ -1,6 +1,7 @@
-import {STATES} from "../states";
+
 import _ from 'lodash';
 import axios from "axios";
+import {STATES} from "../../../src/utils";
 
 export default async function userHandler(req, res) {
     const { query, method } = req;

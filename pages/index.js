@@ -29,7 +29,7 @@ import {
     ListItem, ListItemAvatar,
     ListItemButton, ListItemSecondaryAction,
     ListItemText,
-    ListSubheader,
+    ListSubheader, Menu,
     MenuItem,
     Select, Snackbar,
     Stack,
@@ -91,8 +91,18 @@ const App = () => {
     const [mobileOpen, setMobileOpen] = React.useState(false);
     const [contributorName, setContributorName] = React.useState(globalThis?.localStorage?.getItem(KEY_CONTRIBUTOR) || generateUsername());
 
-    const emails = ['username@gmail.com', 'user02@gmail.com'];
     const [isOpen, setIsOpen] = useState(false);
+
+    const [anchorEl, setAnchorEl] = React.useState(null);
+    const open = Boolean(anchorEl);
+
+    const handleMenuClick = (event) => {
+        setAnchorEl(event.currentTarget);
+    };
+
+    const handleMenuClose = () => {
+        setAnchorEl(null);
+    };
 
     const handleDrawerToggle = () => {
         setMobileOpen((prevState) => !prevState);
@@ -257,10 +267,46 @@ const App = () => {
                                         // }}>
                                         //     <DownloadRoundedIcon/>
                                         // </IconButton>
-                                        <Link href={`/api/downloads/${selectedPu.wards[0]._id}`} color={'secondary'} >
-                                            <DownloadRoundedIcon sx={{mt: 2, mr: 2}}/>
-                                        </Link>
-                                        : null
+                                        <div>
+                                            <Button
+                                                id="basic-button"
+                                                aria-controls={open ? 'basic-menu' : undefined}
+                                                aria-haspopup="true"
+                                                aria-expanded={open ? 'true' : undefined}
+                                                onClick={handleMenuClick}
+                                                color={'secondary'}
+                                                sx={{mt: 2, mr: 2}}
+                                            >
+                                                <DownloadRoundedIcon />
+                                            </Button>
+                                            <Menu
+                                                id="basic-menu"
+                                                anchorEl={anchorEl}
+                                                open={open}
+                                                onClose={handleMenuClose}
+                                                MenuListProps={{
+                                                    'aria-labelledby': 'basic-button',
+                                                }}
+                                            >
+                                                <MenuItem onClick={handleMenuClose}>
+                                                    <Link href={`/api/downloads/${selectedLga.lga.lga_id}?stateId=${selectedLga.state.state_id}`} >
+                                                        {`Download LGA "${selectedLga.lga.name}"`}
+                                                    </Link>
+                                                </MenuItem>
+                                                <MenuItem onClick={handleMenuClose}>
+                                                    <Link href={`/api/downloads/${selectedPu.wards[0]._id}`} >
+                                                        {`Download Ward "${selectedPu.wards[0].name}"`}
+                                                    </Link>
+                                                </MenuItem>
+                                            </Menu>
+                                        </div>
+                                        : (
+                                            selectedLga ?
+                                                <Link href={`/api/downloads/${selectedLga.lga.lga_id}?stateId=${selectedLga.state.state_id}`} color={'secondary'} >
+                                                    <DownloadRoundedIcon sx={{mt: 2, mr: 2}}/>
+                                                </Link>
+                                            : null
+                                        )
                                 }
 
                                 <FormControl sx={{ m: 1, minWidth: 120 }} size="small">

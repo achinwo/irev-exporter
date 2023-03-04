@@ -1,57 +1,92 @@
-import {fetchWardData} from "../pus/[id]";
-import fs from "fs";
 import path from 'path';
-import stream from 'stream';
-import {promisify} from 'util';
-import fetch from 'node-fetch';
+
 import url from 'url';
 import _ from 'lodash';
-import archiver from 'archiver';
-//const pipeline = promisify(stream.pipeline);
+
+import {archivePipe, fetchWardData, STATES} from "../../../src/utils";
+import axios from "axios";
+
+function resolvePuFilename(pu, opts={includeWard: false}) {
+    if (!pu.document?.url) return null;
+
+    const fileName = _.trim(path.basename(url.parse(pu.document?.url).pathname));
+
+    if(!fileName) return null;
+
+    const puFileName = `${pu.pu_code.replaceAll('/', '_')}${path.extname(fileName)}`;
+
+    if (!opts?.includeWard){
+        return puFileName;
+    }
+
+    const wardDir = _.snakeCase(pu.ward.name.replaceAll('\"', '').replaceAll('\'', ''));
+    return `${wardDir}/${puFileName}`
+}
 
 export default async function userHandler(req, res) {
     const { query, method } = req;
 
+    console.log('QUery:', query);
+
     switch (method) {
         case 'GET':
-            let data = await fetchWardData(query.id, {includePuData: false});
+            let dataSets = [];
+            let state = null;
+            let lga = null;
 
-            const docUrls = _.filter(data.data.map(pu => pu.document?.url), (v) => v);
-            console.log('The button was clicked', docUrls);
+            if(query.stateId){
+                const response = await axios.get(`https://storage.googleapis.com/joli-app-bucket/json-data/data_lgas_${query.stateId}.json`);
+                const lgas = response.data.data;
 
-            let proms = []
-            for (const docUrl of docUrls) {
-                proms.push(fetch(docUrl));
+                const lgaData = _.find(lgas, (l) => l.lga.lga_id === _.toInteger(query.id));
+
+                lga = lgaData.lga;
+                state = _.find(STATES, (s) => _.toInteger(query.stateId) === s.id);
+                //console.log('resolved LGA:', lgaData);
+
+                for (const ward of (lgaData?.wards || [])) {
+                    let data = await fetchWardData(ward._id, {includePuData: false});
+                    dataSets.push(data);
+                }
+
+            } else {
+                let data = await fetchWardData(query.id, {includePuData: false});
+                dataSets.push(data);
+
+                state = _.find(STATES, (s) => _.first(data.lgas)?.state_id === s.id);
+                lga = _.first(data.lgas);
             }
 
-            const fileName = `output_${query.id}.zip`;
+            let docUrls = {};
+
+            for (const data of dataSets) {
+                for (const pu of data.data) {
+                    const fileName = resolvePuFilename(pu, {includeWard: !_.isEmpty(query.stateId)});
+
+                    if(!fileName) continue;
+
+                    docUrls[pu.document.url] = fileName;
+                }
+            }
+
+            //console.log('The button was clicked', _.keys(docUrls));
+
+
+            const fileName = `${_.snakeCase(state?.name || 'unknownstate')}_${_.snakeCase(lga?.name || 'unknownlga')}_${query.id}.zip`;
 
             res.setHeader('Content-Disposition', `attachment; filename=${fileName}`);
             res.setHeader('Content-Type', 'application/zip');
+
+            await archivePipe(res, docUrls);
+
             //res.setHeader('Content-Length', );
-            res.writeHead(200, {
-                'Content-Type': 'application/zip',
-                'Content-Disposition': `attachment; filename=${fileName}`,
-                //'Content-Length': stat.size
-            });
+            // res.writeHead(200, {
+            //     'Content-Type': 'application/zip',
+            //     'Content-Disposition': `attachment; filename=${fileName}`,
+            //     //'Content-Length': stat.size
+            // });
 
-            const archive = archiver('zip');
 
-            archive.pipe(res);
-
-            for (const resp of await Promise.all(proms)) {
-
-                const parsed = url.parse(resp.url);
-                const fileName = path.basename(parsed.pathname);
-
-                if(!_.trim(fileName)) continue;
-
-                archive.append(resp.body, {name: fileName});
-            }
-
-            await archive.finalize();
-
-            console.log(`finalized archive: ${fileName}`);
             break
         default:
             res.setHeader('Allow', ['GET', 'PUT'])

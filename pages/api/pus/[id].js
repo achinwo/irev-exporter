@@ -2,46 +2,8 @@ import axios from "axios";
 const https = require('https');
 import {STATES} from "../states";
 import _ from 'lodash';
+import {BASE_URL_KVDB, fetchWardData} from "../../../src/utils";
 import {KEY_CONTRIBUTOR} from "../../index";
-
-const BASE_URL_KVDB = process.env.BASE_URL_KVDB;
-
-export const CACHE = {};
-
-
-export async function fetchWardData(wardId, opts={includePuData: true}) {
-    let data = CACHE[wardId];
-    let startTime = new Date().getTime();
-
-    if(!data){
-        const url = `https://lv001-g.inecelectionresults.ng/api/v1/elections/63f8f25b594e164f8146a213/pus?ward=${wardId}`;
-        console.log('Fetching url:', url);
-
-        const response = await axios.get(url);
-        data = response.data;
-
-        CACHE[wardId] = data;
-    }
-
-    if(opts?.includePuData){
-        const endpoint = `${BASE_URL_KVDB}/api/polling-data`;
-        try{
-            const resp = await axios.get(`${endpoint}/${wardId}`, {httpsAgent: new https.Agent({
-                    rejectUnauthorized: false,//endpoint.indexOf('localhost') > -1
-                })});
-            data['polling_data'] = _.transform(resp.data.puData, (result, item) => {
-                result[item.puCode] = item;
-            }, {});
-        }catch (e) {
-            console.log('Unable to fetch polling data:', e.stack);
-        }
-    }
-
-    let endTime = new Date().getTime();
-    data['request_duration'] = endTime - startTime;
-
-    return data;
-}
 
 export default async function userHandler(req, res) {
     const { query, method, body } = req;
