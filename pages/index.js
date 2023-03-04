@@ -259,6 +259,37 @@ const App = () => {
     setContributorName(localStorage.getItem(KEY_CONTRIBUTOR));
   };
 
+  let xlsMenu = <>
+    {selectedLga ?
+        <>
+          <MenuItem onClick={handleMenuClose}>
+            <Link href={`/api/downloads/${selectedLga.lga.lga_id}?stateId=${selectedLga.state.state_id}`} underline="none">
+              {`Download LGA "${selectedLga.lga.name}"`}
+            </Link>
+          </MenuItem>
+          <Divider/>
+        </>
+        : null
+    }
+    <MenuItem onClick={handleMenuClose}>
+    <Link href={`/api/downloads`} underline="none">
+      {`Download Collated (.xlsx)`}
+    </Link>
+  </MenuItem>
+  </>;
+
+  let view = xlsMenu;
+  if (selectedPu) {
+    view = <>
+      <MenuItem onClick={handleMenuClose}>
+        <Link href={`/api/downloads/${selectedPu.wards[0]._id}`} underline="none">
+          {`Download Ward "${selectedPu.wards[0].name}"`}
+        </Link>
+      </MenuItem>
+      {xlsMenu}
+    </>
+  }
+
   return (
     <>
       <MetaHead />
@@ -283,15 +314,6 @@ const App = () => {
                 </Typography>
               </Box>
               <Stack direction={"row"}>
-                {selectedPu ? (
-                  // <IconButton sx={{m: 2}} aria-label="delete" color="primary" onClick={() => {
-                  //     const docUrls = selectedPu.data.map(pu => pu.document.url);
-                  //     console.log('The button was clicked', docUrls, selectedPu.data);
-                  //
-                  //
-                  // }}>
-                  //     <DownloadRoundedIcon/>
-                  // </IconButton>
                   <div>
                     <Button
                       id="basic-button"
@@ -304,6 +326,7 @@ const App = () => {
                     >
                       <DownloadRoundedIcon />
                     </Button>
+
                     <Menu
                       id="basic-menu"
                       anchorEl={anchorEl}
@@ -311,32 +334,11 @@ const App = () => {
                       onClose={handleMenuClose}
                       MenuListProps={{
                         "aria-labelledby": "basic-button",
-                      }}
-                    >
-                      <MenuItem onClick={handleMenuClose}>
-                        <Link
-                          href={`/api/downloads/${selectedLga.lga.lga_id}?stateId=${selectedLga.state.state_id}`}
-                        >
-                          {`Download LGA "${selectedLga.lga.name}"`}
-                        </Link>
-                      </MenuItem>
-                      <MenuItem onClick={handleMenuClose}>
-                        <Link
-                          href={`/api/downloads/${selectedPu.wards[0]._id}`}
-                        >
-                          {`Download Ward "${selectedPu.wards[0].name}"`}
-                        </Link>
-                      </MenuItem>
+                      }}>
+                      {view}
                     </Menu>
                   </div>
-                ) : selectedLga ? (
-                  <Link
-                    href={`/api/downloads/${selectedLga.lga.lga_id}?stateId=${selectedLga.state.state_id}`}
-                    color={"secondary"}
-                  >
-                    <DownloadRoundedIcon sx={{ mt: 2, mr: 2 }} />
-                  </Link>
-                ) : null}
+
 
                 <FormControl sx={{ m: 1, minWidth: 120 }} size="small">
                   <InputLabel>State</InputLabel>

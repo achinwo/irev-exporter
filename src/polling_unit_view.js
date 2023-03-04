@@ -1,6 +1,6 @@
 import axios from "axios";
 import {capitalize, Card, CardContent, CardMedia, Typography} from "@material-ui/core";
-import {Button, Checkbox, FormControlLabel, Link, TextField} from "@mui/material";
+import {Button, Checkbox, FormControlLabel, Grid, Link, TextField} from "@mui/material";
 import Box from "@mui/material/Box";
 import _ from "lodash";
 import React from "react";
@@ -16,10 +16,20 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
         const url = `/api/pus/${pu._id}`;
         console.log('submitted pu data url:', url, puData);
 
+        const toBool = (value) => {
+            return ['on', true, 1].includes(value);
+        }
+
         setIsSubmitting(true);
 
         try{
-            const data = puData || {votesLp: undefined, votesNnpp: undefined, votesPdp: undefined, votesApc: undefined};
+            let data = puData || {votesLp: undefined, votesNnpp: undefined, votesPdp: undefined, votesApc: undefined};
+
+            data = _.assign(data, {
+                isResultLegible: !toBool(data?.isResultIllegible),
+                isPuNameCorrect: !toBool(data?.containsIncorrectPuName),
+            });
+
             const resp = await axios.post(url, {pu, puData: data, contributor: globalThis?.localStorage?.getItem(KEY_CONTRIBUTOR)});
             console.log('submitted pu data', resp);
 
@@ -30,6 +40,13 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
             setIsSubmitting(false);
         }
     }
+
+    const fieldsInfo = [
+        ['containsIncorrectPuName', 'Incorrect PU name?'],
+        ['isInecStampAbsent', 'INEC stamp absent?'],
+        ['containsAlterations', 'Contains alterations?'],
+        ['isNoneEceightForm', 'None EC8 form?'],
+    ];
 
     return <Box component="form" sx={{'& > :not(style)': {m: 1, width: '25ch'},}} noValidate autoComplete="off">
         {
@@ -47,28 +64,38 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
             })
         }
         <br/>
-        <FormControlLabel
-            label="Is PU name correct?"
-            control={
-                <Checkbox
-                    checked={puData.isPuNameCorrect}
-                    onChange={(evt) => {
-                        setPuData({isPuNameCorrect: evt.target.value});
-                    }}
-                />
+        {
+            [['votersAccredited', 'Accredited Voters'], ['votesCast', 'Total Votes']].map(([tag, label], key) => {
+                return <TextField label={label}
+                                  key={tag}
+                                  value={puData[tag]}
+                                  onChange={(evt) => {
+                                      setPuData({[tag]: evt.target.value});
+                                  }}
+                                  inputProps={{inputMode: 'numeric', pattern: '[0-9]*'}}
+                                  variant="filled"/>
+            })
+        }
+        <br/>
+
+            {
+                fieldsInfo.map(([fieldName, label], idx) => {
+                    return <>
+                        {idx % 2 === 0 ? <br/> : null}
+                        <FormControlLabel
+                            label={label}
+                            control={
+                                <Checkbox
+                                    checked={puData[fieldName]}
+                                    onChange={(evt) => {
+                                        setPuData({[fieldName]: evt.target.value});
+                                    }}
+                                />
+                            }
+                        />
+                    </>;
+                })
             }
-        />
-        <FormControlLabel
-            label="Is result legible?"
-            control={
-                <Checkbox
-                    checked={puData.isResultLegible}
-                    onChange={(evt) => {
-                        setPuData({isResultLegible: evt.target.value});
-                    }}
-                />
-            }
-        />
         <br/>
 
         <LoadingButton
