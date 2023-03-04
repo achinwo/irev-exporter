@@ -45,7 +45,17 @@ export default async function userHandler(req, res) {
                 //console.log('resolved LGA:', lgaData);
 
                 for (const ward of (lgaData?.wards || [])) {
-                    let data = await fetchWardData(ward._id, {includePuData: false});
+                    let data = null;
+
+                    try {
+                        data = await fetchWardData(ward._id, {includePuData: false});
+                    } catch (e) {
+                        console.log('Unable to fetch:', ward);
+                        data = await fetchWardData(ward._id, {includePuData: false});
+                    }
+
+                    if(!data) continue;
+
                     dataSets.push(data);
                 }
 
