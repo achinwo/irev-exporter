@@ -99,12 +99,12 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
         <br/>
 
         <LoadingButton
-            size="small"
+            size="medium"
             color="secondary"
             onClick={() => submitPollingData()}
             loading={isSubmitting}
             loadingPosition="start"
-            variant="text"
+            variant="outlined"
         >
             <span>Submit</span>
         </LoadingButton>
