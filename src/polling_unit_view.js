@@ -54,7 +54,7 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
             setAlert({type: 'success', message: `Submitted numbers for unit "${pu.pu_code}" successfully!`});
         } catch (e) {
             setAlert({type: 'error', message: `Error occurred while submitting for "${pu.pu_code}"!`});
-        }finally {
+        } finally {
             setIsSubmitting(false);
         }
     }

@@ -9,7 +9,8 @@ import https from "https";
 export async function archivePipe(destination, urls) {
     let proms = []
     for (const docUrl of _.keys(urls)) {
-        proms.push(fetch(docUrl));
+        proms.push(fetch(docUrl)
+            .catch(error => console.log(`Failed to download: ${docUrl}`, error)));
     }
 
     const archive = archiver('zip');
@@ -17,6 +18,9 @@ export async function archivePipe(destination, urls) {
     archive.pipe(destination);
 
     for (const resp of await Promise.all(proms)) {
+
+        if(!resp) continue;
+
         const fileName = urls[resp.url] || path.basename(url.parse(resp.url).pathname);
         console.log(`fileName: ${fileName}, url: ${resp.url}`);
         archive.append(resp.body, {name: fileName});
