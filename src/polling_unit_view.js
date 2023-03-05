@@ -1,6 +1,17 @@
 import axios from "axios";
 import {capitalize, Card, CardContent, CardMedia, Typography} from "@material-ui/core";
-import {Button, Checkbox, FormControlLabel, Grid, Link, TextField} from "@mui/material";
+import {
+    Button,
+    Checkbox,
+    FormControl,
+    FormControlLabel,
+    FormLabel,
+    Grid,
+    Link,
+    Radio,
+    RadioGroup,
+    TextField
+} from "@mui/material";
 import Box from "@mui/material/Box";
 import _ from "lodash";
 import React from "react";
@@ -8,6 +19,11 @@ import {KEY_CONTRIBUTOR} from "../pages";
 import url from "url";
 import LoadingButton from "@mui/lab/LoadingButton";
 
+const RESULT_ILLEGIBILITY_STATE = {
+    LEGIBLE: false,
+    ILLEGIBLE: true,
+    UNANSWERED: undefined
+}
 
 export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, isSubmitting, setIsSubmitting, setAlert}) => {
     const pu = pollingUnit;
@@ -45,10 +61,10 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
         ['containsIncorrectPuName', 'Incorrect PU name?'],
         ['isInecStampAbsent', 'INEC stamp absent?'],
         ['containsAlterations', 'Contains alterations?'],
-        ['isNoneEceightForm', 'None EC8 form?'],
+        //['isNoneEceightForm', 'None EC8 form?'],
     ];
 
-    return <Box component="form" sx={{'& > :not(style)': {m: 1, width: '25ch'},}} noValidate autoComplete="off">
+    const legibleResultView = <>
         {
             ['Apc', 'Lp', 'Nnpp', 'Pdp'].map((tag, key) => {
                 return <TextField label={tag.toUpperCase()}
@@ -78,36 +94,89 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
         }
         <br/>
 
-            {
-                fieldsInfo.map(([fieldName, label], idx) => {
-                    return <>
-                        {idx % 2 === 0 ? <br/> : null}
-                        <FormControlLabel
-                            label={label}
-                            control={
-                                <Checkbox
-                                    checked={puData[fieldName]}
-                                    onChange={(evt) => {
-                                        setPuData({[fieldName]: evt.target.value});
-                                    }}
-                                />
-                            }
-                        />
-                    </>;
-                })
-            }
+        {
+            fieldsInfo.map(([fieldName, label], idx) => {
+                return <>
+                    {idx % 2 === 0 ? <br/> : null}
+                    <FormControlLabel
+                        label={label}
+                        control={
+                            <Checkbox
+                                checked={puData[fieldName]}
+                                onChange={(evt) => {
+                                    setPuData({[fieldName]: evt.target.value});
+                                }}
+                            />
+                        }
+                    />
+                </>;
+            })
+        }
         <br/>
+    </>;
 
-        <LoadingButton
-            size="medium"
-            color="secondary"
-            onClick={() => submitPollingData()}
-            loading={isSubmitting}
-            loadingPosition="start"
-            variant="outlined"
-        >
-            <span>Submit</span>
-        </LoadingButton>
+
+    const isIllegibleResult = puData?.isResultIllegible;
+    const isIllegibleValue = puData?.createdAt ? (puData.isResultIllegible ? 'isResultIllegible' : 'isNoneEceightForm') : undefined
+
+    const illegibleResultView = <>
+        <FormControl disabled={!_.isUndefined(isIllegibleValue)} fullWidth={true}>
+            <FormLabel>
+                <Typography variant="h6">Why is this result invalid?</Typography>
+            </FormLabel>
+            <RadioGroup row name="row-radio-buttons-group" sx={{m: 2}} value={isIllegibleValue} style={{display: 'flex', justifyContent: 'center',
+                alignItems: 'center'}}  onChange={(evt) => {
+                setPuData({[evt.target.value]: true});
+            }}>
+                <FormControlLabel style={{ width: 'auto' }} sx={{mr: 2}} value="isResultIllegible" control={<Radio  />} label="It is illegible" />
+                <FormControlLabel style={{ width: 'auto' }} sx={{ml: 2}} value="isNoneEceightForm" control={<Radio />} label="Not a presidential EC8" />
+            </RadioGroup>
+        </FormControl>
+        <br/>
+    </>
+
+    const unansweredView = <>
+
+        <FormControl fullWidth={true}>
+            <FormLabel id="demo-error-radios">
+                <Typography variant="h6">
+                Can you read the presidential election voting numbers?
+                </Typography>
+            </FormLabel>
+            <RadioGroup row name="row-radio-buttons-group1" sx={{m: 2}} style={{display: 'flex', justifyContent: 'center',
+                alignItems: 'center'}}  onChange={(evt) => {
+                setPuData({isResultIllegible: _.toInteger(evt.target.value) === 1});
+            }}>
+                <FormControlLabel style={{ width: 'auto' }} sx={{mr: 2}} value="0" control={<Radio  />} label="Yes" />
+                <FormControlLabel style={{ width: 'auto' }} sx={{ml: 2}} value="1" control={<Radio />} label="No" />
+            </RadioGroup>
+        </FormControl>
+        <br/>
+    </>
+
+
+    return <Box component="form" sx={{'& > :not(style)': {m: 1, width: '80%'},}} noValidate autoComplete="off">
+        {isIllegibleResult === RESULT_ILLEGIBILITY_STATE.LEGIBLE ?
+            legibleResultView
+        :
+            (isIllegibleResult === RESULT_ILLEGIBILITY_STATE.ILLEGIBLE ? illegibleResultView : unansweredView)
+        }
+
+        {
+            _.isUndefined(isIllegibleResult) || puData.createdAt ? null
+                :
+                <LoadingButton
+                    size="medium"
+                    color="secondary"
+                    onClick={() => submitPollingData()}
+                    loading={isSubmitting}
+                    loadingPosition="start"
+                    variant="outlined"
+                >
+                    <span>Submit</span>
+                </LoadingButton>
+        }
+
     </Box>;
 }
 
