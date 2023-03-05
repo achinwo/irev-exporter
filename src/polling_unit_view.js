@@ -64,7 +64,7 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
         //['isNoneEceightForm', 'None EC8 form?'],
     ];
 
-    const legibleResultView = <>
+    const legibleResultView = <Box sx={{'& > :not(style)': {m: 1, width: '25ch'},}}>
         {
             ['Apc', 'Lp', 'Nnpp', 'Pdp'].map((tag, key) => {
                 return <TextField label={tag.toUpperCase()}
@@ -97,7 +97,6 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
         {
             fieldsInfo.map(([fieldName, label], idx) => {
                 return <>
-                    {idx % 2 === 0 ? <br/> : null}
                     <FormControlLabel
                         label={label}
                         control={
@@ -113,7 +112,7 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
             })
         }
         <br/>
-    </>;
+    </Box>;
 
 
     const isIllegibleResult = puData?.isResultIllegible;
@@ -154,7 +153,7 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
         <br/>
     </>
 
-
+    //isIllegibleResult === RESULT_ILLEGIBILITY_STATE.LEGIBLE ? '25ch' :
     return <Box component="form" sx={{'& > :not(style)': {m: 1, width: '80%'},}} noValidate autoComplete="off">
         {isIllegibleResult === RESULT_ILLEGIBILITY_STATE.LEGIBLE ?
             legibleResultView
