@@ -15,19 +15,19 @@ function resolvePuFilename(pu, opts={includeWard: false, includeWardAndLga: fals
 
     const puFileName = `${pu.pu_code.replaceAll('/', '_')}${path.extname(fileName)}`;
 
-    if (!(opts?.includeWard || opts?.includeWardAndLga)){
+    if (!opts?.includeWard){
         return puFileName;
     }
 
     const wardDir = _.snakeCase(pu.ward.name.replaceAll('\"', '').replaceAll('\'', ''));
-    const wardFilePath = `${wardDir}/${puFileName}`;
+    return `${wardDir}/${puFileName}`;
 
-    if (!opts?.includeWardAndLga) {
-        return wardFilePath;
-    }
-
-    const lgaDir = _.snakeCase(pu.polling_unit.lga.name.replaceAll('\"', '').replaceAll('\'', ''));
-    return `${lgaDir}/${wardFilePath}`;
+    // if (!opts?.includeWardAndLga) {
+    //     return wardFilePath;
+    // }
+    //
+    // const lgaDir = _.snakeCase(pu.polling_unit.lga.name.replaceAll('\"', '').replaceAll('\'', ''));
+    // return `${lgaDir}/${wardFilePath}`;
 }
 
 export default async function userHandler(req, res) {
