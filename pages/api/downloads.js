@@ -49,7 +49,6 @@ export default async function handler(req, res) {
 }
 
 const SCHEMA = [
-    {column: 'Id', type: Number, value: data => data.id},
     {column: 'Created At', type: String, value: data => data.createdAt},
     {column: 'Updated At', type: String, value: data => data.updatedAt},
     {column: 'Name', type: String, value: data => data.name},
@@ -69,8 +68,6 @@ const SCHEMA = [
     {column: 'Votes Apc', type: Number, value: data => data.votesApc},
     {column: 'Votes Pdp', type: Number, value: data => data.votesPdp},
     {column: 'Votes Nnpp', type: Number, value: data => data.votesNnpp},
-    {column: 'Is Result Legible', type: Boolean, value: data => data.isResultLegible},
-    {column: 'Is Pu Name Correct', type: Boolean, value: data => data.isPuNameCorrect},
     {column: 'Contributor Username', type: String, value: data => data.contributorUsername},
     {column: 'Lga Id', type: Number, value: data => data.lgaId},
     {column: 'Lga Name', type: String, value: data => data.lgaName},
