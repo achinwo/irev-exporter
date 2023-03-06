@@ -44,7 +44,7 @@ export async function fetchWardData(wardId, opts={includePuData: true}) {
         const url = `https://lv001-g.inecelectionresults.ng/api/v1/elections/63f8f25b594e164f8146a213/pus?ward=${wardId}`;
         console.log('Fetching url:', url);
 
-        const response = await axios.get(url);
+        const response = await axios.get(url, {timeout: 50000});
         data = response.data;
 
         CACHE[wardId] = data;
