@@ -6,7 +6,7 @@ import _ from 'lodash';
 import {archivePipe, fetchWardData, STATES} from "../../../src/utils";
 import axios from "axios";
 
-function resolvePuFilename(pu, opts={includeWard: false}) {
+function resolvePuFilename(pu, opts={includeWard: false, includeWardAndLga: false}) {
     if (!pu.document?.url) return null;
 
     const fileName = _.trim(path.basename(url.parse(pu.document?.url).pathname));
@@ -20,7 +20,14 @@ function resolvePuFilename(pu, opts={includeWard: false}) {
     }
 
     const wardDir = _.snakeCase(pu.ward.name.replaceAll('\"', '').replaceAll('\'', ''));
-    return `${wardDir}/${puFileName}`
+    return `${wardDir}/${puFileName}`;
+
+    // if (!opts?.includeWardAndLga) {
+    //     return wardFilePath;
+    // }
+    //
+    // const lgaDir = _.snakeCase(pu.polling_unit.lga.name.replaceAll('\"', '').replaceAll('\'', ''));
+    // return `${lgaDir}/${wardFilePath}`;
 }
 
 export default async function userHandler(req, res) {
@@ -78,9 +85,6 @@ export default async function userHandler(req, res) {
                     docUrls[pu.document.url] = fileName;
                 }
             }
-
-            //console.log('The button was clicked', _.keys(docUrls));
-
 
             const fileName = `${_.snakeCase(state?.name || 'unknownstate')}_${_.snakeCase(lga?.name || 'unknownlga')}_${query.id}.zip`;
 

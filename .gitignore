@@ -21,7 +21,8 @@ lerna-debug.log*
 
 # production
 /build
-
+google-service-account.json
+google-credentials.json
 irev_data.json
 
 .idea

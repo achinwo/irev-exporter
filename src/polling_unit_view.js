@@ -54,7 +54,7 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
             setAlert({type: 'success', message: `Submitted numbers for unit "${pu.pu_code}" successfully!`});
         } catch (e) {
             setAlert({type: 'error', message: `Error occurred while submitting for "${pu.pu_code}"!`});
-        }finally {
+        } finally {
             setIsSubmitting(false);
         }
     }
@@ -164,7 +164,12 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
         }
 
         {
-            _.isUndefined(isIllegibleResult) || puData.createdAt ? null
+            _.isUndefined(isIllegibleResult) || puData.createdAt ?
+
+                (puData.createdAt ? <Typography sx={{fontStyle: 'italic'}} variant="subtitle1" style={{color: 'grey'}}>
+                    Submitted by {puData.contributorUsername}
+                </Typography> : null)
+
                 :
                 <LoadingButton
                     size="medium"
