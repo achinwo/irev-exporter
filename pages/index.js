@@ -63,6 +63,8 @@ import PersonIcon from "@mui/icons-material/Person";
 import LoadingButton from "@mui/lab/LoadingButton";
 import { Alert } from "@mui/lab";
 import MetaHead from "../src/MetaHead";
+import BarChart from "../components/Chart/Chart";
+// import LineGraph from "../components/Chart/Chart";
 
 const useStyles = makeStyles({
   pokemonCardsArea: {
@@ -553,17 +555,21 @@ function MainBody({ isLoadingPuData, selectedPu }) {
     );
   } else {
     return (
-      <Grid sm={3} sx={{ mt: 18 }} style={{ maxHeight: "100%" }}>
+      <Grid sm={3} sx={{ mt: 18 }} style={{ maxHeight: "100%", marginBottom: "10%" }}>
         <Card style={{ width: "50vw" }}>
           <CardContent>
             <Typography
               variant={"h6"}
               style={{ color: "gray" }}
-              sx={{ mt: 12 }}
+              sx={{ mb: 100 }}
             >
               Select a State and then a polling unit from the left panel
             </Typography>
+            {/* <Chart /> */}
+            {/* <LineGraph/>   */}
+             
           </CardContent>
+          <BarChart /> 
         </Card>
       </Grid>
     );
