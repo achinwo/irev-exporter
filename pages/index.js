@@ -13,7 +13,7 @@ import {
   AppBar,
   Avatar,
   Button,
-  Checkbox,
+  Checkbox, Chip,
   CircularProgress,
   Collapse,
   CssBaseline,
@@ -86,6 +86,109 @@ const useStyles = makeStyles({
 
 export const KEY_CONTRIBUTOR = "contributor-name";
 
+import FaceIcon from '@mui/icons-material/Face';
+
+const WardSummaryView = ({ward, puData}) => {
+  let puDataList = _.compact(_.sortBy(_.values(puData), (v) => v.createdAt));
+  puDataList = _.filter(puDataList, (d) => d.wardId === ward._id);
+
+  return <Stack direction={'row'} spacing={1}>
+    <Chip label={`#${ward.code}`} size="small" />
+    {
+      !_.isEmpty(puDataList) ?
+          <>
+            <Chip label={`${puDataList.length}`} color="secondary" title={`Results submitted`}  variant="outlined" size="small" />
+            <Chip sx={{maxWidth: 100}} title={`Last contributor ${_.last(puDataList).contributorUsername}`} icon={<FaceIcon />} label={_.last(puDataList).contributorUsername} color="primary"  variant="outlined" size="small" />
+          </>
+
+          : null
+    }
+  </Stack>
+}
+
+const DrawerView = ({handleDrawerToggle, state, lga, ward, pu, setWard, setLga}) => {
+  const selectedState = state;
+  const selectedLga = lga;
+  const setSelectedLga = setLga;
+  const selectedWard = ward;
+  const puData = (pu || {}).polling_data;
+  console.log('DRAWER PU', pu);
+
+  return <Box sx={{textAlign: "center"}}>
+    <Box display="flex" alignItems="center">
+      <Box flexGrow={1}>
+        <Typography variant="h6" sx={{my: 2}}>
+          {selectedState?.name}
+        </Typography>
+      </Box>
+      <Box>
+        <IconButton onClick={handleDrawerToggle}>
+          <CloseIcon/>
+        </IconButton>
+      </Box>
+    </Box>
+
+    <Divider/>
+    <List
+        subheader={
+          <ListSubheader component="div" id="nested-list-subheader">
+            LGAs
+          </ListSubheader>
+        }
+    >
+      {(selectedState?.lgas?.data || []).map((lga, idx) => {
+        return (
+            <>
+              <ListItem
+                  onClick={() =>
+                      setSelectedLga(
+                          lga.lga.lga_id === selectedLga?.lga.lga_id ? null : lga
+                      )
+                  }
+                  key={idx}
+              >
+                <ListItemText primary={lga.lga.name}/>
+                {lga.lga.lga_id === selectedLga?.lga.lga_id ? (
+                    <ExpandLess/>
+                ) : (
+                    <ExpandMore/>
+                )}
+              </ListItem>
+
+              <Collapse
+                  in={lga.lga.lga_id === selectedLga?.lga.lga_id}
+                  timeout="auto"
+                  unmountOnExit
+                  key={idx}
+              >
+                <List component="div" disablePadding>
+                  {lga.wards.map((ward, idx) => {
+                    return (
+                        <ListItemButton
+                            key={idx}
+                            sx={{pl: 4}}
+                            onClick={() => {
+                              setWard(ward);
+                              handleDrawerToggle();
+                            }}
+                            selected={ward._id === selectedWard?._id}
+                        >
+                          <ListItemText
+                              primary={ward.name}
+                              secondary={<WardSummaryView ward={ward} puData={puData}/>}
+                          />
+                        </ListItemButton>
+                    );
+                  })}
+                </List>
+              </Collapse>
+            </>
+        );
+      })}
+    </List>
+  </Box>
+}
+
 const App = () => {
   const classes = useStyles();
   const [states, setStates] = useState([]);
@@ -122,82 +225,6 @@ const App = () => {
   };
 
   const drawerWidth = 240;
-
-  const drawer = (
-    <Box sx={{ textAlign: "center" }}>
-      <Box display="flex" alignItems="center">
-        <Box flexGrow={1}>
-          <Typography variant="h6" sx={{ my: 2 }}>
-            {selectedState?.name}
-          </Typography>
-        </Box>
-        <Box>
-          <IconButton onClick={handleDrawerToggle}>
-            <CloseIcon />
-          </IconButton>
-        </Box>
-      </Box>
-
-      <Divider />
-      <List
-        subheader={
-          <ListSubheader component="div" id="nested-list-subheader">
-            LGAs
-          </ListSubheader>
-        }
-      >
-        {(selectedState?.lgas?.data || []).map((lga, idx) => {
-          return (
-            <>
-              <ListItem
-                onClick={() =>
-                  setSelectedLga(
-                    lga.lga.lga_id === selectedLga?.lga.lga_id ? null : lga
-                  )
-                }
-                key={idx}
-              >
-                <ListItemText primary={lga.lga.name} />
-                {lga.lga.lga_id === selectedLga?.lga.lga_id ? (
-                  <ExpandLess />
-                ) : (
-                  <ExpandMore />
-                )}
-              </ListItem>
-
-              <Collapse
-                in={lga.lga.lga_id === selectedLga?.lga.lga_id}
-                timeout="auto"
-                unmountOnExit
-                key={idx}
-              >
-                <List component="div" disablePadding>
-                  {lga.wards.map((ward, idx) => {
-                    return (
-                      <ListItemButton
-                        key={idx}
-                        sx={{ pl: 4 }}
-                        onClick={() => {
-                          setWard(ward);
-                          handleDrawerToggle();
-                        }}
-                        selected={ward._id === selectedWard?._id}
-                      >
-                        <ListItemText
-                          primary={ward.name}
-                          secondary={`Ward Number: ${ward.code}`}
-                        />
-                      </ListItemButton>
-                    );
-                  })}
-                </List>
-              </Collapse>
-            </>
-          );
-        })}
-      </List>
-    </Box>
-  );
 
   const fetchStates = async () => {
     const response = await axios.get("/api/states");
@@ -403,7 +430,7 @@ const App = () => {
               },
             }}
           >
-            {drawer}
+            <DrawerView handleDrawerToggle={handleDrawerToggle} state={selectedState} lga={selectedLga} ward={selectedWard} pu={selectedPu} setWard={setWard} setLga={setSelectedLga} />
           </Drawer>
           <Drawer
             variant="permanent"
@@ -416,7 +443,7 @@ const App = () => {
             }}
             open
           >
-            {drawer}
+            <DrawerView handleDrawerToggle={handleDrawerToggle} state={selectedState} lga={selectedLga} pu={selectedPu} setWard={setWard} setLga={setSelectedLga} />
           </Drawer>
         </Box>
 
@@ -474,6 +501,7 @@ function MainBody({ isLoadingPuData, selectedPu }) {
   let [isSubmitting, setIsSubmitting] = useState(false);
   const [open, setOpen] = React.useState(false);
   const [alert, setAlert] = React.useState({});
+  const [scrollPointer, setScrollPointer] = React.useState(0);
 
   useEffect(() => {
     if (!alert || !alert.message) {
@@ -499,6 +527,11 @@ function MainBody({ isLoadingPuData, selectedPu }) {
     setPuData(
       _.isEmpty(selectedPu) ? puData : _.cloneDeep(selectedPu.polling_data)
     );
+
+    const newScrollPointer = _.isEmpty(selectedPu?.data) ? 0 : Math.min(4, selectedPu?.data?.length);
+    console.log('SCROLL:', newScrollPointer);
+    setScrollPointer(newScrollPointer);
+
   }, [selectedPu]);
 
   if (isLoadingPuData) {

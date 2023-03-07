@@ -5,6 +5,8 @@ const _ = require('lodash');
 const puppeteer = require('puppeteer');
 const fs = require('node:fs/promises');
 const path = require('path');
+const {Bucket, Storage} = require('@google-cloud/storage');
+const https = require("https");
 
 const TOKEN = process.env.SESSION_TOKEN;
 
@@ -131,6 +133,101 @@ exports.exportLgas = async function() {
     }
 
     console.log('Done!');
+}
+
+async function fetchWardData(wardId) {
+    const filePath = `./build/data_ward_${wardId}.json`
+    let data = null;
+
+    try {
+        data = require(filePath);
+    }catch (e) {
+        console.log(`ward data for "${wardId}" not present, fetching from server...`);
+    }
+
+    if(!data){
+        const url = `https://lv001-g.inecelectionresults.ng/api/v1/elections/63f8f25b594e164f8146a213/pus?ward=${wardId}`;
+        console.log('Fetching url:', url);
+
+        const response = await axios.get(url, {timeout: 50000});
+        data = response.data;
+
+        await fs.writeFile(filePath, JSON.stringify(data, null, 4));
+        console.log('saved ward data:', filePath);
+    }
+
+    return data;
+}
+
+exports.santizeResults = async function(){
+
+    const o = require('./google-service-account.json');
+
+    const httpsAgent = new https.Agent({
+        rejectUnauthorized: false,
+    });
+
+    for(const fn of await fs.readdir('./build')){
+        if(!fn.startsWith('data_lgas_')) continue;
+
+        const data = require(`./build/${fn}`);
+        let count = 0;
+
+        for (const lga of data.data) {
+            for (const ward of lga.wards) {
+
+                try {
+                    await fetchWardData(ward._id);
+                } catch (e) {
+                    console.log('error fetching ward:', ward._id, e);
+                    continue
+                } finally {
+                    count += 1;
+                }
+
+                console.log(`fetching ward #${count}:`, ward._id);
+            }
+        }
+    }
+
+
+    //const idInts = _.map(ids, (x) => _.toInteger(x));
+    //const res = await axios.get(`https://localhost:8080/api/polling-data?filterIn=${_.join(ids, ',')}`, {httpsAgent});
+
+    //console.log('DATA:', res.data);
+
+
+
+    //for (const puData of res.data.data) {
+        // const ward = await fetchWardData(puData.wardId);
+        //
+        // const pu = _.find(ward.data, p => p.pu_code === puData.puCode);
+        //
+        // puData.lgaId = pu.polling_unit.lga_id;
+        // puData.lgaName = pu.polling_unit.name;
+
+        // puData.isResultIllegible = !puData.isResultLegible;
+        // puData.containsIncorrectPuName = !puData.isPuNameCorrect;
+        // console.log('Polling Unit:', puData.puCode, puData.id, puData.isResultLegible, puData.isResultIllegible);
+
+        // const resp = await axios.post('https://localhost:8080/api/polling-data', {pu: null, puData}, {httpsAgent: new https.Agent({
+        //         rejectUnauthorized: false//endpoint.indexOf('localhost') > -1,
+        //     })});
+        //
+        // const {lgaName, lgaId, id, puCode, isResultIllegible, containsIncorrectPuName} = resp.data.result;
+        // console.log(lgaName, lgaId, id, puCode, isResultIllegible, containsIncorrectPuName);
+    //}
+
+
+    // const storage = new Storage(o);
+    // const bucket = storage.bucket('joli-app-bucket');
+    //
+    // const options = {
+    //     destination: path.join(process.cwd(), 'downloaded.json'),
+    // };
+    //
+    // const res = await bucket.file('json-data/data_lgas_10.json').download(options);
+    // console.log(res);
 }
 
 const TOTALS = {};

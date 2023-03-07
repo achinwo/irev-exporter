@@ -164,7 +164,12 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
         }
 
         {
-            _.isUndefined(isIllegibleResult) || puData.createdAt ? null
+            _.isUndefined(isIllegibleResult) || puData.createdAt ?
+
+                (puData.createdAt ? <Typography sx={{fontStyle: 'italic'}} variant="subtitle1" style={{color: 'grey'}}>
+                    Submitted by {puData.contributorUsername}
+                </Typography> : null)
+
                 :
                 <LoadingButton
                     size="medium"
