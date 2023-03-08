@@ -221,7 +221,7 @@ exports.downloadDocs = async function(){
 
         const lgaName = _.first(data.lgas).name;
 
-        //if(stateName.toLowerCase() !== 'rivers') continue;
+        //if(stateName.toLowerCase() !== 'ogun') continue;
 
         const stateDir = `${basePath}/${_.snakeCase(stateName)}`;
         const existState = await fileExists(stateDir);

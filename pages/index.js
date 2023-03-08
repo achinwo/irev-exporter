@@ -619,6 +619,12 @@ function MainBody({ isLoadingPuData, selectedPu }) {
         width: 150,
       },
       {
+        field: 'progress',
+        headerName: 'Progress',
+        type: 'string',
+        width: 110,
+      },
+      {
         field: 'puCount',
         headerName: 'Polling Units',
         type: 'number',
@@ -647,13 +653,7 @@ function MainBody({ isLoadingPuData, selectedPu }) {
         headerName: 'Transcribed',
         type: 'number',
         width: 110,
-      },
-      {
-        field: 'progress',
-        headerName: 'Progress',
-        type: 'string',
-        width: 110,
-      },
+      }
     ];
 
     return (
