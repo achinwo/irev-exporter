@@ -506,9 +506,25 @@ function MainBody({ isLoadingPuData, selectedPu }) {
 
   useEffect(async () => {
     const res = await axios.get('/api/states/stats');
-    console.log('STATS:', res.data);
+    let rows = [];
+    const stats = res.data.data;
 
-    setStatsRows(res.data.data);
+    for (const state of STATES) {
+      const stat = _.find(stats, s => s.id === state.id);
+      const row = {
+        id: state.id,
+        progress: null,
+        submittedCount: _.toInteger(stat?.submittedCount || 0),
+        resultCount: null,
+        wardCount: null,
+        lgaCount: null,
+        puCount: null,
+        name: state.name,
+      };
+      rows.push(row);
+    }
+
+    setStatsRows(rows);
   }, [isSubmitting]);
 
   useEffect(() => {
@@ -668,6 +684,7 @@ function MainBody({ isLoadingPuData, selectedPu }) {
 }
 
 import { DataGrid } from '@mui/x-data-grid';
+import {STATES} from "../src/ref_data";
 
 function mobileCheck() {
   let check = false;
