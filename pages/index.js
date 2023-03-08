@@ -12,7 +12,7 @@ import { PollingUnitView } from "../src/polling_unit_view";
 import {
   AppBar,
   Avatar,
-  Button,
+  Button, CardHeader,
   Checkbox, Chip,
   CircularProgress,
   Collapse,
@@ -504,6 +504,31 @@ function MainBody({ isLoadingPuData, selectedPu }) {
   const [open, setOpen] = React.useState(false);
   const [alert, setAlert] = React.useState({});
   const [scrollPointer, setScrollPointer] = React.useState(0);
+  const [statsRows, setStatsRows] = React.useState([]);
+
+  useEffect(async () => {
+    const res = await axios.get('/api/states/stats');
+    let rows = [];
+    const stats = res.data.data;
+
+    for (const state of STATES) {
+      const stat = _.find(stats, s => s.id === state.id);
+      const submitted = _.toInteger(stat?.submittedCount || 0);
+      const row = {
+        id: state.id,
+        progress: `${((submitted / state.resultCount) * 100).toFixed(2)}%`,
+        submittedCount: submitted,
+        resultCount: state.resultCount,
+        wardCount: state.wardCount,
+        lgaCount: state.lgaCount,
+        puCount: state.puCount,
+        name: state.name,
+      };
+      rows.push(row);
+    }
+
+    setStatsRows(rows);
+  }, [isSubmitting]);
 
   useEffect(() => {
     if (!alert || !alert.message) {
@@ -587,20 +612,73 @@ function MainBody({ isLoadingPuData, selectedPu }) {
       </Grid>
     );
   } else {
+
+    const columns = [
+      { field: 'id', headerName: 'ID', width: 50 },
+      {
+        field: 'name',
+        headerName: 'State',
+        width: 120,
+      },
+      {
+        field: 'progress',
+        headerName: 'Progress',
+        type: 'string',
+        width: 100,
+      },
+      {
+        field: 'puCount',
+        headerName: 'Polling Units',
+        type: 'number',
+        width: 100,
+      },
+      {
+        field: 'lgaCount',
+        headerName: 'LGAs',
+        type: 'number',
+        width: 100,
+      },
+      {
+        field: 'wardCount',
+        headerName: 'Wards',
+        type: 'number',
+        width: 100,
+      },
+      {
+        field: 'resultCount',
+        headerName: 'IReV Results',
+        type: 'number',
+        width: 100,
+      },
+      {
+        field: 'submittedCount',
+        headerName: 'Transcribed',
+        type: 'number',
+        width: 100,
+      }
+    ];
+
     return (
-      <Grid sm={3} sx={{ mt: 18 }} style={{ maxHeight: "100%", marginBottom: "10%" }}>
-        <Card style={{ width: "50vw" }}>
+      <Grid sm={3} sx={{ mt: 20 }} style={{}}>
+        <Card style={{ width: "60vw" }}>
+          <CardHeader>
+
+          </CardHeader>
           <CardContent>
             <Typography
-              variant={"h6"}
-              style={{ color: "gray" }}
-              sx={{ mb: 100 }}
+                variant={"h6"}
+                style={{ color: "gray" }}
+                sx={{ mt: 4, mb: 4 }}
             >
               Select a State and then a polling unit from the left panel
             </Typography>
-            {/* <Chart /> */}
-            {/* <LineGraph/>   */}
-             
+            <Box sx={{ height: 500, width: '100%' }}>
+                <DataGrid
+                    rows={statsRows}
+                    columns={columns}
+                    disableRowSelectionOnClick
+                />
+              </Box>
           </CardContent>
           <BarChart /> 
         </Card>
@@ -608,6 +686,9 @@ function MainBody({ isLoadingPuData, selectedPu }) {
     );
   }
 }
+
+import { DataGrid } from '@mui/x-data-grid';
+import {STATES} from "../src/ref_data";
 
 function mobileCheck() {
   let check = false;
