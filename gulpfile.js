@@ -159,64 +159,132 @@ async function fetchWardData(wardId) {
     return data;
 }
 
+const url = require('url');
+
+exports.downloadDocs = async function(){
+
+    const fileExists = async (filePath) => {
+        try {
+            await fs.stat(filePath);
+            return true;
+        } catch (e) {
+            return e.code !== 'ENOENT';
+        }
+    };
+
+    const basePath = '/Volumes/Samsung USB/irev_data';
+
+    for(const fn of await fs.readdir('./build')){
+        if(!fn.startsWith('data_ward_')) continue;
+
+        const data = require(`./build/${fn}`);
+
+        const lgaData = require(`./build/data_lgas_${_.first(data.wards).state_id}.json`);
+        const stateName = _.first(lgaData.data).state.name;
+
+        const lgaName = _.first(data.lgas).name;
+
+        //if(stateName.toLowerCase() !== 'rivers') continue;
+
+        const stateDir = `${basePath}/${_.snakeCase(stateName)}`;
+        const existState = await fileExists(stateDir);
+
+        if(!existState){
+            await fs.mkdir(stateDir);
+        }
+
+        const lgaDir = `${stateDir}/${_.snakeCase(lgaName)}`;
+        const exists = await fileExists(lgaDir);
+
+        if(!exists){
+            await fs.mkdir(lgaDir);
+        }
+
+        for (const ward of data.data) {
+            if(!ward.document?.url || (url.parse(ward.document?.url).pathname === '/')) continue;
+            const ext = path.extname(ward.document.url);
+            const filePath = `${lgaDir}/${_.snakeCase(ward.polling_unit.pu_code)}${ext}`;
+
+            const wardExist = await fileExists(filePath);
+
+            if(wardExist) continue;
+
+            try{
+                console.log('fetching doc:', ward.document.url);
+                const res = await axios({url: ward.document.url, responseType: 'stream',});
+
+                await fs.writeFile(filePath, res.data);
+            } catch (e) {
+                console.log(`error fetching url: ${ward.document.url}`, e.stack);
+            }
+
+        }
+    }
+}
+
 exports.santizeResults = async function(){
 
-    const o = require('./google-service-account.json');
+    //const o = require('./google-service-account.json');
 
     const httpsAgent = new https.Agent({
         rejectUnauthorized: false,
     });
 
+    let lgaNames = [];
     for(const fn of await fs.readdir('./build')){
         if(!fn.startsWith('data_lgas_')) continue;
 
         const data = require(`./build/${fn}`);
-        let count = 0;
 
+        // let count = 0;
+        //
         for (const lga of data.data) {
-            for (const ward of lga.wards) {
+            lgaNames.push(lga.lga.name);
 
-                try {
-                    await fetchWardData(ward._id);
-                } catch (e) {
-                    console.log('error fetching ward:', ward._id, e);
-                    continue
-                } finally {
-                    count += 1;
-                }
-
-                console.log(`fetching ward #${count}:`, ward._id);
-            }
+        //     for (const ward of lga.wards) {
+        //
+        //         try {
+        //             await fetchWardData(ward._id);
+        //         } catch (e) {
+        //             console.log('error fetching ward:', ward._id, e);
+        //             continue
+        //         } finally {
+        //             count += 1;
+        //         }
+        //
+        //         console.log(`fetching ward #${count}:`, ward._id);
+        //     }
         }
     }
 
 
     //const idInts = _.map(ids, (x) => _.toInteger(x));
     //const res = await axios.get(`https://localhost:8080/api/polling-data?filterIn=${_.join(ids, ',')}`, {httpsAgent});
+    const res = await axios.post(`https://localhost:8080/api/polling-data/badlgas`, {lgaNames}, {httpsAgent});
 
-    //console.log('DATA:', res.data);
+    console.log('DATA:', res.data.data.length);
 
 
 
-    //for (const puData of res.data.data) {
-        // const ward = await fetchWardData(puData.wardId);
-        //
-        // const pu = _.find(ward.data, p => p.pu_code === puData.puCode);
-        //
-        // puData.lgaId = pu.polling_unit.lga_id;
-        // puData.lgaName = pu.polling_unit.name;
-
-        // puData.isResultIllegible = !puData.isResultLegible;
-        // puData.containsIncorrectPuName = !puData.isPuNameCorrect;
-        // console.log('Polling Unit:', puData.puCode, puData.id, puData.isResultLegible, puData.isResultIllegible);
-
-        // const resp = await axios.post('https://localhost:8080/api/polling-data', {pu: null, puData}, {httpsAgent: new https.Agent({
-        //         rejectUnauthorized: false//endpoint.indexOf('localhost') > -1,
-        //     })});
-        //
-        // const {lgaName, lgaId, id, puCode, isResultIllegible, containsIncorrectPuName} = resp.data.result;
-        // console.log(lgaName, lgaId, id, puCode, isResultIllegible, containsIncorrectPuName);
-    //}
+    // for (const puData of res.data.data) {
+    //     const ward = await fetchWardData(puData.wardId);
+    //
+    //     const pu = _.find(ward.data, p => p.pu_code === puData.puCode);
+    //
+    //     puData.lgaId = pu.polling_unit.lga_id;
+    //     puData.lgaName = pu.polling_unit.lga.name;
+    //
+    //     // puData.isResultIllegible = !puData.isResultLegible;
+    //     // puData.containsIncorrectPuName = !puData.isPuNameCorrect;
+    //     // console.log('Polling Unit:', puData.puCode, puData.id, puData.isResultLegible, puData.isResultIllegible);
+    //
+    //     const resp = await axios.post('https://localhost:8080/api/polling-data', {pu: null, puData}, {httpsAgent: new https.Agent({
+    //             rejectUnauthorized: false//endpoint.indexOf('localhost') > -1,
+    //         })});
+    //
+    //     const {lgaName, lgaId, id, puCode, isResultIllegible, containsIncorrectPuName} = resp.data.result;
+    //     console.log(lgaName, lgaId, id, puCode, isResultIllegible, containsIncorrectPuName);
+    // }
 
 
     // const storage = new Storage(o);

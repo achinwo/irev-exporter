@@ -12,7 +12,7 @@ import { PollingUnitView } from "../src/polling_unit_view";
 import {
   AppBar,
   Avatar,
-  Button,
+  Button, CardHeader,
   Checkbox, Chip,
   CircularProgress,
   Collapse,
@@ -502,6 +502,14 @@ function MainBody({ isLoadingPuData, selectedPu }) {
   const [open, setOpen] = React.useState(false);
   const [alert, setAlert] = React.useState({});
   const [scrollPointer, setScrollPointer] = React.useState(0);
+  const [statsRows, setStatsRows] = React.useState([]);
+
+  useEffect(async () => {
+    const res = await axios.get('/api/states/stats');
+    console.log('STATS:', res.data);
+
+    setStatsRows(res.data.data);
+  }, [isSubmitting]);
 
   useEffect(() => {
     if (!alert || !alert.message) {
@@ -585,23 +593,81 @@ function MainBody({ isLoadingPuData, selectedPu }) {
       </Grid>
     );
   } else {
+
+    const columns = [
+      { field: 'id', headerName: 'ID', width: 90 },
+      {
+        field: 'name',
+        headerName: 'State',
+        width: 150,
+      },
+      {
+        field: 'puCount',
+        headerName: 'Polling Units',
+        type: 'number',
+        width: 150,
+      },
+      {
+        field: 'lgaCount',
+        headerName: 'LGAs',
+        type: 'number',
+        width: 150,
+      },
+      {
+        field: 'wardCount',
+        headerName: 'Wards',
+        type: 'number',
+        width: 150,
+      },
+      {
+        field: 'resultCount',
+        headerName: 'IReV Results',
+        type: 'number',
+        width: 110,
+      },
+      {
+        field: 'submittedCount',
+        headerName: 'Transcribed',
+        type: 'number',
+        width: 110,
+      },
+      {
+        field: 'progress',
+        headerName: 'Progress',
+        type: 'number',
+        width: 110,
+      },
+    ];
+
     return (
-      <Grid sm={3} sx={{ mt: 18 }} style={{ maxHeight: "100%" }}>
-        <Card style={{ width: "50vw" }}>
+      <Grid sm={3} sx={{ mt: 20 }} style={{}}>
+        <Card style={{ width: "60vw" }}>
+          <CardHeader>
+
+          </CardHeader>
           <CardContent>
             <Typography
-              variant={"h6"}
-              style={{ color: "gray" }}
-              sx={{ mt: 12 }}
+                variant={"h6"}
+                style={{ color: "gray" }}
+                sx={{ mt: 4, mb: 4 }}
             >
               Select a State and then a polling unit from the left panel
             </Typography>
+            <Box sx={{ height: 500, width: '100%' }}>
+                <DataGrid
+                    rows={statsRows}
+                    columns={columns}
+                    disableRowSelectionOnClick
+                />
+              </Box>
           </CardContent>
         </Card>
       </Grid>
     );
   }
 }
+
+import { DataGrid } from '@mui/x-data-grid';
 
 function mobileCheck() {
   let check = false;
