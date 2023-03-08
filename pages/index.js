@@ -612,47 +612,47 @@ function MainBody({ isLoadingPuData, selectedPu }) {
   } else {
 
     const columns = [
-      { field: 'id', headerName: 'ID', width: 90 },
+      { field: 'id', headerName: 'ID', width: 50 },
       {
         field: 'name',
         headerName: 'State',
-        width: 150,
+        width: 120,
       },
       {
         field: 'progress',
         headerName: 'Progress',
         type: 'string',
-        width: 110,
+        width: 100,
       },
       {
         field: 'puCount',
         headerName: 'Polling Units',
         type: 'number',
-        width: 150,
+        width: 100,
       },
       {
         field: 'lgaCount',
         headerName: 'LGAs',
         type: 'number',
-        width: 150,
+        width: 100,
       },
       {
         field: 'wardCount',
         headerName: 'Wards',
         type: 'number',
-        width: 150,
+        width: 100,
       },
       {
         field: 'resultCount',
         headerName: 'IReV Results',
         type: 'number',
-        width: 110,
+        width: 100,
       },
       {
         field: 'submittedCount',
         headerName: 'Transcribed',
         type: 'number',
-        width: 110,
+        width: 100,
       }
     ];
 
