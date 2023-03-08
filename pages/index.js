@@ -511,14 +511,15 @@ function MainBody({ isLoadingPuData, selectedPu }) {
 
     for (const state of STATES) {
       const stat = _.find(stats, s => s.id === state.id);
+      const submitted = _.toInteger(stat?.submittedCount || 0);
       const row = {
         id: state.id,
-        progress: null,
-        submittedCount: _.toInteger(stat?.submittedCount || 0),
-        resultCount: null,
-        wardCount: null,
-        lgaCount: null,
-        puCount: null,
+        progress: `${((submitted / state.resultCount) * 100).toFixed(2)}%`,
+        submittedCount: submitted,
+        resultCount: state.resultCount,
+        wardCount: state.wardCount,
+        lgaCount: state.lgaCount,
+        puCount: state.puCount,
         name: state.name,
       };
       rows.push(row);
@@ -650,7 +651,7 @@ function MainBody({ isLoadingPuData, selectedPu }) {
       {
         field: 'progress',
         headerName: 'Progress',
-        type: 'number',
+        type: 'string',
         width: 110,
       },
     ];

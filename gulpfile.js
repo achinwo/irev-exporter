@@ -160,6 +160,43 @@ async function fetchWardData(wardId) {
 }
 
 const url = require('url');
+const {STATES} = require('./src/ref_data');
+
+exports.fetchStats = async function(){
+    const newStates = [];
+    for (const state of STATES) {
+        const lgaData = require(`./build/data_lgas_${state.id}`);
+
+        const wardCount = _.sum(lgaData.data.map(l => l.wards.length));
+
+        let puCount = 0;
+        let results = 0;
+
+        for (const lga of lgaData.data) {
+            for (const ward of lga.wards) {
+                const wardData = require(`./build/data_ward_${ward._id}.json`);
+                puCount += wardData.data.length;
+
+                for (const pu of wardData.data) {
+                    if(!pu.document?.url || (url.parse(pu.document?.url).pathname === '/')) continue;
+                    results += 1;
+                }
+            }
+        }
+
+        newStates.push({
+            id: state.id,
+            url: state.url,
+            resultCount: results,
+            wardCount: wardCount,
+            lgaCount: lgaData.data.length,
+            puCount: puCount,
+            name: state.name,
+        })
+    }
+
+    console.log(JSON.stringify(newStates, null, 4));
+}
 
 exports.downloadDocs = async function(){
 
