@@ -211,6 +211,17 @@ exports.downloadDocs = async function(){
 
     const basePath = '/Volumes/Samsung USB/irev_data';
 
+    const skipStates = [
+        'lagos',
+        'rivers',
+
+        'katsina',
+        'nasarawa',
+        'yobe',
+        'kaduna',
+        'niger'
+    ]
+
     for(const fn of await fs.readdir('./build')){
         if(!fn.startsWith('data_ward_')) continue;
 
@@ -221,7 +232,7 @@ exports.downloadDocs = async function(){
 
         const lgaName = _.first(data.lgas).name;
 
-        //if(stateName.toLowerCase() !== 'ogun') continue;
+        if(skipStates.includes(stateName.toLowerCase())) continue;
 
         const stateDir = `${basePath}/${_.snakeCase(stateName)}`;
         const existState = await fileExists(stateDir);
