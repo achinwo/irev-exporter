@@ -9,7 +9,7 @@ import {
     Grid,
     Link,
     Radio,
-    RadioGroup,
+    RadioGroup, Stack,
     TextField
 } from "@mui/material";
 import Box from "@mui/material/Box";
@@ -212,24 +212,16 @@ export const PollingUnitView = ({pollingUnit, puData, setPuData, isSubmitting, s
                         <Link href={pu.document?.url} rel="noopener noreferrer" target="_blank" sx={{mb: 4}}>Document
                             Link</Link>
                         <CardMedia style={{maxWidth: "100%", minHeight: '70vh'}}>
-
-                                { pu.document.url.endsWith('.pdf') ?
-                                    <div style={{maxWidth: "100%", height: '100%', position: 'relative'}}>
-                                        <iframe width={'80%'} height={'70vh'} src={pu.document?.url} frameBorder={0}
-                                                seamless style={{height: '70vh', marginTop: '1em'}}/>
-
-                                    </div>
-                                    :
-                                    <div style={{maxWidth: "100%", height: '50%'}}>
+                            <Stack>
+                                <Box style={{maxWidth: "100%", position: 'relative', overflow: 'hidden'}}>
                                     <ReactPanZoom
-                                        image={pu.document?.url}
+                                        image={pu.document.url.endsWith('.pdf') ? `/api/doc?url=${encodeURI(pu.document.url)}` : pu.document.url}
                                         alt={`Result for Polling Unit ${pu.pu_code}`}
                                     />
-                                    </div>
-                                }
-
-                            <PollingResultQuestionnaireView pollingUnit={pu} puData={puData} setPuData={setPuData}
-                                                            isSubmitting={isSubmitting} setIsSubmitting={setIsSubmitting} setAlert={setAlert} />
+                                </Box>
+                                <PollingResultQuestionnaireView pollingUnit={pu} puData={puData} setPuData={setPuData}
+                                                                isSubmitting={isSubmitting} setIsSubmitting={setIsSubmitting} setAlert={setAlert} />
+                            </Stack>
                         </CardMedia>
                     </>
                     :
