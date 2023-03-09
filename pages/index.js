@@ -88,17 +88,17 @@ export const KEY_CONTRIBUTOR = "contributor-name";
 
 import FaceIcon from '@mui/icons-material/Face';
 
-const WardSummaryView = ({ward, puData}) => {
-  let puDataList = _.compact(_.sortBy(_.values(puData), (v) => v.createdAt));
-  puDataList = _.filter(puDataList, (d) => d.wardId === ward._id);
+const WardSummaryView = ({ward, stats}) => {
+  let wardStat = _.find(stats.ward, w => w.wardId === ward._id);
+  console.log('WARD', wardStat, stats);
 
   return <Stack direction={'row'} spacing={1}>
     <Chip label={`#${ward.code}`} size="small" />
     {
-      !_.isEmpty(puDataList) ?
+      !_.isEmpty(wardStat) ?
           <>
-            <Chip label={`${puDataList.length}`} color="secondary" title={`Results submitted`}  variant="outlined" size="small" />
-            <Chip sx={{maxWidth: 100}} title={`Last contributor ${_.last(puDataList).contributorUsername}`} icon={<FaceIcon />} label={_.last(puDataList).contributorUsername} color="primary"  variant="outlined" size="small" />
+            <Chip label={`${wardStat.wardCount}`} color="secondary" title={`Results submitted`}  variant="outlined" size="small" />
+            <Chip sx={{maxWidth: 100}} title={`Last contributor ${wardStat.lastContributorUsername}`} icon={<FaceIcon />} label={wardStat.lastContributorUsername} color="primary"  variant="outlined" size="small" />
           </>
 
           : null
@@ -106,7 +106,7 @@ const WardSummaryView = ({ward, puData}) => {
   </Stack>
 }
 
-const DrawerView = ({handleDrawerToggle, state, lga, ward, pu, setWard, setLga}) => {
+const DrawerView = ({handleDrawerToggle, state, lga, ward, pu, setWard, setLga, stats}) => {
   const selectedState = state;
   const selectedLga = lga;
   const setSelectedLga = setLga;
@@ -175,7 +175,7 @@ const DrawerView = ({handleDrawerToggle, state, lga, ward, pu, setWard, setLga})
                         >
                           <ListItemText
                               primary={ward.name}
-                              secondary={<WardSummaryView ward={ward} puData={puData}/>}
+                              secondary={<WardSummaryView ward={ward} puData={puData} stats={stats}/>}
                           />
                         </ListItemButton>
                     );
@@ -207,6 +207,8 @@ const App = () => {
     globalThis?.localStorage?.getItem(KEY_CONTRIBUTOR) || generateUsername()
   );
 
+  const [stats, setStats] = useState({state: [], ward: []});
+
   const [isOpen, setIsOpen] = useState(false);
 
   const [anchorEl, setAnchorEl] = React.useState(null);
@@ -235,6 +237,33 @@ const App = () => {
     localStorage.setItem(KEY_CONTRIBUTOR, newValue);
     console.log("saved contributor name:", contributorName);
   }
+
+
+  useEffect(async () => {
+    const res = await axios.get('/api/states/stats');
+    let rows = [];
+    const {state: stateData, ward: wardData} = res.data.data;
+
+    for (const state of STATES) {
+      const stat = _.find(stateData || res.data.data, s => s.id === state.id);
+      const submitted = _.toInteger(stat?.submittedCount || 0);
+      const row = {
+        id: state.id,
+        progress: `${((submitted / state.resultCount) * 100).toFixed(2)}%`,
+        submittedCount: submitted,
+        resultCount: state.resultCount,
+        wardCount: state.wardCount,
+        lgaCount: state.lgaCount,
+        puCount: state.puCount,
+        name: state.name,
+      };
+      rows.push(row);
+    }
+
+    const wardRows = wardData;
+
+    setStats({state: rows, ward: wardRows});
+  }, [stateId]);
 
   useEffect(async () => {
     const contributor = localStorage.getItem(KEY_CONTRIBUTOR);
@@ -430,7 +459,7 @@ const App = () => {
               },
             }}
           >
-            <DrawerView handleDrawerToggle={handleDrawerToggle} state={selectedState} lga={selectedLga} ward={selectedWard} pu={selectedPu} setWard={setWard} setLga={setSelectedLga} />
+            <DrawerView handleDrawerToggle={handleDrawerToggle} state={selectedState} lga={selectedLga} ward={selectedWard} pu={selectedPu} setWard={setWard} setLga={setSelectedLga} stats={stats} />
           </Drawer>
           <Drawer
             variant="permanent"
@@ -443,7 +472,7 @@ const App = () => {
             }}
             open
           >
-            <DrawerView handleDrawerToggle={handleDrawerToggle} state={selectedState} lga={selectedLga} pu={selectedPu} setWard={setWard} setLga={setSelectedLga} />
+            <DrawerView handleDrawerToggle={handleDrawerToggle} state={selectedState} lga={selectedLga} pu={selectedPu} setWard={setWard} setLga={setSelectedLga} stats={stats} />
           </Drawer>
         </Box>
 
@@ -455,7 +484,7 @@ const App = () => {
           justifyContent={"center"}
           style={{ maxWidth: "100%", height: "100vh", overflowY: "scroll" }}
         >
-          <MainBody isLoadingPuData={isLoadingPuData} selectedPu={selectedPu} />
+          <MainBody isLoadingPuData={isLoadingPuData} selectedPu={selectedPu} stats={stats}/>
         </Grid>
 
         <Dialog onClose={handleClose} open={isOpen}>
@@ -494,7 +523,7 @@ const App = () => {
   );
 };
 
-function MainBody({ isLoadingPuData, selectedPu }) {
+function MainBody({ isLoadingPuData, selectedPu, stats}) {
   //const classes = useStyles();
 
   let [puData, setPuData] = useState({});
@@ -502,31 +531,7 @@ function MainBody({ isLoadingPuData, selectedPu }) {
   const [open, setOpen] = React.useState(false);
   const [alert, setAlert] = React.useState({});
   const [scrollPointer, setScrollPointer] = React.useState(0);
-  const [statsRows, setStatsRows] = React.useState([]);
 
-  useEffect(async () => {
-    const res = await axios.get('/api/states/stats');
-    let rows = [];
-    const stats = res.data.data;
-
-    for (const state of STATES) {
-      const stat = _.find(stats, s => s.id === state.id);
-      const submitted = _.toInteger(stat?.submittedCount || 0);
-      const row = {
-        id: state.id,
-        progress: `${((submitted / state.resultCount) * 100).toFixed(2)}%`,
-        submittedCount: submitted,
-        resultCount: state.resultCount,
-        wardCount: state.wardCount,
-        lgaCount: state.lgaCount,
-        puCount: state.puCount,
-        name: state.name,
-      };
-      rows.push(row);
-    }
-
-    setStatsRows(rows);
-  }, [isSubmitting]);
 
   useEffect(() => {
     if (!alert || !alert.message) {
@@ -672,7 +677,7 @@ function MainBody({ isLoadingPuData, selectedPu }) {
             </Typography>
             <Box sx={{ height: 500, width: '100%' }}>
                 <DataGrid
-                    rows={statsRows}
+                    rows={stats.state}
                     columns={columns}
                     disableRowSelectionOnClick
                 />
