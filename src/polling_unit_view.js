@@ -220,7 +220,7 @@ export const PollingUnitView = ({pollingUnit, puData, setPuData, isSubmitting, s
 
                                     </div>
                                     :
-                                    <div style={{maxWidth: "100%", height: '50%', overflow: "hidden"}}>
+                                    <div style={{maxWidth: "100%", height: '50%'}}>
                                     <ReactPanZoom
                                         image={pu.document?.url}
                                         alt={`Result for Polling Unit ${pu.pu_code}`}
