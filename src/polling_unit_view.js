@@ -120,7 +120,7 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
 
 
     const isIllegibleResult = puData?.isResultIllegible;
-    const isIllegibleValue = puData?.createdAt ? (puData.isResultIllegible ? 'isResultIllegible' : 'isNoneEceightForm') : undefined
+    const isIllegibleValue = puData?.createdAt ? (puData.isNoneEceightForm ? 'isNoneEceightForm' : 'isResultIllegible') : undefined
 
     const illegibleResultView = <>
         <FormControl disabled={!_.isUndefined(isIllegibleValue)} fullWidth={true}>
