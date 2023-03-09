@@ -224,7 +224,7 @@ export const PollingUnitView = ({pollingUnit, puData, setPuData, isSubmitting, s
                                         :
                                         <Box style={{maxWidth: "100%", position: 'relative', overflow: 'hidden'}}>
                                             <ReactPanZoom
-                                                image={`/api/doc?url=${encodeURI(pu.document.url)}`}
+                                                image={pu.document.url}
                                                 alt={`Result for Polling Unit ${pu.pu_code}`}
                                             />
                                         </Box>
