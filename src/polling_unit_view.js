@@ -84,7 +84,7 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
         }
         <br/>
         {
-            [['votersAccredited', 'Accredited Voters'], ['votesCast', 'Total Votes']].map(([tag, label], key) => {
+            [['votersAccredited', 'Accredited Voters'], ['votesCast', 'Total Votes']].map(([tag, label]) => {
                 return <TextField label={label}
                                   key={tag}
                                   value={puData[tag]}
@@ -102,6 +102,7 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
                 return <>
                     <FormControlLabel
                         label={label}
+                        key={idx}
                         control={
                             <Checkbox
                                 checked={puData[fieldName]}
@@ -213,12 +214,22 @@ export const PollingUnitView = ({pollingUnit, puData, setPuData, isSubmitting, s
                             Link</Link>
                         <CardMedia style={{maxWidth: "100%", minHeight: '70vh'}}>
                             <Stack>
-                                <Box style={{maxWidth: "100%", position: 'relative', overflow: 'hidden'}}>
-                                    <ReactPanZoom
-                                        image={pu.document.url.endsWith('.pdf') ? `/api/doc?url=${encodeURI(pu.document.url)}` : pu.document.url}
-                                        alt={`Result for Polling Unit ${pu.pu_code}`}
-                                    />
-                                </Box>
+                                {
+                                    pu.document.url.endsWith('.pdf') ?
+                                        <div style={{maxWidth: "100%", height: '100%', position: 'relative'}}>
+                                            <iframe width={'80%'} height={'70vh'} src={pu.document?.url} frameBorder={0}
+                                                    seamless style={{height: '70vh', marginTop: '1em'}}/>
+
+                                        </div>
+                                        :
+                                        <Box style={{maxWidth: "100%", position: 'relative', overflow: 'hidden'}}>
+                                            <ReactPanZoom
+                                                image={`/api/doc?url=${encodeURI(pu.document.url)}`}
+                                                alt={`Result for Polling Unit ${pu.pu_code}`}
+                                            />
+                                        </Box>
+                                }
+
                                 <PollingResultQuestionnaireView pollingUnit={pu} puData={puData} setPuData={setPuData}
                                                                 isSubmitting={isSubmitting} setIsSubmitting={setIsSubmitting} setAlert={setAlert} />
                             </Stack>
