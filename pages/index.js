@@ -122,9 +122,9 @@ const DrawerView = ({handleDrawerToggle, state, lga, ward, pu, setWard, setLga, 
         </Typography>
       </Box>
       <Box>
-        <IconButton onClick={handleDrawerToggle}>
-          <CloseIcon/>
-        </IconButton>
+        {/*<IconButton onClick={handleDrawerToggle}>*/}
+        {/*  <CloseIcon/>*/}
+        {/*</IconButton>*/}
       </Box>
     </Box>
 
@@ -249,7 +249,7 @@ const App = () => {
       const submitted = _.toInteger(stat?.submittedCount || 0);
       const row = {
         id: state.id,
-        progress: `${((submitted / state.resultCount) * 100).toFixed(2)}%`,
+        progress: (submitted / state.resultCount) * 100,
         submittedCount: submitted,
         resultCount: state.resultCount,
         wardCount: state.wardCount,
@@ -628,6 +628,9 @@ function MainBody({ isLoadingPuData, selectedPu, stats}) {
         headerName: 'Progress',
         type: 'string',
         width: 100,
+        renderCell: (params) => {
+          return `${params.value.toFixed(2)}%`
+        }
       },
       {
         field: 'puCount',
@@ -662,8 +665,8 @@ function MainBody({ isLoadingPuData, selectedPu, stats}) {
     ];
 
     return (
-      <Grid sm={3} sx={{ mt: 20 }} style={{}}>
-        <Card style={{ width: "60vw" }}>
+      <Grid sm={3} md={8} sx={{ mt: 20 }} style={{}}>
+        <Card style={{ minWidth: "60vw" }}>
           <CardHeader>
 
           </CardHeader>
