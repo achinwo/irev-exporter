@@ -665,8 +665,8 @@ function MainBody({ isLoadingPuData, selectedPu, stats}) {
     ];
 
     return (
-      <Grid sm={3} md={8} sx={{ mt: 20 }} style={{}}>
-        <Card style={{ minWidth: "60vw" }}>
+      <Grid xs={12} sm={6} md={8} sx={{ mt: 20 }} style={{}}>
+        <Card>
           <CardHeader>
 
           </CardHeader>
