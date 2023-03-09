@@ -63,6 +63,8 @@ import PersonIcon from "@mui/icons-material/Person";
 import LoadingButton from "@mui/lab/LoadingButton";
 import { Alert } from "@mui/lab";
 import MetaHead from "../src/MetaHead";
+import BarChart from "../components/Chart/Chart";
+// import LineGraph from "../components/Chart/Chart";
 
 const useStyles = makeStyles({
   pokemonCardsArea: {
@@ -683,6 +685,7 @@ function MainBody({ isLoadingPuData, selectedPu, stats}) {
                 />
               </Box>
           </CardContent>
+          <BarChart /> 
         </Card>
       </Grid>
     );
