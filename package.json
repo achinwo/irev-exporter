@@ -33,6 +33,7 @@
     "puppeteer": "^19.7.2",
     "react": "17.0.2",
     "react-dom": "17.0.2",
+    "react-image-pan-zoom-rotate": "^1.6.0",
     "react-infinite-scroll-component": "6.1.0",
     "react-scripts": "4.0.0",
     "unique-username-generator": "^1.1.3",

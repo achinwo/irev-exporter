@@ -18,6 +18,7 @@ import React from "react";
 import {KEY_CONTRIBUTOR} from "../pages";
 import url from "url";
 import LoadingButton from "@mui/lab/LoadingButton";
+import ReactPanZoom from 'react-image-pan-zoom-rotate';
 
 const RESULT_ILLEGIBILITY_STATE = {
     LEGIBLE: false,
@@ -211,10 +212,22 @@ export const PollingUnitView = ({pollingUnit, puData, setPuData, isSubmitting, s
                         <Link href={pu.document?.url} rel="noopener noreferrer" target="_blank" sx={{mb: 4}}>Document
                             Link</Link>
                         <CardMedia style={{maxWidth: "100%", minHeight: '70vh'}}>
-                            <div style={{maxWidth: "100%", height: '100%', position: 'relative'}}>
-                                <iframe width={'80%'} height={'70vh'} src={pu.document?.url} frameBorder={0}
-                                        seamless style={{height: '70vh', marginTop: '1em'}}/>
-                            </div>
+
+                                { pu.document.url.endsWith('.pdf') ?
+                                    <div style={{maxWidth: "100%", height: '100%', position: 'relative'}}>
+                                        <iframe width={'80%'} height={'70vh'} src={pu.document?.url} frameBorder={0}
+                                                seamless style={{height: '70vh', marginTop: '1em'}}/>
+
+                                    </div>
+                                    :
+                                    <div style={{maxWidth: "100%", height: '50%', position: 'relative'}}>
+                                    <ReactPanZoom
+                                        image={pu.document?.url}
+                                        alt={`Result for Polling Unit ${pu.pu_code}`}
+                                    />
+                                    </div>
+                                }
+
                             <PollingResultQuestionnaireView pollingUnit={pu} puData={puData} setPuData={setPuData}
                                                             isSubmitting={isSubmitting} setIsSubmitting={setIsSubmitting} setAlert={setAlert} />
                         </CardMedia>
