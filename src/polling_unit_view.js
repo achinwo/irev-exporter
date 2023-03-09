@@ -214,21 +214,12 @@ export const PollingUnitView = ({pollingUnit, puData, setPuData, isSubmitting, s
                             Link</Link>
                         <CardMedia style={{maxWidth: "100%", minHeight: '70vh'}}>
                             <Stack>
-                                {
-                                    pu.document.url.endsWith('.pdf') ?
-                                        <div style={{maxWidth: "100%", height: '100%', position: 'relative'}}>
-                                            <iframe width={'80%'} height={'70vh'} src={pu.document?.url} frameBorder={0}
-                                                    seamless style={{height: '70vh', marginTop: '1em'}}/>
-
-                                        </div>
-                                        :
-                                        <Box style={{maxWidth: "100%", position: 'relative', overflow: 'hidden'}}>
-                                            <ReactPanZoom
-                                                image={pu.document.url}
-                                                alt={`Result for Polling Unit ${pu.pu_code}`}
-                                            />
-                                        </Box>
-                                }
+                                <Box style={{maxWidth: "100%", position: 'relative', overflow: 'hidden'}}>
+                                    <ReactPanZoom
+                                        image={`/api/doc?url=${encodeURI(pu.document.url)}`}
+                                        alt={`Result for Polling Unit ${pu.pu_code}`}
+                                    />
+                                </Box>
 
                                 <PollingResultQuestionnaireView pollingUnit={pu} puData={puData} setPuData={setPuData}
                                                                 isSubmitting={isSubmitting} setIsSubmitting={setIsSubmitting} setAlert={setAlert} />
