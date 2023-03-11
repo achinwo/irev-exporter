@@ -1,6 +1,5 @@
 import url from 'url';
 import axios from "axios";
-import pdf2img from "pdf-img-convert";
 import path from 'path';
 import {BASE_URL_KVDB} from "../../src/utils";
 import https from "https";
