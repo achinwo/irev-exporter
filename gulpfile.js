@@ -209,7 +209,7 @@ exports.downloadDocs = async function(){
         }
     };
 
-    const basePath = '/Volumes/Samsung USB/irev_data';
+    const basePath = '/Volumes/T7/irev_data';
 
     for(const fn of await fs.readdir('./build')){
         if(!fn.startsWith('data_ward_')) continue;
