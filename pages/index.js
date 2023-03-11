@@ -100,7 +100,7 @@ const WardSummaryView = ({ward, stats}) => {
             <Chip label={`${wardStat.wardCount}${ward.stats ? '/' + ward.stats.resultCount : ''}`}
                   color={_.toInteger(wardStat.wardCount) === ward.stats?.resultCount ? 'success' : "secondary"}
                   title={`Results submitted`}
-                  variant={_.toInteger(wardStat.wardCount) === ward.stats?.resultCount ? 'filled' : "outlined"} size="small" />
+                  variant={_.toInteger(wardStat.wardCount) >= ward.stats?.resultCount ? 'filled' : "outlined"} size="small" />
             <Chip sx={{maxWidth: 100}} title={`Last contributor ${wardStat.lastContributorUsername}`} icon={<FaceIcon />} label={wardStat.lastContributorUsername} color="primary"  variant="outlined" size="small" />
           </>
 
