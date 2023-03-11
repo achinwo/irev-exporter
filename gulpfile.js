@@ -1,6 +1,7 @@
 require('ts-node').register();
 require('dotenv').config();
 
+const models = require('./src/orm');
 const gulp = require('gulp');
 const cheerio = require('cheerio');
 const axios = require('axios');
@@ -10,6 +11,7 @@ const fs = require('node:fs/promises');
 const path = require('path');
 const {Bucket, Storage} = require('@google-cloud/storage');
 const https = require("https");
+const {knex} = require('./src/lib/model');
 
 const TOKEN = process.env.SESSION_TOKEN;
 
@@ -557,6 +559,23 @@ function waitRefresh(page, opts={contains: 'refreshing...', timeout: 5000}) {
     })
 }
 
+function padDate(segment) {
+    segment = segment.toString();
+    return segment[1] ? segment : `0${segment}`;
+}
+
+function yyyymmddhhmmss(offsetSecs=0) {
+    const d = new Date();
+    return (
+        d.getFullYear().toString() +
+        padDate(d.getMonth() + 1) +
+        padDate(d.getDate()) +
+        padDate(d.getHours()) +
+        padDate(d.getMinutes()) +
+        padDate(d.getSeconds() + offsetSecs)
+    );
+}
+
 const migrationTemplate2 = `
 exports.up = function(knex) {
     return knex.schema
@@ -757,7 +776,7 @@ async function dbMigrationFilesGenerate(){
 
         console.log(`name: ${migName}\n${modelDef.renderUp()}`);
 
-        fs.writeFileSync(migName, text.replace(/^\s*[\r\n]/gm, ''));
+        await fs.writeFile(migName, text.replace(/^\s*[\r\n]/gm, ''));
     }
 }
 

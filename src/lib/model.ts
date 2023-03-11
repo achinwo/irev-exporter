@@ -17,7 +17,7 @@ import * as JsonPath from 'jmespath';
 import _ from 'lodash';
 import moment from "moment";
 
-const knexConfig = require('../knexfile');
+const knexConfig = require('../../knexfile');
 
 const REGEXP = /^\$2[ayb]\$[0-9]{2}\$[A-Za-z0-9./]{53}$/;
 
