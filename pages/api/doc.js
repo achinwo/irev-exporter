@@ -25,3 +25,9 @@ export default async function handler(req, res) {
             res.status(405).end(`Method ${method} Not Allowed`)
     }
 }
+
+export const config = {
+    api: {
+        responseLimit: '12mb',
+    },
+}
