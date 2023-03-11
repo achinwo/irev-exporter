@@ -1,3 +1,6 @@
+require('ts-node').register();
+require('dotenv').config();
+
 const gulp = require('gulp');
 const cheerio = require('cheerio');
 const axios = require('axios');
@@ -553,3 +556,212 @@ function waitRefresh(page, opts={contains: 'refreshing...', timeout: 5000}) {
         resolve(isRefreshed);
     })
 }
+
+const migrationTemplate2 = `
+exports.up = function(knex) {
+    return knex.schema
+<%= modelDef.renderUp() %>}
+
+exports.down = function(knex) {
+    return knex.schema
+<%= modelDef.renderDown() %>}
+
+exports.jsonSchema = <%= JSON.stringify(modelDef.schema || {}, null, 4) %>;
+`
+
+async function dbMigrationFilesGenerate(){
+    const compiled = _.template(migrationTemplate2);
+    // const modelDefs = [{tableName: 'users', columnDefs: [
+    //         {name: 'id', typeFunc: 'increments', isPrimary: true, nullable: false, default: 'knex.fn.now()'}
+    //     ]}];
+    const typeFuncMap = {
+        string: 'string',
+        integer: 'integer',
+        date: 'date',
+        datetime: 'dateTime',
+        text: 'text',
+        boolean: 'boolean',
+        uuid: 'uuid',
+    }
+    const auditCols = ['createdAt', 'updatedAt'];
+
+    const modelsFilered = _.filter(models, (mCls) => mCls && mCls.tableName);
+
+    const modelDefs = _.map(modelsFilered, (cls) => {
+
+        const modelDef = {
+            tableName: cls.tableName,
+            schema: cls.jsonSchema,
+            //dropCols: `'${_.join(['createdAt', 'deletedAt'], '\', \'')}'`,
+        };
+
+        modelDef.columnDefs = _.map(cls.columns(), (col) => {
+            let typeFunc, typeFuncArgs = null;
+
+            if(!_.isEmpty(col.enum)){
+                typeFunc = 'enum';
+                typeFuncArgs = `, ['${_.join(col.enum, '\', \'')}']`; //, {useNative: true, enumName: '${_.snakeCase(col.name)}_type'}
+            }else{
+                typeFunc = col.name === 'id' ? 'increments' : typeFuncMap[col.type] || null;
+            }
+
+
+            let defaultVal = null;
+            if(col.type === 'datetime' && _.includes(auditCols, col.name)){
+                defaultVal = 'knex.fn.now()';
+
+            } else if(col.type === 'uuid') {
+                defaultVal = 'knex.raw(\'uuid_generate_v4()\')';
+            }
+
+            return {
+                name: col.name,
+                colName: col.colName,
+                typeFunc, typeFuncArgs,
+                isPrimary: col.name === 'id',
+                isUnique: col.unique,
+                nullable: col.nullable,
+                default:  defaultVal,
+            }
+        });
+        return modelDef;
+    });
+
+    const [migratedFiles, rest] = await knex.migrate.list();
+    const allFiles = _.concat([], migratedFiles, rest.map(obj => obj.file));
+    const migrationDir = require('./knexfile').development.migrations.directory;
+
+    //console.log('[MIGRATIONS]', allFiles);
+
+
+    const schemaDiff2 = (oldSchema, newSchema, columnDefs) => {
+        if (oldSchema == null) {
+
+            return {
+                up: {changeType: 'create', properties: newSchema.properties, required: newSchema.required},
+                down: {changeType: 'drop'},
+            };
+        }
+
+        const prevAttrs = _.keys(oldSchema.properties);
+        const currentAttrs = _.keys(newSchema.properties);
+
+        let newAttributes = _.difference(currentAttrs, prevAttrs);
+        let columnNames = _.map(columnDefs, (c) => c.name);
+
+        let properties = {};
+        for(let [key, val] of _.toPairs(newSchema.properties)){
+            if(!(_.includes(prevAttrs, key) || _.includes(columnNames, key))) continue;
+            if(!_.includes(newAttributes, key)) continue;
+            properties[key] = val;
+        }
+
+        if(_.isEmpty(properties)) return {
+            up: null,
+            down: null
+        }
+
+        return {
+            up: {changeType: 'alter', properties, required: newSchema.required},
+            down: {changeType: 'drop', attrNames: _.keys(properties)}
+        };
+    }
+
+    let tsIncrement = 0;
+
+    for(let modelDef of modelDefs){
+
+        const lastFile = _.findLast(allFiles, (fl) => {
+            const [tsString] = _.split(fl.name, '_', 1);
+            return fl.name.substring(tsString.length) === `_${modelDef.tableName}.js`;
+        });
+
+        const migName = path.join(migrationDir, `${yyyymmddhhmmss(tsIncrement)}_${(modelDef.tableName)}.js`);
+        tsIncrement += 1;
+
+        const lastFilePath = lastFile ? path.join(migrationDir, lastFile.name) : null;
+        let changesOrig;
+
+        if(lastFilePath && fs.existsSync(lastFilePath)){
+            const {jsonSchema: schema} = require(lastFilePath);
+            changesOrig = schemaDiff2(schema, modelDef.schema, modelDef.columnDefs);
+        }else{
+            changesOrig = schemaDiff2(null, modelDef.schema, modelDef.columnDefs);
+        }
+
+        const down = changesOrig.down;
+        const up = changesOrig.up;
+
+        if(_.isEmpty(up) && _.isEmpty(down)) {
+            console.log(`[dbMigrationFilesGenerate] skipping "${migName}"`);
+            continue
+        }
+
+        modelDef.renderUp = () => {
+            let lines = [];
+
+            const colMap = _.fromPairs(_.map(modelDef.columnDefs, (c) => { return [c.name, c] }));
+
+            lines.push(`\t\t.${up.changeType}Table('${modelDef.tableName}', (table) => {`);
+
+            const {properties, required} = up;
+
+            for (const [attrName, props] of _.toPairs(properties)) {
+                const col = colMap[attrName];
+
+                if(!col){
+                    console.log(`[renderUp] '${modelDef.tableName}' skipping ${attrName}...`);
+                    continue;
+                }
+
+                const indent = '\t\t\t';
+
+                let txt = `${indent}table.${col.typeFunc}('${col.colName}'${ col.typeFuncArgs ? col.typeFuncArgs : ''})`
+                const markedLen = lines.length;
+
+                if(col.isPrimary) lines.push(`${indent}\t.primary()`);
+                if(col.isUnique) lines.push(`${indent}\t.unique()`);
+                if(!col.nullable) lines.push(`${indent}\t.notNullable()`);
+                if(col.default) lines.push(`${indent}\t.defaultTo(${col.default});`);
+
+                if(lines.length === markedLen){
+                    lines.splice(markedLen, 0, `${txt};`);
+                } else {
+                    lines.splice(markedLen, 0, `${txt}`);
+                }
+            }
+
+            lines.push(`\t\t});\n`);
+
+            return _.join(lines, '\n');
+        }
+
+        modelDef.renderDown = () => {
+            let lines = [];
+            if(down.attrNames) {
+                lines.push(`\t\t.alterTable('${modelDef.tableName}', (table) => {`);
+                for (const attrName of down.attrNames) {
+                    const colName = _.find(modelDef.columnDefs, (c) => c.name === attrName).colName;
+                    const txt = `\t\t\ttable.dropColumn('${colName}');`;
+                    lines.push(txt);
+                }
+                lines.push(`\t\t});\n`);
+            } else {
+                lines.push(`\t\t\t.dropTableIfExists('${modelDef.tableName}')\n`);
+            }
+            return _.join(lines, '\n');
+        }
+
+        const text = compiled({modelDef});
+
+
+        console.log(`name: ${migName}\n${modelDef.renderUp()}`);
+
+        fs.writeFileSync(migName, text.replace(/^\s*[\r\n]/gm, ''));
+    }
+}
+
+gulp.task('db:migration:generate', async function (done) {
+    await dbMigrationFilesGenerate()
+    done();
+});
