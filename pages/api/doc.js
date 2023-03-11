@@ -2,22 +2,23 @@ import url from 'url';
 import axios from "axios";
 import pdf2img from "pdf-img-convert";
 import path from 'path';
+import {BASE_URL_KVDB} from "../../src/utils";
+import https from "https";
 
 export default async function handler(req, res) {
     const {method, query} = req;
 
     switch (method) {
         case 'GET':
-            const docUrl = decodeURI(query.url);
+            const endpoint = `${BASE_URL_KVDB}/api/polling-data/doc`;
+            const response = await axios.post(endpoint, {url: query.url},{
+                responseType: 'arraybuffer',
+                httpsAgent: new https.Agent({
+                    rejectUnauthorized: false,
+                })});
 
-            const [data,] = await pdf2img.convert(docUrl);
-
-            res.setHeader('Content-Type', 'image/jpeg')
-            //res.setHeader('Content-Disposition', 'attachment; filename=name.Pdf')
-            // res.setHeader('Content-disposition', `inline; filename="${path.basename(docUrl)}"`);
-            // res.setHeader('Content-type', 'application/pdf');
-            //res.setHeader('Content-Length', data.length)
-            res.end(data)
+            res.setHeader('Content-Type', 'image/png')
+            res.end(response.data);
 
             break;
         default:
