@@ -1,6 +1,6 @@
 import axios from "axios";
-import {capitalize, Card, CardContent, CardMedia, Typography} from "@material-ui/core";
 import {
+    capitalize, Card, CardContent, CardMedia, Typography,
     Button,
     Checkbox,
     FormControl,

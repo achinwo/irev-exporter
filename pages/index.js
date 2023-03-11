@@ -1,15 +1,11 @@
 import React, { useState, useEffect } from "react";
+import { generateUsername } from "unique-username-generator";
+import { PollingUnitView } from "../src/polling_unit_view";
 import {
   Grid,
   Card,
   Typography,
   CardContent,
-  CardMedia,
-  capitalize,
-} from "@material-ui/core";
-import { generateUsername } from "unique-username-generator";
-import { PollingUnitView } from "../src/polling_unit_view";
-import {
   AppBar,
   Avatar,
   Button, CardHeader,
@@ -48,7 +44,6 @@ import {
   TextField,
   Toolbar,
 } from "@mui/material";
-import { makeStyles } from "@material-ui/styles";
 import axios from "axios";
 import InfiniteScroll from "react-infinite-scroll-component";
 import Box from "@mui/material/Box";
@@ -63,26 +58,6 @@ import PersonIcon from "@mui/icons-material/Person";
 import LoadingButton from "@mui/lab/LoadingButton";
 import { Alert } from "@mui/lab";
 import MetaHead from "../src/MetaHead";
-
-const useStyles = makeStyles({
-  pokemonCardsArea: {
-    paddingTop: "30px",
-    paddingLeft: "15%",
-    paddingRight: "15%",
-    width: "100%",
-  },
-  pokemonImage: {
-    height: "160px",
-    width: "160px",
-  },
-  progress: {
-    position: "fixed",
-    top: "50%",
-    left: "50%",
-    marginTop: "-100px",
-    marginLeft: "-100px",
-  },
-});
 
 export const KEY_CONTRIBUTOR = "contributor-name";
 
@@ -193,7 +168,6 @@ const DrawerView = ({handleDrawerToggle, state, lga, ward, pu, setWard, setLga, 
 }
 
 const App = () => {
-  const classes = useStyles();
   const [states, setStates] = useState([]);
   const [stateId, setStateId] = useState(null);
   const [selectedState, setSelectedState] = useState(null);
