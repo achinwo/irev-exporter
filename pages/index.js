@@ -90,14 +90,17 @@ import FaceIcon from '@mui/icons-material/Face';
 
 const WardSummaryView = ({ward, stats}) => {
   let wardStat = _.find(stats.ward, w => w.wardId === ward._id);
-  console.log('WARD', wardStat, stats);
+  //console.log('WARD', ward);
 
   return <Stack direction={'row'} spacing={1}>
     <Chip label={`#${ward.code}`} size="small" />
     {
       !_.isEmpty(wardStat) ?
           <>
-            <Chip label={`${wardStat.wardCount}`} color="secondary" title={`Results submitted`}  variant="outlined" size="small" />
+            <Chip label={`${wardStat.wardCount}${ward.stats ? '/' + ward.stats.resultCount : ''}`}
+                  color={_.toInteger(wardStat.wardCount) === ward.stats?.resultCount ? 'success' : "secondary"}
+                  title={`Results submitted`}
+                  variant={_.toInteger(wardStat.wardCount) === ward.stats?.resultCount ? 'filled' : "outlined"} size="small" />
             <Chip sx={{maxWidth: 100}} title={`Last contributor ${wardStat.lastContributorUsername}`} icon={<FaceIcon />} label={wardStat.lastContributorUsername} color="primary"  variant="outlined" size="small" />
           </>
 

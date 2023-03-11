@@ -198,6 +198,30 @@ exports.fetchStats = async function(){
     console.log(JSON.stringify(newStates, null, 4));
 }
 
+exports.exportWardResults = async function(){
+    const wardData = {};
+    for(const fn of await fs.readdir('./build')) {
+        if (!fn.startsWith('data_ward_')) continue;
+
+        const data = require(`./build/${fn}`);
+        const numResults = _.sum(data.data.map((pu) => !pu.document?.url || (url.parse(pu.document?.url).pathname === '/') ? 0 : 1) || [0]);
+
+        const ward = _.first(data.wards);
+        const wardId = ward.ward_id;
+        wardData[wardId] = {
+            id: wardId,
+            uid: ward._id,
+            name: ward.name,
+            code: ward.code,
+            stateId: ward.state_id,
+            lgaId: ward.lga_id,
+            resultCount: numResults,
+        };
+    }
+
+    await fs.writeFile('./build/data_stats_ward.json', JSON.stringify(wardData, null, 4));
+}
+
 exports.downloadDocs = async function(){
 
     const fileExists = async (filePath) => {
