@@ -1,15 +1,11 @@
 import React, { useState, useEffect } from "react";
+import { generateUsername } from "unique-username-generator";
+import { PollingUnitView } from "../src/polling_unit_view";
 import {
   Grid,
   Card,
   Typography,
   CardContent,
-  CardMedia,
-  capitalize,
-} from "@material-ui/core";
-import { generateUsername } from "unique-username-generator";
-import { PollingUnitView } from "../src/polling_unit_view";
-import {
   AppBar,
   Avatar,
   Button, CardHeader,
@@ -48,7 +44,6 @@ import {
   TextField,
   Toolbar,
 } from "@mui/material";
-import { makeStyles } from "@material-ui/styles";
 import axios from "axios";
 import InfiniteScroll from "react-infinite-scroll-component";
 import Box from "@mui/material/Box";
@@ -64,40 +59,23 @@ import LoadingButton from "@mui/lab/LoadingButton";
 import { Alert } from "@mui/lab";
 import MetaHead from "../src/MetaHead";
 
-const useStyles = makeStyles({
-  pokemonCardsArea: {
-    paddingTop: "30px",
-    paddingLeft: "15%",
-    paddingRight: "15%",
-    width: "100%",
-  },
-  pokemonImage: {
-    height: "160px",
-    width: "160px",
-  },
-  progress: {
-    position: "fixed",
-    top: "50%",
-    left: "50%",
-    marginTop: "-100px",
-    marginLeft: "-100px",
-  },
-});
-
 export const KEY_CONTRIBUTOR = "contributor-name";
 
 import FaceIcon from '@mui/icons-material/Face';
 
 const WardSummaryView = ({ward, stats}) => {
   let wardStat = _.find(stats.ward, w => w.wardId === ward._id);
-  console.log('WARD', wardStat, stats);
+  //console.log('WARD', ward);
 
   return <Stack direction={'row'} spacing={1}>
     <Chip label={`#${ward.code}`} size="small" />
     {
       !_.isEmpty(wardStat) ?
           <>
-            <Chip label={`${wardStat.wardCount}`} color="secondary" title={`Results submitted`}  variant="outlined" size="small" />
+            <Chip label={`${wardStat.wardCount}${ward.stats ? '/' + ward.stats.resultCount : ''}`}
+                  color={_.toInteger(wardStat.wardCount) === ward.stats?.resultCount ? 'success' : "secondary"}
+                  title={`Results submitted`}
+                  variant={_.toInteger(wardStat.wardCount) >= ward.stats?.resultCount ? 'filled' : "outlined"} size="small" />
             <Chip sx={{maxWidth: 100}} title={`Last contributor ${wardStat.lastContributorUsername}`} icon={<FaceIcon />} label={wardStat.lastContributorUsername} color="primary"  variant="outlined" size="small" />
           </>
 
@@ -122,9 +100,9 @@ const DrawerView = ({handleDrawerToggle, state, lga, ward, pu, setWard, setLga, 
         </Typography>
       </Box>
       <Box>
-        <IconButton onClick={handleDrawerToggle}>
-          <CloseIcon/>
-        </IconButton>
+        {/*<IconButton onClick={handleDrawerToggle}>*/}
+        {/*  <CloseIcon/>*/}
+        {/*</IconButton>*/}
       </Box>
     </Box>
 
@@ -190,7 +168,6 @@ const DrawerView = ({handleDrawerToggle, state, lga, ward, pu, setWard, setLga, 
 }
 
 const App = () => {
-  const classes = useStyles();
   const [states, setStates] = useState([]);
   const [stateId, setStateId] = useState(null);
   const [selectedState, setSelectedState] = useState(null);
@@ -249,7 +226,7 @@ const App = () => {
       const submitted = _.toInteger(stat?.submittedCount || 0);
       const row = {
         id: state.id,
-        progress: `${((submitted / state.resultCount) * 100).toFixed(2)}%`,
+        progress: (submitted / state.resultCount) * 100,
         submittedCount: submitted,
         resultCount: state.resultCount,
         wardCount: state.wardCount,
@@ -628,6 +605,9 @@ function MainBody({ isLoadingPuData, selectedPu, stats}) {
         headerName: 'Progress',
         type: 'string',
         width: 100,
+        renderCell: (params) => {
+          return `${params.value.toFixed(2)}%`
+        }
       },
       {
         field: 'puCount',
@@ -662,8 +642,8 @@ function MainBody({ isLoadingPuData, selectedPu, stats}) {
     ];
 
     return (
-      <Grid sm={3} sx={{ mt: 20 }} style={{}}>
-        <Card style={{ width: "60vw" }}>
+      <Grid xs={12} sm={6} md={8} sx={{ mt: 20 }} style={{}}>
+        <Card>
           <CardHeader>
 
           </CardHeader>
