@@ -1,17 +1,16 @@
 require('dotenv').config();
 
 const path = require('path');
-const fs = require('fs');
 
-const migrations = {
+export const migrations = {
     directory: path.resolve(__dirname, './db/migrations')
 };
 
-const seeds = {
+export const seeds = {
     directory: path.resolve(__dirname, './db/seeds')
 };
 
-const pool = {
+export const pool = {
     min: 0
 };
 

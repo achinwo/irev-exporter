@@ -126,7 +126,7 @@ export interface DbModelClass<M extends DbModel> extends ModelClass<M> {
 }
 
 export interface User {
-    name: string;
+    displayName: string;
     passwordHash: string;
     email: string;
     id?: number;
@@ -188,7 +188,7 @@ export abstract class DbModel extends Model {
         return rels
     }
 
-    static get jsonSchema() {
+    public static get jsonSchema() {
         const required = ['createdById', 'updatedById']
         const properties = {}
         for (let col of this.columns()) {
@@ -377,6 +377,8 @@ export abstract class DbModel extends Model {
     }
 
 }
+
+export const SESSION_SECRET = process.env.SESSION_SECRET || 'supersecretkey';
 
 // Give the knex object to objection.
 DbModel.knex(knex);

@@ -11,7 +11,9 @@ const fs = require('node:fs/promises');
 const path = require('path');
 const {Bucket, Storage} = require('@google-cloud/storage');
 const https = require("https");
-const {knex} = require('./src/lib/model');
+const {knex, destKnex} = require('./src/lib/model');
+const url = require('url');
+const {STATES} = require('./src/ref_data');
 
 const TOKEN = process.env.SESSION_TOKEN;
 
@@ -164,8 +166,45 @@ async function fetchWardData(wardId) {
     return data;
 }
 
-const url = require('url');
-const {STATES} = require('./src/ref_data');
+const Knex = require('knex');
+
+exports.importDataToDatabase = async function(){
+    const {migrations, seeds, pool} = require('./knexfile');
+    const {knex: destKnex} = require('./src/lib/model');
+
+    const srcDbConfig = {
+        client: 'pg',
+        connection: {
+            port: process.env.SRC_DB_PORT,
+            host: process.env.SRC_DB_HOST,
+            database: process.env.SRC_DB_NAME,
+            user: process.env.SRC_DB_USER,
+            password: process.env.SRC_DB_PASSWORD,
+            pool: {min: 0, max: 7}
+        },
+        migrations,
+        seeds,
+        pool
+    };
+
+    const srcKnex = Knex(srcDbConfig);
+
+    try {
+        const srcData = await srcKnex(models.PuData.tableName);
+        const chunked = _.chunk(srcData, 999);
+
+        let batchIdx = 1;
+        for (const chunk of chunked) {
+            await destKnex(models.PuData.tableName).insert(chunk);
+            console.log(`Inserted chunked data into "${models.PuData.tableName}": ${batchIdx} of ${chunked.length}`);
+            batchIdx += 1;
+        }
+
+    } finally {
+        await srcKnex.destroy();
+        await destKnex.destroy();
+    }
+}
 
 exports.fetchStats = async function(){
     const newStates = [];
@@ -227,17 +266,16 @@ exports.exportWardResults = async function(){
     await fs.writeFile('./build/data_stats_ward.json', JSON.stringify(wardData, null, 4));
 }
 
+const fileExists = async (filePath) => {
+    try {
+        await fs.stat(filePath);
+        return true;
+    } catch (e) {
+        return e.code !== 'ENOENT';
+    }
+};
+
 exports.downloadDocs = async function(){
-
-    const fileExists = async (filePath) => {
-        try {
-            await fs.stat(filePath);
-            return true;
-        } catch (e) {
-            return e.code !== 'ENOENT';
-        }
-    };
-
     const basePath = '/Volumes/T7/irev_data';
 
     for(const fn of await fs.readdir('./build')){
@@ -290,8 +328,6 @@ exports.downloadDocs = async function(){
 
 exports.santizeResults = async function(){
 
-    //const o = require('./google-service-account.json');
-
     const httpsAgent = new https.Agent({
         rejectUnauthorized: false,
     });
@@ -302,66 +338,14 @@ exports.santizeResults = async function(){
 
         const data = require(`./build/${fn}`);
 
-        // let count = 0;
-        //
         for (const lga of data.data) {
             lgaNames.push(lga.lga.name);
-
-        //     for (const ward of lga.wards) {
-        //
-        //         try {
-        //             await fetchWardData(ward._id);
-        //         } catch (e) {
-        //             console.log('error fetching ward:', ward._id, e);
-        //             continue
-        //         } finally {
-        //             count += 1;
-        //         }
-        //
-        //         console.log(`fetching ward #${count}:`, ward._id);
-        //     }
         }
     }
 
-
-    //const idInts = _.map(ids, (x) => _.toInteger(x));
-    //const res = await axios.get(`https://localhost:8080/api/polling-data?filterIn=${_.join(ids, ',')}`, {httpsAgent});
     const res = await axios.post(`https://localhost:8080/api/polling-data/badlgas`, {lgaNames}, {httpsAgent});
 
     console.log('DATA:', res.data.data.length);
-
-
-
-    // for (const puData of res.data.data) {
-    //     const ward = await fetchWardData(puData.wardId);
-    //
-    //     const pu = _.find(ward.data, p => p.pu_code === puData.puCode);
-    //
-    //     puData.lgaId = pu.polling_unit.lga_id;
-    //     puData.lgaName = pu.polling_unit.lga.name;
-    //
-    //     // puData.isResultIllegible = !puData.isResultLegible;
-    //     // puData.containsIncorrectPuName = !puData.isPuNameCorrect;
-    //     // console.log('Polling Unit:', puData.puCode, puData.id, puData.isResultLegible, puData.isResultIllegible);
-    //
-    //     const resp = await axios.post('https://localhost:8080/api/polling-data', {pu: null, puData}, {httpsAgent: new https.Agent({
-    //             rejectUnauthorized: false//endpoint.indexOf('localhost') > -1,
-    //         })});
-    //
-    //     const {lgaName, lgaId, id, puCode, isResultIllegible, containsIncorrectPuName} = resp.data.result;
-    //     console.log(lgaName, lgaId, id, puCode, isResultIllegible, containsIncorrectPuName);
-    // }
-
-
-    // const storage = new Storage(o);
-    // const bucket = storage.bucket('joli-app-bucket');
-    //
-    // const options = {
-    //     destination: path.join(process.cwd(), 'downloaded.json'),
-    // };
-    //
-    // const res = await bucket.file('json-data/data_lgas_10.json').download(options);
-    // console.log(res);
 }
 
 const TOTALS = {};
@@ -701,7 +685,7 @@ async function dbMigrationFilesGenerate(){
         const lastFilePath = lastFile ? path.join(migrationDir, lastFile.name) : null;
         let changesOrig;
 
-        if(lastFilePath && fs.existsSync(lastFilePath)){
+        if(lastFilePath && await fileExists(lastFilePath)){
             const {jsonSchema: schema} = require(lastFilePath);
             changesOrig = schemaDiff2(schema, modelDef.schema, modelDef.columnDefs);
         }else{
