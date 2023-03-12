@@ -5,13 +5,11 @@ import axios from "axios";
 import {BASE_URL_KVDB} from "../../src/utils";
 import https from "https";
 import _ from 'lodash';
+import {User} from "../../src/orm";
 
 const pipeline = promisify(stream.pipeline);
 
 export default async function handler(req, res) {
-
-    //const zipPath = path.join(process.cwd(), 'pages/api', './Avenir-Font.zip');
-    //const stat = fs.statSync(zipPath);
 
     const options = {
         year: 'numeric',
@@ -29,22 +27,27 @@ export default async function handler(req, res) {
     const fileName = `irev_export_${_.snakeCase(new Date().toLocaleDateString("en-GB", options))}.xlsx`;
     console.log('export file name:', fileName);
 
-    // res.setHeader('Content-Disposition', `attachment; filename=${fileName}`);
-    // res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    //res.setHeader('Content-Length', stat.size);
-
     res.writeHead(200, {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'Content-Disposition': `attachment; filename=${fileName}`,
-        //  'Content-Length': stat.size
+        'Content-Disposition': `attachment; filename=${fileName}`
     });
 
-    try{
+    const recs = await User.query().select('display_name', 'contributor_id');
+    const mapping = _.fromPairs(recs.map(r => [r.contributorId, r.displayName]));
+
+    try {
+        for (const row of response.data.data) {
+            const contribId = _.trim(row.contributorUsername);
+            delete row['contributorUsername'];
+
+            row.contributorDisplayname = mapping[contribId] || '(unmapped contributor)';
+        }
+
         const fileStream = await writeXlsxFile(response.data.data, {schema: SCHEMA});
         await pipeline(fileStream, res);
     } catch (e) {
         console.error(e);
-        res.status(500).end(`An internal server error occured while exporting the data`);
+        res.status(500).end(`An internal server error occurred while exporting the data`);
     }
 }
 
@@ -68,7 +71,7 @@ const SCHEMA = [
     {column: 'Votes Apc', type: Number, value: data => data.votesApc},
     {column: 'Votes Pdp', type: Number, value: data => data.votesPdp},
     {column: 'Votes Nnpp', type: Number, value: data => data.votesNnpp},
-    {column: 'Contributor Username', type: String, value: data => data.contributorUsername},
+    {column: 'Contributor Display Name', type: String, value: data => data.contributorDisplayname},
     {column: 'Lga Id', type: Number, value: data => data.lgaId},
     {column: 'Lga Name', type: String, value: data => data.lgaName},
     {column: 'Voters Accredited', type: Number, value: data => data.votersAccredited},
@@ -77,5 +80,5 @@ const SCHEMA = [
     {column: 'Contains Incorrect Pu Name', type: Boolean, value: data => data.containsIncorrectPuName},
     {column: 'Contains Alterations', type: Boolean, value: data => data.containsAlterations},
     {column: 'Is Inec Stamp Absent', type: Boolean, value: data => data.isInecStampAbsent},
-    {column: 'Is None Eceight Form', type: Boolean, value: data => data.isNoneEceightForm},
+    {column: 'Is Non-EC8 Form', type: Boolean, value: data => data.isNoneEceightForm},
 ]
