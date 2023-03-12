@@ -260,6 +260,33 @@ exports.importUsersFromPuData = async function(){
     }
 }
 
+const AwsClientS3 = require("aws-client-s3");
+
+exports.fetchS3 = async function(){
+    const config = {
+        region: process.env.S3_REGION,
+        credentials: {
+            accessKeyId: process.env.S3_ACCESS_KEY_ID,
+            secretAccessKey: process.env.S3_SECRET_ACCESS_KEY
+        }
+    };
+
+    const client = new AwsClientS3(config);
+
+    const objs = await client.listBucketObjects('citizens-bucket', 'all');
+
+    for (const obj of objs.Contents) {
+        console.log(obj);
+    }
+
+    // const fileStream = await client.readFile({
+    //     bucket: "citizens-bucket",
+    //     key: "Test.txt",
+    // });
+    //
+    // await fs.writeFile('./s3-file.txt', fileStream);
+}
+
 exports.fetchStats = async function(){
     const newStates = [];
     for (const state of STATES) {
