@@ -273,7 +273,7 @@ exports.fetchS3 = async function(){
 
     const client = new AwsClientS3(config);
 
-    const objs = await client.listBucketObjects('citizens-bucket', 'all');
+    const objs = await client.listBucketObjects(process.env.S3_BUCKET_NAME, 'all');
 
     for (const obj of objs.Contents) {
         console.log(obj);
