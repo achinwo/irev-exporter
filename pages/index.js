@@ -183,6 +183,9 @@ const App = () => {
   const [contributorName, setContributorName] = React.useState(
     globalThis?.localStorage?.getItem(KEY_CONTRIBUTOR) || generateUsername()
   );
+  const [displayName, setDisplayName] = React.useState(null);
+  const [isContribFormValid, setIsContribFormValid] = React.useState(null);
+  const [currentUser, setCurrentUser] = React.useState(null);
 
   const [stats, setStats] = useState({state: [], ward: []});
 
@@ -210,9 +213,22 @@ const App = () => {
     setStates(response.data);
   };
 
-  function saveContributorName(newValue) {
-    localStorage.setItem(KEY_CONTRIBUTOR, newValue);
-    console.log("saved contributor name:", contributorName);
+  async function saveContributorName(newValue, dispName) {
+    const contribId = _.trim(newValue)
+    localStorage.setItem(KEY_CONTRIBUTOR, contribId);
+
+    let user;
+
+    if(currentUser){
+      user = await axios.put(`/api/users/${currentUser.id}`, {contributorId: contribId, displayName: dispName});
+    } else {
+      user = await axios.post(`/api/users`, {contributorId: contribId, displayName: dispName});
+    }
+
+    setContributorName(contribId);
+    setDisplayName(dispName);
+
+    console.log("saved user data:", user);
   }
 
 
@@ -237,17 +253,29 @@ const App = () => {
       rows.push(row);
     }
 
-    const wardRows = wardData;
-
-    setStats({state: rows, ward: wardRows});
+    setStats({state: rows, ward: wardData});
   }, [stateId]);
 
   useEffect(async () => {
+    setIsContribFormValid(_.trim(contributorName) && _.trim(displayName || '') && _.trim(contributorName) !== _.trim(displayName || ''));
+  }, [displayName, contributorName]);
+
+  useEffect(async () => {
+
     const contributor = localStorage.getItem(KEY_CONTRIBUTOR);
 
     if (!contributor) {
-      saveContributorName(contributorName);
+      localStorage.setItem(KEY_CONTRIBUTOR, contributor);
       console.log("initialized contributor name:", contributorName);
+    } else {
+      try{
+        const resp = await axios.get(`/api/users/${contributor}`);
+        setCurrentUser(resp.data.data);
+        setDisplayName(resp.data.data?.displayName || displayName);
+        setContributorName(resp.data.data?.contributorId || contributor);
+      } catch (e) {
+        console.error('Unable to fetch user by conributor id:', contributor, e.stack);
+      }
     }
 
     await fetchStates();
@@ -468,25 +496,40 @@ const App = () => {
           <DialogTitle>Polling Data Contributor</DialogTitle>
           <DialogContent>
             <DialogContentText>
-              Setting a contributor username ascribes all result data entry to
-              you.
+              Setting a Contributor ID ascribes all result data entry to
+              you. Note that this should be kept private!
+              <br/>
+              Your display name can be shared and will appear on exports like daily Leaderboards.
             </DialogContentText>
-            <TextField
-              autoFocus
-              margin="dense"
-              id="name"
-              label="Contributor Username"
-              fullWidth
-              value={contributorName}
-              variant="standard"
-              onChange={(evt) => setContributorName(evt.target.value)}
-            />
+            <Stack spacing={2} direction={'column'}>
+              <TextField
+                  autoFocus
+                  margin="dense"
+                  id="name"
+                  label="Display Name"
+                  fullWidth
+                  value={displayName}
+                  variant="standard"
+                  onChange={(evt) => setDisplayName(evt.target.value)}
+              />
+              <TextField
+                  autoFocus
+                  margin="dense"
+                  id="name"
+                  label="Contributor ID"
+                  fullWidth
+                  value={contributorName}
+                  variant="standard"
+                  onChange={(evt) => setContributorName(evt.target.value)}
+              />
+            </Stack>
+
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setIsOpen(false)}>Cancel</Button>
-            <Button
+            <Button disabled={!isContribFormValid}
               onClick={() => {
-                saveContributorName(contributorName);
+                saveContributorName(contributorName, displayName);
                 setIsOpen(false);
               }}
             >
