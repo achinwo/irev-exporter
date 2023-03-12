@@ -102,7 +102,7 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
                 return <>
                     <FormControlLabel
                         label={label}
-                        key={idx}
+                        key={`pu-field-${fieldName}`}
                         control={
                             <Checkbox
                                 checked={puData[fieldName]}

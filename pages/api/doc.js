@@ -1,6 +1,6 @@
 import url from 'url';
 import axios from "axios";
-import pdf2img from "pdf-img-convert";
+//import pdf2img from "pdf-img-convert";
 import path from 'path';
 
 export default async function handler(req, res) {
@@ -10,14 +10,10 @@ export default async function handler(req, res) {
         case 'GET':
             const docUrl = decodeURI(query.url);
 
-            const [data,] = await pdf2img.convert(docUrl);
-
-            res.setHeader('Content-Type', 'image/jpeg')
-            //res.setHeader('Content-Disposition', 'attachment; filename=name.Pdf')
-            // res.setHeader('Content-disposition', `inline; filename="${path.basename(docUrl)}"`);
-            // res.setHeader('Content-type', 'application/pdf');
-            //res.setHeader('Content-Length', data.length)
-            res.end(data)
+            // const [data,] = await pdf2img.convert(docUrl);
+            //
+            // res.setHeader('Content-Type', 'image/jpeg')
+            res.json({url: docUrl, message: 'Not Implemented'});
 
             break;
         default:
