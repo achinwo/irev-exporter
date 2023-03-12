@@ -10,12 +10,13 @@ export class User extends DbModel implements UserInterface {
     static tableName = 'users';
 
     @col(SchemaType.string, false) displayName: string;
-    @col(SchemaType.string, false) contributorId: string;
+    @col(SchemaType.string, {unique: true, nullable: false}) contributorId: string;
 
     @col(SchemaType.string, true) passwordHash: string;
     @col(SchemaType.string, true) email: string;
 
     @col(SchemaType.datetime) activatedAt: Date;
+    @col(SchemaType.datetime) firstContributedAt: Date;
 
     @col(SchemaType.text, true) imageSmall: string; // 64x64
     @col(SchemaType.text, true) imageMedium: string; // 300x300

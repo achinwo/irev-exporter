@@ -19,10 +19,12 @@ exports.up = function(knex) {
 			table.string('display_name')
 				.notNullable()
 			table.string('contributor_id')
+				.unique()
 				.notNullable()
 			table.string('password_hash');
 			table.string('email');
 			table.dateTime('activated_at');
+			table.dateTime('first_contributed_at');
 			table.text('image_small');
 			table.text('image_medium');
 			table.text('image_large');
@@ -73,6 +75,10 @@ exports.jsonSchema = {
             "type": "string"
         },
         "activatedAt": {
+            "type": "string",
+            "format": "date-time"
+        },
+        "firstContributedAt": {
             "type": "string",
             "format": "date-time"
         },

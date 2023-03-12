@@ -167,27 +167,26 @@ async function fetchWardData(wardId) {
 }
 
 const Knex = require('knex');
+const {migrations, seeds, pool} = require('./knexfile')[process.env.NODE_ENV || 'development'];
+
+const SRC_DB_CONFIG = {
+    client: 'pg',
+    connection: {
+        port: process.env.SRC_DB_PORT,
+        host: process.env.SRC_DB_HOST,
+        database: process.env.SRC_DB_NAME,
+        user: process.env.SRC_DB_USER,
+        password: process.env.SRC_DB_PASSWORD,
+        pool: {min: 0, max: 7}
+    },
+    migrations,
+    seeds,
+    pool
+};
 
 exports.importDataToDatabase = async function(){
-    const {migrations, seeds, pool} = require('./knexfile');
     const {knex: destKnex} = require('./src/lib/model');
-
-    const srcDbConfig = {
-        client: 'pg',
-        connection: {
-            port: process.env.SRC_DB_PORT,
-            host: process.env.SRC_DB_HOST,
-            database: process.env.SRC_DB_NAME,
-            user: process.env.SRC_DB_USER,
-            password: process.env.SRC_DB_PASSWORD,
-            pool: {min: 0, max: 7}
-        },
-        migrations,
-        seeds,
-        pool
-    };
-
-    const srcKnex = Knex(srcDbConfig);
+    const srcKnex = Knex(SRC_DB_CONFIG);
 
     try {
         const srcData = await srcKnex(models.PuData.tableName);
@@ -203,6 +202,61 @@ exports.importDataToDatabase = async function(){
     } finally {
         await srcKnex.destroy();
         await destKnex.destroy();
+    }
+}
+
+exports.importUsersFromPuData = async function(){
+    try {
+        const adminContribId = 'okeyability';
+        const adminUser = await models.User.query().insertAndFetch({
+            contributorId: adminContribId,
+            displayName: 'Tech Support Guy',
+            createdById: 1,
+            updatedById: 1,
+        });
+
+        const pus = await models.PuData.query()
+            .select('contributor_username')
+            .count('pu_code', {as: 'entriesCount'})
+            .min('created_at as firstDataEnteredAt')
+            //.where('contributor_username', '!=', adminContribId)
+            .groupBy('contributor_username');
+
+        //console.log(pus);
+        let newUsers = [];
+        let idx = 1;
+
+        for (const puData of pus) {
+
+            if(puData.contributorUsername === adminContribId){
+                await models.User.query().updateAndFetchById(adminUser.id, {firstContributedAt: puData.firstDataEnteredAt});
+                continue;
+            }
+
+            const existing = _.find(newUsers, u => u.contributorId === _.trim(puData.contributorUsername));
+
+            if(existing){
+                console.log(`Duplicate detected for id "${_.trim(puData.contributorUsername)}":`, existing, puData);
+                existing.firstContributedAt = _.min([existing.firstContributedAt, puData.firstDataEnteredAt]);
+                continue
+            }
+
+            const newUser = {
+                contributorId: _.trim(puData.contributorUsername),
+                displayName: `Contributor #${idx}`,
+                firstContributedAt: puData.firstDataEnteredAt,
+                createdById: adminUser.id,
+                updatedById: adminUser.id,
+            }
+
+            newUsers.push(newUser);
+            idx += 1;
+        }
+
+        await models.User.query().insert(newUsers);
+        console.log('Created new users:', newUsers.length);
+    } finally {
+        await models.PuData.knex().destroy()
     }
 }
 
