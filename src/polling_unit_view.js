@@ -49,7 +49,7 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
 
             const contributor = globalThis?.localStorage?.getItem(KEY_CONTRIBUTOR);
 
-            if(!contributor){
+            if(!contributor || contributor === 'null'){
                 setAlert({type: 'error', message: `Submission failed due to missing identifiers, ensure display name and contributor ID are set!`});
                 return;
             }
