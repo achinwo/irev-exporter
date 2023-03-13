@@ -264,9 +264,12 @@ const App = () => {
 
     const contributor = localStorage.getItem(KEY_CONTRIBUTOR);
 
-    if (!contributor) {
-      localStorage.setItem(KEY_CONTRIBUTOR, contributorName);
-      console.log("initialized contributor name:", contributorName);
+    if (!contributor || contributor === 'null') {
+      const contribName = contributorName === 'null' ? generateUsername() : contributorName
+      localStorage.setItem(KEY_CONTRIBUTOR, contribName);
+
+      setContributorName(contribName);
+      console.log("initialized contributor name:", contribName);
     } else {
       try{
         const resp = await axios.get(`/api/users/${contributor}`);
