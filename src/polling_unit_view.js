@@ -218,7 +218,7 @@ export const PollingUnitView = ({pollingUnit, puData, setPuData, isSubmitting, s
                 {pu.document?.url && (_.trim(url.parse(pu.document.url).pathname) !== '/') ?
                     <>
                         <Link href={pu.document?.url} rel="noopener noreferrer" target="_blank" sx={{mb: 4}}>Document
-                            Link</Link>
+                            Link {pu.document.url.endsWith('.pdf') ? '(PDF)' : '(JPG)'}</Link>
                         <CardMedia style={{maxWidth: "100%", minHeight: '70vh'}}>
                             <Stack>
                                 {
