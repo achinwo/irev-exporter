@@ -10,7 +10,7 @@ export default async function handler(req, res) {
             res.json({data: user});
             break;
         case 'PUT':
-            const updatedUser = await User.query().updateAndFetchById(query.id, _.omit(req.body, 'contributorId'));
+            const updatedUser = await User.query().updateAndFetchById(query.id, req.body);
             res.json({data: updatedUser});
             break;
         default:

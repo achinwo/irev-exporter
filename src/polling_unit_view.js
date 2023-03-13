@@ -47,7 +47,14 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
                 isPuNameCorrect: !toBool(data?.containsIncorrectPuName),
             });
 
-            const resp = await axios.post(url, {pu, puData: data, contributor: globalThis?.localStorage?.getItem(KEY_CONTRIBUTOR)});
+            const contributor = globalThis?.localStorage?.getItem(KEY_CONTRIBUTOR);
+
+            if(!contributor){
+                setAlert({type: 'error', message: `Submission failed due to missing identifiers, ensure display name and contributor ID are set!`});
+                return;
+            }
+
+            const resp = await axios.post(url, {pu, puData: data, contributor: contributor});
             console.log('submitted pu data', resp.data);
 
             setPuData(resp.data.data);
