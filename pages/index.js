@@ -265,7 +265,7 @@ const App = () => {
     const contributor = localStorage.getItem(KEY_CONTRIBUTOR);
 
     if (!contributor) {
-      localStorage.setItem(KEY_CONTRIBUTOR, contributor);
+      localStorage.setItem(KEY_CONTRIBUTOR, contributorName);
       console.log("initialized contributor name:", contributorName);
     } else {
       try{
