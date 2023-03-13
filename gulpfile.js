@@ -194,7 +194,7 @@ exports.importDataToDatabase = async function(){
 
         let batchIdx = 1;
         for (const chunk of chunked) {
-            await destKnex(models.PuData.tableName).insert(chunk);
+            await destKnex(models.PuData.tableName).insert(_.omit(chunk, ['id']));
             console.log(`Inserted chunked data into "${models.PuData.tableName}": ${batchIdx} of ${chunked.length}`);
             batchIdx += 1;
         }

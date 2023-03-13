@@ -50,7 +50,7 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
             const contributor = globalThis?.localStorage?.getItem(KEY_CONTRIBUTOR);
 
             if(!contributor || contributor === 'null'){
-                setAlert({type: 'error', message: `Submission failed due to missing identifiers, ensure display name and contributor ID are set!`});
+                setAlert({severity: 'error', message: `Submission failed due to missing identifiers, ensure display name and contributor ID are set!`});
                 return;
             }
 
@@ -59,9 +59,9 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
 
             setPuData(resp.data.data);
 
-            setAlert({type: 'success', message: `Submitted numbers for unit "${pu.pu_code}" successfully!`});
+            setAlert({severity: 'success', message: `Submitted numbers for unit "${pu.pu_code}" successfully!`});
         } catch (e) {
-            setAlert({type: 'error', message: `Error occurred while submitting for "${pu.pu_code}"!`});
+            setAlert({severity: 'error', message: `Error occurred while submitting for "${pu.pu_code}"!`});
         } finally {
             setIsSubmitting(false);
         }
