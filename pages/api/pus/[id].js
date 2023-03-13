@@ -1,25 +1,20 @@
-import axios from "axios";
-const https = require('https');
 import _ from 'lodash';
-import {BASE_URL_KVDB, fetchWardData, STATES} from "../../../src/utils";
+import {fetchWardData, STATES} from "../../../src/utils";
+import {PuData} from "../../../src/orm";
 
 export default async function userHandler(req, res) {
     const { query, method, body } = req;
-
+    let data;
     switch (method) {
         case 'GET':
             const wardId = query.id;
-            const data = await fetchWardData(wardId);
+            data = await fetchWardData(wardId);
             res.status(200).json(data);
             break
         case 'POST':
-            const endpoint = `${BASE_URL_KVDB}/api/polling-data`;
             body.pu.ward.state_name = _.find(STATES, (s) => s.id === body.pu.ward.state_id)?.name;
-            console.log('body', body);
-            const resp = await axios.post(endpoint, body, {httpsAgent: new https.Agent({
-                        rejectUnauthorized: false//endpoint.indexOf('localhost') > -1,
-                    })});
-            res.status(200).json(resp.data);
+            data = await PuData.createOrUpdate(body);
+            res.status(200).json({data});
             break;
         default:
             res.setHeader('Allow', ['GET', 'PUT'])

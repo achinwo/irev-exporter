@@ -1,11 +1,8 @@
 import stream from 'stream';
 import {promisify} from 'util';
 import writeXlsxFile from 'write-excel-file/node'
-import axios from "axios";
-import {BASE_URL_KVDB} from "../../src/utils";
-import https from "https";
 import _ from 'lodash';
-import {User} from "../../src/orm";
+import {PuData, User} from "../../src/orm";
 
 const pipeline = promisify(stream.pipeline);
 
@@ -19,10 +16,7 @@ export default async function handler(req, res) {
         minute: 'numeric'
     };
 
-    const endpoint = `${BASE_URL_KVDB}/api/polling-data`;
-    const response = await axios.get(endpoint, {httpsAgent: new https.Agent({
-            rejectUnauthorized: false,//endpoint.indexOf('localhost') > -1
-        })});
+    const data = await PuData.query();
 
     const fileName = `irev_export_${_.snakeCase(new Date().toLocaleDateString("en-GB", options))}.xlsx`;
     console.log('export file name:', fileName);
@@ -36,14 +30,14 @@ export default async function handler(req, res) {
     const mapping = _.fromPairs(recs.map(r => [r.contributorId, r.displayName]));
 
     try {
-        for (const row of response.data.data) {
+        for (const row of data) {
             const contribId = _.trim(row.contributorUsername);
             delete row['contributorUsername'];
 
             row.contributorDisplayname = mapping[contribId] || '(unmapped contributor)';
         }
 
-        const fileStream = await writeXlsxFile(response.data.data, {schema: SCHEMA});
+        const fileStream = await writeXlsxFile(data, {schema: SCHEMA});
         await pipeline(fileStream, res);
     } catch (e) {
         console.error(e);
@@ -52,8 +46,8 @@ export default async function handler(req, res) {
 }
 
 const SCHEMA = [
-    {column: 'Created At', type: String, value: data => data.createdAt},
-    {column: 'Updated At', type: String, value: data => data.updatedAt},
+    {column: 'Created At', type: Date, value: data => data.createdAt, format: 'dd/mm/yyyy hh:mm AM/PM'},
+    {column: 'Updated At', type: Date, value: data => data.updatedAt, format: 'dd/mm/yyyy hh:mm AM/PM'},
     {column: 'Name', type: String, value: data => data.name},
     {column: 'Pu Id', type: String, value: data => data.puId},
     {column: 'Pu Code', type: String, value: data => data.puCode},
@@ -64,7 +58,7 @@ const SCHEMA = [
     {column: 'Document Url', type: String, value: data => data.documentUrl},
     {column: 'Document Type', type: String, value: data => data.documentType},
     {column: 'Document Size', type: Number, value: data => data.documentSize},
-    {column: 'Document Updated At', type: String, value: data => data.documentUpdatedAt},
+    {column: 'Document Updated At', type: Date, value: data => data.documentUpdatedAt, format: 'dd/mm/yyyy hh:mm AM/PM'},
     {column: 'Document Hash', type: String, value: data => data.documentHash},
     {column: 'Number Of Prev Documents', type: Number, value: data => data.numberOfPrevDocuments},
     {column: 'Votes Lp', type: Number, value: data => data.votesLp},

@@ -5,6 +5,7 @@ import path from "path";
 import url from "url";
 import axios from "axios";
 import https from "https";
+import {PuData} from "./orm";
 
 export async function archivePipe(destination, urls) {
     let proms = []
@@ -31,8 +32,6 @@ export async function archivePipe(destination, urls) {
     console.log(`finalized archive: fileCount=${_.size(urls)}`);
 }
 
-export const BASE_URL_KVDB = process.env.BASE_URL_KVDB;
-
 export const CACHE = {};
 
 
@@ -51,12 +50,9 @@ export async function fetchWardData(wardId, opts={includePuData: true}) {
     }
 
     if(opts?.includePuData){
-        const endpoint = `${BASE_URL_KVDB}/api/polling-data`;
         try{
-            const resp = await axios.get(`${endpoint}/${wardId}`, {httpsAgent: new https.Agent({
-                    rejectUnauthorized: false,//endpoint.indexOf('localhost') > -1
-                })});
-            data['polling_data'] = _.transform(resp.data.puData, (result, item) => {
+            const puData = await PuData.query().where('ward_id', wardId);
+            data['polling_data'] = _.transform(puData, (result, item) => {
                 result[item.puCode] = item;
             }, {});
         }catch (e) {

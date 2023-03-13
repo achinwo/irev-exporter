@@ -50,7 +50,7 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
             const resp = await axios.post(url, {pu, puData: data, contributor: globalThis?.localStorage?.getItem(KEY_CONTRIBUTOR)});
             console.log('submitted pu data', resp.data);
 
-            setPuData(resp.data.result);
+            setPuData(resp.data.data);
 
             setAlert({type: 'success', message: `Submitted numbers for unit "${pu.pu_code}" successfully!`});
         } catch (e) {

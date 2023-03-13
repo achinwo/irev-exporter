@@ -208,12 +208,20 @@ exports.importDataToDatabase = async function(){
 exports.importUsersFromPuData = async function(){
     try {
         const adminContribId = 'okeyability';
-        const adminUser = await models.User.query().insertAndFetch({
-            contributorId: adminContribId,
-            displayName: 'Tech Support Guy',
-            createdById: 1,
-            updatedById: 1,
-        });
+        let adminUser = await models.User.query().where('contributor_id', adminContribId).first();
+
+        if(!adminUser) {
+            adminUser = await models.User.query().insertAndFetch({
+                contributorId: adminContribId,
+                displayName: 'Tech Support Guy',
+                createdById: 1,
+                updatedById: 1,
+            });
+        }
+
+        const recs = await User.query().select('display_name', 'contributor_id');
+        const mapping = _.fromPairs(recs.map(r => [r.contributorId, r.displayName]));
+        const existingContribs = _.keys(mapping);
 
         const pus = await models.PuData.query()
             .select('contributor_username')
@@ -224,9 +232,13 @@ exports.importUsersFromPuData = async function(){
 
         //console.log(pus);
         let newUsers = [];
-        let idx = 1;
+        let idx = existingContribs.length + 1;
 
         for (const puData of pus) {
+
+            if(_.includes(existingContribs, _.trim(puData.contributorUsername))){
+                continue;
+            }
 
             if(puData.contributorUsername === adminContribId){
                 await models.User.query().updateAndFetchById(adminUser.id, {firstContributedAt: puData.firstDataEnteredAt});
@@ -261,6 +273,7 @@ exports.importUsersFromPuData = async function(){
 }
 
 const AwsClientS3 = require("aws-client-s3");
+const {User} = require("./src/orm");
 
 exports.fetchS3 = async function(){
     const config = {
