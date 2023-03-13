@@ -8,7 +8,7 @@ export default async function handler(req, res) {
         case 'POST':
             const newUser: PartialModelObject<User> = req.body;
 
-            const saved = await User.query().insert(newUser);
+            const saved = await User.query().insert({createdById: 1, updatedById: 1, ...newUser});
             res.json({data: saved});
             break;
         default:
