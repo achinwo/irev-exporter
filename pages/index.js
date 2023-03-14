@@ -273,7 +273,7 @@ const App = () => {
       console.log("initialized contributor name:", contribName);
     } else {
       try{
-        const resp = await axios.get(`/api/users/${_.trim(contributor)}`);
+        const resp = await axios.get(`/api/users/${_.trim(encodeURIComponent(contributor))}`);
         setCurrentUser(resp.data.data);
         setDisplayName(resp.data.data?.displayName || displayName);
         setContributorName(resp.data.data?.contributorId || contributor);

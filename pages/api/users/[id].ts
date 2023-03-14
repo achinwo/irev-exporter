@@ -6,7 +6,7 @@ export default async function handler(req, res) {
 
     switch (method) {
         case 'GET':
-            const user = await User.query().where({contributor_id: query.id}).first();
+            const user = await User.query().where({contributor_id: _.trim(decodeURIComponent(query.id))}).first();
             res.json({data: user});
             break;
         case 'PUT':
