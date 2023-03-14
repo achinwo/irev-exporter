@@ -215,18 +215,19 @@ const App = () => {
 
   async function saveContributorName(newValue, dispName) {
     const contribId = _.trim(newValue)
+    const dispNameClean = _.trim(dispName);
     localStorage.setItem(KEY_CONTRIBUTOR, contribId);
 
     let user;
 
     if(currentUser){
-      user = await axios.put(`/api/users/${currentUser.id}`, {contributorId: contribId, displayName: dispName});
+      user = await axios.put(`/api/users/${currentUser.id}`, {contributorId: contribId, displayName: dispNameClean});
     } else {
-      user = await axios.post(`/api/users`, {contributorId: contribId, displayName: dispName});
+      user = await axios.post(`/api/users`, {contributorId: contribId, displayName: dispNameClean});
     }
 
     setContributorName(contribId);
-    setDisplayName(dispName);
+    setDisplayName(dispNameClean);
 
     console.log("saved user data:", user);
   }

@@ -2,6 +2,7 @@ import {col, DbModel, SchemaType} from "../lib/model";
 import _ from 'lodash';
 import path from "path";
 import {PartialModelObject} from "objection";
+import {User} from "./user";
 
 export class PuData extends DbModel {
     static tableName = 'pu_data';
@@ -135,7 +136,16 @@ export class PuData extends DbModel {
             .select('state_name', 'ward_name', 'ward_id')
             .count('ward_name', {as: 'wardCount'})
             .max('contributor_username as lastContributorUsername')
-            .groupBy('state_name', 'ward_name', 'ward_id');
+            .groupBy('state_name', 'ward_name', 'ward_id') as unknown as {stateName: string, wardName: string, wardCount: string, lastContributorUsername: string}[];
+
+        const recs = await User.query().select('display_name', 'contributor_id');
+        const mapping = _.fromPairs(recs.map(r => [r.contributorId, r.displayName]));
+
+        for (const ward of wardRes) {
+            const contributor = mapping[_.trim(ward.lastContributorUsername)];
+            if(!contributor) console.error(`Unable to map contributor username "${ward.lastContributorUsername}"`);
+            ward.lastContributorUsername = contributor || '(unknown)';
+        }
 
         return {state: rows, ward: wardRes};
     }
