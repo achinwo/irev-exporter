@@ -83,7 +83,7 @@ export class PuData extends DbModel {
             isInecStampAbsent: toBool(puData.isInecStampAbsent),
             isNoneEceightForm: toBool(puData.isNoneEceightForm),
 
-            contributorUsername: contributor,
+            contributorUsername: _.trim(contributor),
 
             documentUrl: pu.document.url,
             documentSize: pu.document.size,
