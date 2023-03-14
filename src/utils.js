@@ -5,7 +5,7 @@ import path from "path";
 import url from "url";
 import axios from "axios";
 import https from "https";
-import {PuData} from "./orm";
+import {PuData, User} from "./orm";
 
 export async function archivePipe(destination, urls) {
     let proms = []
@@ -52,6 +52,16 @@ export async function fetchWardData(wardId, opts={includePuData: true}) {
     if(opts?.includePuData){
         try{
             const puData = await PuData.query().where('ward_id', wardId);
+
+            const recs = await User.query().select('display_name', 'contributor_id');
+            const mapping = _.fromPairs(recs.map(r => [r.contributorId, r.displayName]));
+
+            for (const ward of puData) {
+                const contributor = mapping[_.trim(ward.contributorUsername)];
+                if(!contributor) console.error(`Unable to map contributor username "${ward.contributorUsername}"`);
+                ward.contributorUsername = contributor || '(unknown)';
+            }
+
             data['polling_data'] = _.transform(puData, (result, item) => {
                 result[item.puCode] = item;
             }, {});
