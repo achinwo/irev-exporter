@@ -61,7 +61,7 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
 
             setAlert({severity: 'success', message: `Submitted numbers for unit "${pu.pu_code}" successfully!`});
         } catch (e) {
-            setAlert({severity: 'error', message: `Error occurred while submitting for "${pu.pu_code}"!`});
+            setAlert({severity: 'error', message: e?.response?.data?.errorMessage ?? `Error occurred while submitting for "${pu.pu_code}"!`});
         } finally {
             setIsSubmitting(false);
         }
@@ -207,6 +207,10 @@ export const PollingUnitView = ({pollingUnit, puData, setPuData, isSubmitting, s
     };
     const pu = pollingUnit;
 
+    let priorVersionLabel = '';
+    // if(!_.isEmpty(pu.old_documents)){
+    //
+    // }
     //<Grid key={pu._id} item xs={12} sm={12} md={12} lg={12} style={{maxWidth: "100%"}}>
     return (
 
@@ -214,7 +218,7 @@ export const PollingUnitView = ({pollingUnit, puData, setPuData, isSubmitting, s
             <CardContent align="center" style={{maxWidth: "100%"}}>
                 <Typography>{capitalize(`${pu.name}`)}</Typography>
                 <Typography>{`PU Code: ${pu.pu_code}`}</Typography>
-                <Typography>{`Updated: ${new Date(pu.updated_at).toLocaleDateString("en-US", options)}`}</Typography>
+                <Typography>{`Updated: ${new Date(pu.updated_at).toLocaleDateString("en-US", options)}${priorVersionLabel}`}</Typography>
                 {pu.document?.url && (_.trim(url.parse(pu.document.url).pathname) !== '/') ?
                     <>
                         <Link href={pu.document?.url} rel="noopener noreferrer" target="_blank" sx={{mb: 4}}>Document

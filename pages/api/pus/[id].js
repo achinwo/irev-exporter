@@ -13,6 +13,15 @@ export default async function userHandler(req, res) {
             break
         case 'POST':
             body.pu.ward.state_name = _.find(STATES, (s) => s.id === body.pu.ward.state_id)?.name;
+
+            const puCode = body.pu.pu_code;
+            const existing = await PuData.query().where('pu_code', puCode).first();
+
+            if(existing){
+                res.status(400).json({errorMessage: `Submission exists for "${puCode}" by "${_.trim(existing.contributorUsername)}". Refresh the page and try again.`});
+                return;
+            }
+
             data = await PuData.createOrUpdate(body);
             res.status(200).json({data});
             break;
