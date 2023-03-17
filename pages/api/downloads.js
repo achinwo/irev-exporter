@@ -3,10 +3,15 @@ import {promisify} from 'util';
 import writeXlsxFile from 'write-excel-file/node'
 import _ from 'lodash';
 import {PuData, User} from "../../src/orm";
+import {STATES} from "../../src/ref_data";
 
 const pipeline = promisify(stream.pipeline);
 
 export default async function handler(req, res) {
+    const {method, query} = req;
+    const stateId = _.toInteger(query.stateId);
+
+    if(method !== 'GET' || !stateId) return res.status(400).json({errorMessage: 'Bad Request', method, stateId});
 
     const options = {
         year: 'numeric',
@@ -16,9 +21,10 @@ export default async function handler(req, res) {
         minute: 'numeric'
     };
 
-    const data = await PuData.query();
+    const data = await PuData.query().where('state_id', stateId);
+    const state = _.find(STATES, (s) => s.id === stateId);
 
-    const fileName = `irev_export_${_.snakeCase(new Date().toLocaleDateString("en-GB", options))}.xlsx`;
+    const fileName = `irev_export_${_.snakeCase(state.name)}_${_.snakeCase(new Date().toLocaleDateString("en-GB", options))}.xlsx`;
     console.log('export file name:', fileName);
 
     res.writeHead(200, {

@@ -337,8 +337,8 @@ const App = () => {
         : null
     }
     <MenuItem onClick={handleMenuClose}>
-    <Link href={`/api/downloads`} underline="none">
-      {`Download Collated (.xlsx)`}
+    <Link href={`/api/downloads?stateId=${stateId}`} underline="none">
+      {`Download Collated "${_.find(STATES, (s) => s.id === _.toInteger(stateId))?.name}" (.xlsx)`}
     </Link>
   </MenuItem>
   </>;
@@ -347,7 +347,7 @@ const App = () => {
   if (selectedPu) {
     view = <>
       <MenuItem onClick={handleMenuClose}>
-        <Link href={`/api/downloads/${selectedPu.wards[0]._id}`} underline="none">
+        <Link href={`/api/downloads/${selectedPu.wards[0]._id}?stateId=${stateId}`} underline="none">
           {`Download Ward "${selectedPu.wards[0].name}"`}
         </Link>
       </MenuItem>
@@ -380,17 +380,20 @@ const App = () => {
               </Box>
               <Stack direction={"row"}>
                   <div>
-                    <Button
-                      id="basic-button"
-                      aria-controls={open ? "basic-menu" : undefined}
-                      aria-haspopup="true"
-                      aria-expanded={open ? "true" : undefined}
-                      onClick={handleMenuClick}
-                      color={"secondary"}
-                      sx={{ mt: 2, mr: 2 }}
-                    >
-                      <DownloadRoundedIcon />
-                    </Button>
+                    {
+                        stateId &&
+                        <Button
+                            id="basic-button"
+                            aria-controls={open ? "basic-menu" : undefined}
+                            aria-haspopup="true"
+                            aria-expanded={open ? "true" : undefined}
+                            onClick={handleMenuClick}
+                            color={"secondary"}
+                            sx={{mt: 2, mr: 2}}
+                        >
+                          <DownloadRoundedIcon/>
+                        </Button>
+                    }
 
                     <Menu
                       id="basic-menu"

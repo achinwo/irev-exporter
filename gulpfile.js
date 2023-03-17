@@ -205,7 +205,21 @@ exports.importDataToDatabase = async function(){
     }
 }
 
-exports.importUsersFromPuData = async function(){
+exports.renameUserDp = async function(){
+    try {
+        const users = await models.User.query().where('display_name', 'like', 'Contributor%');
+        const changed = [];
+        for (const user of users) {
+            const u = await models.User.query().updateAndFetchById(user.id, {displayName: `Elluu P! #${user.id}`});
+            changed.push(u);
+        }
+        console.log(changed);
+    } finally {
+        await models.User.knex().destroy()
+    }
+}
+
+async function importUsersFromPuData(){
     try {
         const adminContribId = 'okeyability';
         let adminUser = await models.User.query().where('contributor_id', adminContribId).first();
@@ -255,7 +269,7 @@ exports.importUsersFromPuData = async function(){
 
             const newUser = {
                 contributorId: _.trim(puData.contributorUsername),
-                displayName: `Contributor #${idx}`,
+                displayName: `Eluu P! #${idx}`,
                 firstContributedAt: puData.firstDataEnteredAt,
                 createdById: adminUser.id,
                 updatedById: adminUser.id,
@@ -271,6 +285,7 @@ exports.importUsersFromPuData = async function(){
         await models.PuData.knex().destroy()
     }
 }
+
 
 const AwsClientS3 = require("aws-client-s3");
 const {User} = require("./src/orm");
@@ -418,28 +433,6 @@ exports.downloadDocs = async function(){
 
         }
     }
-}
-
-exports.santizeResults = async function(){
-
-    const httpsAgent = new https.Agent({
-        rejectUnauthorized: false,
-    });
-
-    let lgaNames = [];
-    for(const fn of await fs.readdir('./build')){
-        if(!fn.startsWith('data_lgas_')) continue;
-
-        const data = require(`./build/${fn}`);
-
-        for (const lga of data.data) {
-            lgaNames.push(lga.lga.name);
-        }
-    }
-
-    const res = await axios.post(`https://localhost:8080/api/polling-data/badlgas`, {lgaNames}, {httpsAgent});
-
-    console.log('DATA:', res.data.data.length);
 }
 
 const TOTALS = {};
@@ -862,3 +855,6 @@ gulp.task('db:migration:generate', async function (done) {
     await dbMigrationFilesGenerate()
     done();
 });
+
+
+gulp.task('import:users:pudata', importUsersFromPuData);
