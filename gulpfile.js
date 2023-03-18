@@ -279,8 +279,12 @@ async function importUsersFromPuData(){
             idx += 1;
         }
 
-        await models.User.query().insert(newUsers);
-        console.log('Created new users:', newUsers.length);
+        if(!_.isEmpty(newUsers)){
+            await models.User.query().insert(newUsers);
+            console.log('Created new users:', newUsers.length);
+        }else {
+            console.log('No new users to import!');
+        }
     } finally {
         await models.PuData.knex().destroy()
     }
