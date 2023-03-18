@@ -17,7 +17,7 @@ import {Alert} from "@mui/lab";
 import {DataGrid} from "@mui/x-data-grid";
 
 
-export function MainBody({ isLoadingPuData, selectedPu, stats}) {
+export function MainBody({ isLoadingPuData, selectedPu, stats, electionType}) {
     //const classes = useStyles();
 
     let [puData, setPuData] = useState({});
@@ -88,6 +88,7 @@ export function MainBody({ isLoadingPuData, selectedPu, stats}) {
                                     isSubmitting={isSubmitting}
                                     setIsSubmitting={setIsSubmitting}
                                     setAlert={setAlert}
+                                    electionType={electionType}
                                 />
                             </Box>
                         );

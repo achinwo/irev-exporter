@@ -1,3 +1,11 @@
+module.exports.ElectionType = {
+    PRESIDENTIAL: 'PRESIDENTIAL',
+    GOVERNORSHIP: 'GOVERNORSHIP',
+}
+
+module.exports.KEY_CONTRIBUTOR = "contributor-name";
+module.exports.KEY_ELECTION_TYPE = "election-type";
+
 module.exports.STATES = [
     {
         "id": 1,

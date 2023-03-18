@@ -15,10 +15,10 @@ import {
 import Box from "@mui/material/Box";
 import _ from "lodash";
 import React from "react";
-import {KEY_CONTRIBUTOR} from "../pages";
 import url from "url";
 import LoadingButton from "@mui/lab/LoadingButton";
 import ReactPanZoom from 'react-image-pan-zoom-rotate';
+import {ElectionType, KEY_CONTRIBUTOR} from "./ref_data";
 
 const RESULT_ILLEGIBILITY_STATE = {
     LEGIBLE: false,
@@ -195,7 +195,7 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
     </Box>;
 }
 
-export const PollingUnitView = ({pollingUnit, puData, setPuData, isSubmitting, setIsSubmitting, setAlert}) => {
+export const PollingUnitView = ({pollingUnit, puData, setPuData, isSubmitting, setIsSubmitting, setAlert, electionType}) => {
 
     const options = {
         weekday: 'long',
@@ -240,9 +240,12 @@ export const PollingUnitView = ({pollingUnit, puData, setPuData, isSubmitting, s
                                             />
                                         </Box>
                                 }
+                                {
+                                    electionType === ElectionType.PRESIDENTIAL &&
+                                    <PollingResultQuestionnaireView pollingUnit={pu} puData={puData} setPuData={setPuData}
+                                                                    isSubmitting={isSubmitting} setIsSubmitting={setIsSubmitting} setAlert={setAlert} />
+                                }
 
-                                <PollingResultQuestionnaireView pollingUnit={pu} puData={puData} setPuData={setPuData}
-                                                                isSubmitting={isSubmitting} setIsSubmitting={setIsSubmitting} setAlert={setAlert} />
                             </Stack>
                         </CardMedia>
                     </>

@@ -8,13 +8,10 @@ import {
   CssBaseline,
   Divider,
   Drawer,
-  FormControl,
   IconButton,
-  InputLabel,
   Link,
   Menu,
   MenuItem,
-  Select,
   Stack,
   Toolbar,
 } from "@mui/material";
@@ -28,10 +25,8 @@ import AccountCircle from '@mui/icons-material/AccountCircle';
 import MetaHead from "../src/MetaHead";
 import {DrawerView} from '../src/drawer_view';
 import {MainBody} from '../src/main_view';
-import {STATES} from "../src/ref_data";
+import {ElectionType, KEY_CONTRIBUTOR, KEY_ELECTION_TYPE, STATES} from "../src/ref_data";
 import {AccountDiaglogView} from "../src/account_view";
-
-export const KEY_CONTRIBUTOR = "contributor-name";
 
 const App = () => {
   const [states, setStates] = useState([]);
@@ -41,7 +36,7 @@ const App = () => {
   const [selectedWard, setWard] = useState(null);
   const [selectedPu, setSelectedPu] = useState(null);
   const [isLoadingPuData, setIsLoadingPuData] = useState(false);
-  const [electionType, setElectionType] = useState('PRESIDENTIAL');
+  const [electionType, setElectionType] = useState(null);
 
   // Setting up states for InfiniteScroll
   // const [scrollData, setScrollData] = useState();
@@ -130,6 +125,7 @@ const App = () => {
 
   useEffect(async () => {
 
+    setElectionType(localStorage.getItem(KEY_ELECTION_TYPE) || ElectionType.PRESIDENTIAL);
     const contributor = localStorage.getItem(KEY_CONTRIBUTOR);
 
     if (!contributor || contributor === 'null') {
@@ -177,14 +173,19 @@ const App = () => {
 
     try {
       setIsLoadingPuData(true);
-      const response = await axios.get(`/api/pus/${selectedWard._id}`);
+
+      const headers = {
+        'x-election-type': electionType
+      };
+
+      const response = await axios.get(`/api/pus/${selectedWard._id}`, {headers});
       console.log("PUS", response.data);
 
       setSelectedPu(response.data);
     } finally {
       setIsLoadingPuData(false);
     }
-  }, [selectedWard]);
+  }, [selectedWard, electionType]);
 
   const handleClose = () => {
     setIsOpen(false);
@@ -227,7 +228,7 @@ const App = () => {
       <MetaHead />
       <Box sx={{ display: "flex" }}>
         <CssBaseline />
-        <AppBar component="nav" color={'transparent'}>
+        <AppBar component="nav" color={'info'}>
           <Toolbar>
             <IconButton
               color="inherit"
@@ -338,7 +339,7 @@ const App = () => {
           justifyContent={"center"}
           style={{ maxWidth: "100%", height: "100vh", overflowY: "scroll" }}
         >
-          <MainBody isLoadingPuData={isLoadingPuData} selectedPu={selectedPu} stats={stats}/>
+          <MainBody isLoadingPuData={isLoadingPuData} selectedPu={selectedPu} stats={stats} electionType={electionType}/>
         </Grid>
 
         <AccountDiaglogView handleClose={handleClose} isOpen={isOpen} setIsOpen={setIsOpen}

@@ -17,16 +17,17 @@ import ExpandMore from "@mui/icons-material/ExpandMore";
 import React from "react";
 import _ from "lodash";
 import FaceIcon from "@mui/icons-material/Face";
+import {ElectionType, KEY_ELECTION_TYPE} from "./ref_data";
 
 
-export const WardSummaryView = ({ward, stats}) => {
+export const WardSummaryView = ({ward, stats, electionType}) => {
     let wardStat = _.find(stats.ward, w => w.wardId === ward._id);
     //console.log('WARD', ward);
 
     return <Stack direction={'row'} spacing={1}>
         <Chip label={`#${ward.code}`} size="small" />
         {
-            !_.isEmpty(wardStat) ?
+            !_.isEmpty(wardStat) && electionType === ElectionType.PRESIDENTIAL ?
                 <>
                     <Chip label={`${wardStat.wardCount}${ward.stats ? '/' + ward.stats.resultCount : ''}`}
                           color={_.toInteger(wardStat.wardCount) === ward.stats?.resultCount ? 'success' : "secondary"}
@@ -47,6 +48,11 @@ export const DrawerView = ({handleDrawerToggle, state, lga, ward, pu, setWard, s
     const selectedWard = ward;
     const puData = (pu || {}).polling_data;
     console.log('DRAWER PU', pu);
+
+    const onElectionTypeClicked = (value) => {
+        localStorage.setItem(KEY_ELECTION_TYPE, value);
+        setElectionType(value);
+    }
 
     return <Box sx={{textAlign: "center"}}>
         <Stack direction={'column'} spacing={1} sx={{m: 1}} alignItems={'center'}>
@@ -95,8 +101,8 @@ export const DrawerView = ({handleDrawerToggle, state, lga, ward, pu, setWard, s
                 {/*<FormHelperText>Select a state</FormHelperText>*/}
             </FormControl>
             <ButtonGroup fullWidth={true} variant="outlined" aria-label="outlined primary button group">
-                <Button disabled={true} variant={electionType !== 'PRESIDENTIAL' ? 'contained' : 'outlined'} onClick={() => setElectionType('GOVERNORSHIP')}>Gov.</Button>
-                <Button variant={electionType === 'PRESIDENTIAL' ? 'contained' : 'outlined'} onClick={() => setElectionType('PRESIDENTIAL')}>Pres.</Button>
+                <Button variant={electionType === ElectionType.GOVERNORSHIP ? 'contained' : 'outlined'} onClick={() => onElectionTypeClicked(ElectionType.GOVERNORSHIP)}>Gov.</Button>
+                <Button variant={electionType === ElectionType.PRESIDENTIAL ? 'contained' : 'outlined'} onClick={() => onElectionTypeClicked(ElectionType.PRESIDENTIAL)}>Pres.</Button>
             </ButtonGroup>
         </Stack>
 
@@ -147,7 +153,7 @@ export const DrawerView = ({handleDrawerToggle, state, lga, ward, pu, setWard, s
                                         >
                                             <ListItemText
                                                 primary={ward.name}
-                                                secondary={<WardSummaryView ward={ward} puData={puData} stats={stats}/>}
+                                                secondary={<WardSummaryView ward={ward} puData={puData} stats={stats} electionType={electionType}/>}
                                             />
                                         </ListItemButton>
                                     );

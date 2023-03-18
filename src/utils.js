@@ -5,7 +5,8 @@ import path from "path";
 import url from "url";
 import axios from "axios";
 import https from "https";
-import {PuData, User} from "./orm";
+import {PuData, User, IrevWard} from "./orm";
+import {ElectionType} from "./ref_data";
 
 export async function archivePipe(destination, urls) {
     let proms = []
@@ -34,22 +35,51 @@ export async function archivePipe(destination, urls) {
 
 export const CACHE = {};
 
+export const resolveBaseUrl = async (stateName, electionType) => {
+    electionType = electionType || ElectionType.PRESIDENTIAL;
 
-export async function fetchWardData(wardId, opts={includePuData: true}) {
-    let data = CACHE[wardId];
+    if(electionType === ElectionType.PRESIDENTIAL) return 'https://lv001-g.inecelectionresults.ng/api/v1/elections/63f8f25b594e164f8146a213/pus';
+
+    const baseUrl = 'https://ncka74vel8.execute-api.eu-west-2.amazonaws.com/abuja-prod/elections';
+    const elections = require(`./data_elections.json`).data;
+    const electionId = _.find(elections, e => e.state.name === stateName)._id;
+
+    return `${baseUrl}/${electionId}/pus`;
+}
+
+const DEFAULT_HEADERS = {
+    'sec-ch-ua': '"Google Chrome";v="111", "Not(A:Brand";v="8", "Chromium";v="111"',
+    'sec-ch-ua-mobile': '?0',
+    'sec-ch-ua-platform': "macOS",
+    'sec-fetch-dest': 'document',
+    'sec-fetch-mode': 'navigate',
+    'sec-fetch-site': 'none',
+    'sec-fetch-user': '?1',
+    'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36',
+}
+
+export async function fetchWardData(wardId, opts={includePuData: true, electionType: ElectionType.PRESIDENTIAL}) {
+    let electionType = opts?.electionType || ElectionType.PRESIDENTIAL;
+
+    const key = `${wardId}-${electionType}`;
+    let data = CACHE[key];
     let startTime = new Date().getTime();
 
     if(!data){
-        const url = `https://lv001-g.inecelectionresults.ng/api/v1/elections/63f8f25b594e164f8146a213/pus?ward=${wardId}`;
+        const wardRec = await IrevWard.query().select('ward_uid', 'name', 'state_name').where('ward_uid', wardId).first();
+        const baseUrl = await resolveBaseUrl(wardRec.stateName, electionType);
+        const url = `${baseUrl}?ward=${wardId}`;
         console.log('Fetching url:', url);
 
-        const response = await axios.get(url, {timeout: 50000});
+        const response = await axios.get(url, {timeout: 50000, headers: DEFAULT_HEADERS});
         data = response.data;
 
-        CACHE[wardId] = data;
+        CACHE[key] = data;
     }
 
-    if(opts?.includePuData){
+    data['polling_data'] = data['polling_data'] || {};
+
+    if(opts?.includePuData && electionType === ElectionType.PRESIDENTIAL){
         try{
             const puData = await PuData.query().where('ward_id', wardId);
 

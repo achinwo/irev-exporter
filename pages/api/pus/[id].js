@@ -3,12 +3,16 @@ import {fetchWardData, STATES} from "../../../src/utils";
 import {PuData} from "../../../src/orm";
 
 export default async function userHandler(req, res) {
-    const { query, method, body } = req;
+    const { query, method, body, headers } = req;
+
+    const electionType = (headers || {})['x-election-type'];
+    console.log('HEADERS:', electionType);
+
     let data;
     switch (method) {
         case 'GET':
             const wardId = query.id;
-            data = await fetchWardData(wardId);
+            data = await fetchWardData(wardId, {electionType, includePuData: true});
             res.status(200).json(data);
             break
         case 'POST':
