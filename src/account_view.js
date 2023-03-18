@@ -11,7 +11,7 @@ import {
 import React from "react";
 
 
-export const AccountView = ({handleClose, isOpen, setIsOpen, displayName, contributorName, setDisplayName, setContributorName, isContribFormValid, saveContributorName}) => {
+export const AccountDiaglogView = ({handleClose, isOpen, setIsOpen, displayName, contributorName, setDisplayName, setContributorName, isContribFormValid, saveContributorName}) => {
   return <Dialog onClose={handleClose} open={isOpen}>
       <DialogTitle>Polling Data Contributor</DialogTitle>
       <DialogContent>

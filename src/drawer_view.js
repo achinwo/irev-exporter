@@ -1,13 +1,15 @@
 import Box from "@mui/material/Box";
 import {
+    Button,
+    ButtonGroup,
     Chip,
     Collapse,
-    Divider,
+    Divider, FormControl, InputLabel,
     List,
     ListItem,
     ListItemButton,
     ListItemText,
-    ListSubheader, Stack,
+    ListSubheader, MenuItem, Select, Stack,
     Typography
 } from "@mui/material";
 import ExpandLess from "@mui/icons-material/ExpandLess";
@@ -38,7 +40,7 @@ export const WardSummaryView = ({ward, stats}) => {
     </Stack>
 }
 
-export const DrawerView = ({handleDrawerToggle, state, lga, ward, pu, setWard, setLga, stats}) => {
+export const DrawerView = ({handleDrawerToggle, state, lga, ward, pu, setWard, setLga, stats, stateId, setStateId, states, electionType, setElectionType}) => {
     const selectedState = state;
     const selectedLga = lga;
     const setSelectedLga = setLga;
@@ -47,18 +49,56 @@ export const DrawerView = ({handleDrawerToggle, state, lga, ward, pu, setWard, s
     console.log('DRAWER PU', pu);
 
     return <Box sx={{textAlign: "center"}}>
-        <Box display="flex" alignItems="center">
-            <Box flexGrow={1}>
-                <Typography variant="h6" sx={{my: 2}}>
-                    {selectedState?.name}
-                </Typography>
-            </Box>
-            <Box>
-                {/*<IconButton onClick={handleDrawerToggle}>*/}
-                {/*  <CloseIcon/>*/}
-                {/*</IconButton>*/}
-            </Box>
-        </Box>
+        <Stack direction={'column'} spacing={1} sx={{m: 1}} alignItems={'center'}>
+            {/*<Box display="flex" alignItems="center">*/}
+            {/*    <Box flexGrow={1}>*/}
+            {/*        <Typography variant="h6" sx={{my: 2}}>*/}
+            {/*            {selectedState?.name}*/}
+            {/*        </Typography>*/}
+            {/*    </Box>*/}
+            {/*    <Box>*/}
+            {/*        /!*<IconButton onClick={handleDrawerToggle}>*!/*/}
+            {/*        /!*  <CloseIcon/>*!/*/}
+            {/*        /!*</IconButton>*!/*/}
+
+            {/*    </Box>*/}
+            {/*</Box>*/}
+            <FormControl fullWidth={true} sx={{ m: 1, minWidth: 120 }} size="small">
+                <InputLabel>State</InputLabel>
+                <Select
+                    labelId="demo-simple-select-helper-label"
+                    value={stateId ? stateId - 1 : null}
+                    onChange={(event) =>
+                        setStateId(
+                            event.target.value === ""
+                                ? null
+                                : _.toInteger(event.target.value) + 1
+                        )
+                    }
+                    label="State"
+                >
+                    <MenuItem value="">
+                        <em>None</em>
+                    </MenuItem>
+
+                    {states.map((state, idx) => {
+                        return (
+                            <MenuItem
+                                value={_.toString(state.id - 1)}
+                                key={`tab-${idx}`}
+                            >
+                                {state.name}
+                            </MenuItem>
+                        );
+                    })}
+                </Select>
+                {/*<FormHelperText>Select a state</FormHelperText>*/}
+            </FormControl>
+            <ButtonGroup fullWidth={true} variant="outlined" aria-label="outlined primary button group">
+                <Button disabled={true} variant={electionType !== 'PRESIDENTIAL' ? 'contained' : 'outlined'} onClick={() => setElectionType('GOVERNORSHIP')}>Gov.</Button>
+                <Button variant={electionType === 'PRESIDENTIAL' ? 'contained' : 'outlined'} onClick={() => setElectionType('PRESIDENTIAL')}>Pres.</Button>
+            </ButtonGroup>
+        </Stack>
 
         <Divider/>
         <List

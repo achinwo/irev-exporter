@@ -24,12 +24,12 @@ import _ from "lodash";
 import MenuIcon from "@mui/icons-material/Menu";
 import DownloadRoundedIcon from "@mui/icons-material/DownloadRounded";
 import { Analytics } from "@vercel/analytics/react";
-import PersonIcon from "@mui/icons-material/Person";
+import AccountCircle from '@mui/icons-material/AccountCircle';
 import MetaHead from "../src/MetaHead";
 import {DrawerView} from '../src/drawer_view';
 import {MainBody} from '../src/main_view';
 import {STATES} from "../src/ref_data";
-import {AccountView} from "../src/account_view";
+import {AccountDiaglogView} from "../src/account_view";
 
 export const KEY_CONTRIBUTOR = "contributor-name";
 
@@ -41,6 +41,7 @@ const App = () => {
   const [selectedWard, setWard] = useState(null);
   const [selectedPu, setSelectedPu] = useState(null);
   const [isLoadingPuData, setIsLoadingPuData] = useState(false);
+  const [electionType, setElectionType] = useState('PRESIDENTIAL');
 
   // Setting up states for InfiniteScroll
   // const [scrollData, setScrollData] = useState();
@@ -226,7 +227,7 @@ const App = () => {
       <MetaHead />
       <Box sx={{ display: "flex" }}>
         <CssBaseline />
-        <AppBar component="nav">
+        <AppBar component="nav" color={'transparent'}>
           <Toolbar>
             <IconButton
               color="inherit"
@@ -273,44 +274,11 @@ const App = () => {
                     </Menu>
                   </div>
 
-
-                <FormControl sx={{ m: 1, minWidth: 120 }} size="small">
-                  <InputLabel>State</InputLabel>
-                  <Select
-                    labelId="demo-simple-select-helper-label"
-                    value={stateId ? stateId - 1 : null}
-                    onChange={(event) =>
-                      setStateId(
-                        event.target.value === ""
-                          ? null
-                          : _.toInteger(event.target.value) + 1
-                      )
-                    }
-                    label="State"
-                  >
-                    <MenuItem value="">
-                      <em>None</em>
-                    </MenuItem>
-
-                    {states.map((state, idx) => {
-                      return (
-                        <MenuItem
-                          value={_.toString(state.id - 1)}
-                          key={`tab-${idx}`}
-                        >
-                          {state.name}
-                        </MenuItem>
-                      );
-                    })}
-                  </Select>
-                  {/*<FormHelperText>Select a state</FormHelperText>*/}
-                </FormControl>
-
                 <IconButton
                   onClick={() => setIsOpen(!isOpen)}
                   sx={{ mt: 1, ml: 1, mr: 1 }}
                 >
-                  <PersonIcon />
+                  <AccountCircle fontSize={'large'} />
                 </IconButton>
               </Stack>
             </Box>
@@ -337,7 +305,13 @@ const App = () => {
               },
             }}
           >
-            <DrawerView handleDrawerToggle={handleDrawerToggle} state={selectedState} lga={selectedLga} ward={selectedWard} pu={selectedPu} setWard={setWard} setLga={setSelectedLga} stats={stats} />
+            <DrawerView handleDrawerToggle={handleDrawerToggle}
+                        state={selectedState} lga={selectedLga}
+                        ward={selectedWard} pu={selectedPu}
+                        setWard={setWard} setLga={setSelectedLga}
+                        stats={stats} stateId={stateId} setStateId={setStateId} states={states}
+                        electionType={electionType} setElectionType={setElectionType}
+            />
           </Drawer>
           <Drawer
             variant="permanent"
@@ -350,7 +324,9 @@ const App = () => {
             }}
             open
           >
-            <DrawerView handleDrawerToggle={handleDrawerToggle} state={selectedState} lga={selectedLga} pu={selectedPu} setWard={setWard} setLga={setSelectedLga} stats={stats} />
+            <DrawerView handleDrawerToggle={handleDrawerToggle} state={selectedState} lga={selectedLga} pu={selectedPu}
+                        setWard={setWard} setLga={setSelectedLga} stats={stats}
+                        stateId={stateId} setStateId={setStateId} states={states} electionType={electionType} setElectionType={setElectionType} />
           </Drawer>
         </Box>
 
@@ -365,10 +341,10 @@ const App = () => {
           <MainBody isLoadingPuData={isLoadingPuData} selectedPu={selectedPu} stats={stats}/>
         </Grid>
 
-        <AccountView handleClose={handleClose} isOpen={isOpen} setIsOpen={setIsOpen}
-                     displayName={displayName} contributorName={contributorName}
-                     setDisplayName={setDisplayName} setContributorName={setContributorName}
-                     isContribFormValid={isContribFormValid} saveContributorName={saveContributorName}/>
+        <AccountDiaglogView handleClose={handleClose} isOpen={isOpen} setIsOpen={setIsOpen}
+                            displayName={displayName} contributorName={contributorName}
+                            setDisplayName={setDisplayName} setContributorName={setContributorName}
+                            isContribFormValid={isContribFormValid} saveContributorName={saveContributorName}/>
       </Box>
       <Analytics />
     </>

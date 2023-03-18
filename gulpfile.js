@@ -529,13 +529,57 @@ async function importIrevRefdata(){
 
 }
 
-exports.downloadDocs = async function(){
-    const basePath = '/Volumes/T7/irev_data';
+async function downloadWardJson(){
+    const baseSrcDir = './build/guber';
+    const baseUrl = 'https://ncka74vel8.execute-api.eu-west-2.amazonaws.com/abuja-prod/elections';
 
-    for(const fn of await fs.readdir('./build')){
+    const wardRecs = await models.IrevWard.query().select('ward_uid', 'name', 'state_name').where('state_name', 'in',['LAGOS', 'RIVERS']);
+
+    const elections = require(`${baseSrcDir}/data_elections.json`).data;
+
+
+    for (const wardRec of wardRecs) {
+
+        const electionId = _.find(elections, e => e.state.name === wardRec.stateName)._id;
+        const downloadUrl = `${baseUrl}/${electionId}/pus?ward=${wardRec.wardUid}`;
+        console.log('fetching:', downloadUrl);
+
+        const headers = {
+            'sec-ch-ua': '"Google Chrome";v="111", "Not(A:Brand";v="8", "Chromium";v="111"',
+            'sec-ch-ua-mobile': '?0',
+            'sec-ch-ua-platform': "macOS",
+            'sec-fetch-dest': 'document',
+            'sec-fetch-mode': 'navigate',
+            'sec-fetch-site': 'none',
+            'sec-fetch-user': '?1',
+            'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36',
+        }
+
+        const res = await axios.get(downloadUrl, {headers});
+        const fullPath = `${baseSrcDir}/data_ward_${wardRec.wardUid}.json`;
+
+        if(_.isEmpty(res.data.data)) continue;
+
+        const jsonExists = await fileExists(fullPath);
+
+        if(jsonExists) await fs.unlink(fullPath);
+
+        await fs.writeFile(fullPath, JSON.stringify(res.data, null, 4));
+        console.log(`saved data for "${wardRec.name}" ward in "${wardRec.stateName}"`);
+    }
+}
+
+gulp.task('download:api-json:guber', downloadWardJson);
+
+async function downloadDocs(election='presidential'){
+    const isPresidential = election === 'presidential';
+    const basePath = `/Volumes/T7/${isPresidential ? 'irev_data' : 'irev_data_guber'}`;
+    const baseSrcDir = isPresidential ? './build' : './build/guber';
+
+    for(const fn of await fs.readdir(baseSrcDir)){
         if(!fn.startsWith('data_ward_')) continue;
 
-        const data = require(`./build/${fn}`);
+        const data = require(`${baseSrcDir}/${fn}`);
 
         const lgaData = require(`./build/data_lgas_${_.first(data.wards).state_id}.json`);
         const stateName = _.first(lgaData.data).state.name;
@@ -579,6 +623,14 @@ exports.downloadDocs = async function(){
         }
     }
 }
+
+gulp.task('download:results:presidential', async () => {
+    await downloadDocs();
+});
+
+gulp.task('download:results:guber', async () => {
+    await downloadDocs('guber');
+});
 
 const TOTALS = {};
 
