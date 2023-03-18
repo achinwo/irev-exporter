@@ -290,18 +290,41 @@ async function importUsersFromPuData(){
 const AwsClientS3 = require("aws-client-s3");
 const {User} = require("./src/orm");
 
+let AWS_CLIENT = null;
+
+function getAwsClient(){
+    if(!AWS_CLIENT){
+        const config = {
+            region: process.env.S3_REGION,
+            credentials: {
+                accessKeyId: process.env.S3_ACCESS_KEY_ID,
+                secretAccessKey: process.env.S3_SECRET_ACCESS_KEY
+            }
+        };
+
+        AWS_CLIENT = new AwsClientS3(config);
+    }
+
+    return AWS_CLIENT;
+}
+
 exports.fetchS3 = async function(){
-    const config = {
-        region: process.env.S3_REGION,
-        credentials: {
-            accessKeyId: process.env.S3_ACCESS_KEY_ID,
-            secretAccessKey: process.env.S3_SECRET_ACCESS_KEY
-        }
-    };
+    const client = getAwsClient();
+    // const res = await client.uploadFile(await fs.readFile('./build/data_lgas_15.json'), {
+    //     bucket: process.env.S3_BUCKET_NAME,
+    //     key: 'irev-exporter/refdata/irev_lgas_15.json'}
+    // );
+    //
+    // // const res = await client.deleteFile({
+    // //     bucket: process.env.S3_BUCKET_NAME,
+    // //     key: 'irev-exporter/refdata/irev_lga_15.json'})
+    // console.log('RESULT:', res);
 
-    const client = new AwsClientS3(config);
+    const objs = await client.listBucketObjects(process.env.S3_BUCKET_NAME, 'irev-exporter/refdata/irev_lgas_');
+    console.log(objs);
 
-    const objs = await client.listBucketObjects(process.env.S3_BUCKET_NAME, 'all');
+    const lgaKeys = objs.Contents.map(o => o.Key);
+    console.log(lgaKeys);
 
     for (const obj of objs.Contents) {
         console.log(obj);
@@ -383,6 +406,124 @@ const fileExists = async (filePath) => {
         return e.code !== 'ENOENT';
     }
 };
+
+async function importIrevRefdata(){
+
+    const processPus = async (ward, lga) => {
+        let pus = [];
+        const res = await models.IrevPu.query().select('pu_code').where('ward_uid', ward.wards[0]._id);
+        let puIds = res.map(r => r.puCode);
+
+        for (const pu of ward.data) {
+            const puData = models.IrevPu.extractFromJsonData(pu);
+
+            if(puIds.includes(puData.puCode)) continue;
+
+            puData.stateName = lga.stateName;
+            puData.updatedById = 1;
+            puData.createdById = 1;
+
+            pus.push(puData);
+        }
+
+        if(!_.isEmpty(pus)) {
+            await models.IrevPu.query().insert(pus);
+            console.log(`saved PUs for "${ward.wards[0]._id}": ${pus.length}`);
+        }
+    }
+
+    const bucketName = process.env.S3_BUCKET_NAME;
+    const client = getAwsClient();
+    //const c = new AwsClientS3();
+
+    const lgaO = await client.listBucketObjects(process.env.S3_BUCKET_NAME, 'irev-exporter/refdata/irev_lgas_');
+    const lgaKeys = lgaO.Contents?.map(o => o.Key) || [];
+
+    const wardO = await client.listBucketObjects(process.env.S3_BUCKET_NAME, 'irev-exporter/refdata/irev_wards_');
+    const wardKeys = wardO.Contents?.map(o => o.Key) || [];
+
+    try {
+
+        for (const fn of await fs.readdir('./build')) {
+            const prefix = 'data_lgas_';
+
+            if (!fn.startsWith(prefix)) continue;
+
+            const fullPath = `./build/${fn}`;
+            const stateData = require(fullPath);
+            const stateId = fn.slice(prefix.length).replaceAll('.json', '');
+            const key = `irev-exporter/refdata/irev_lgas_${stateId}.json`;
+
+            if(!lgaKeys.includes(key)){
+                await client.uploadFile(Buffer.from(JSON.stringify(stateData, null, 4)), {
+                    bucket: process.env.S3_BUCKET_NAME,
+                    key: key,
+                });
+            }
+
+            const res = await models.IrevLga.query().select('lga_id');
+            const existingLgaIds = res.map(r => r.lgaId);
+
+            let lgas = [];
+
+            for (const lgaData of stateData.data) {
+                let lgaObj = await models.IrevLga.extractFromJsonData(lgaData);
+                let wards = [];
+
+                for (const ward of lgaData.wards) {
+                    const wardData = require(`./build/data_ward_${ward._id}.json`);
+                    let wardObj = await models.IrevWard.extractFromJsonData(wardData);
+
+                    const wardDocKey = `irev-exporter/refdata/irev_wards_${wardObj.wardUid}.json`;
+
+                    if(!wardKeys.includes(wardDocKey)){
+                        //wardKeys
+                        await client.uploadFile(Buffer.from(JSON.stringify(wardData, null, 4)), {
+                            bucket: process.env.S3_BUCKET_NAME,
+                            key: wardDocKey,
+                        });
+                    }
+
+                    const resWard = await models.IrevWard.query().select('ward_uid');
+                    const wardUids = resWard.map(w => w.wardUid);
+
+                    await processPus(wardData, lgaObj);
+
+                    if(_.includes(wardUids, wardObj.wardUid)) continue;
+
+                    wardObj.stateName = lgaObj.stateName;
+                    wardObj.documentKey = `${bucketName}:${wardDocKey}`;
+                    wardObj.createdById = 1;
+                    wardObj.updatedById = 1;
+
+                    wards.push(wardObj);
+                    console.log(`saved Ward for "${lgaObj.name}": ${wardObj.name}`);
+                }
+
+                if(!_.isEmpty(wards)){
+                    await models.IrevWard.query().insert(wards);
+                }
+
+                if(_.includes(existingLgaIds, lgaObj.lgaId)) continue;
+
+                lgaObj.documentKey = `${bucketName}:${key}`;
+                lgaObj.createdById = 1;
+                lgaObj.updatedById = 1;
+                lgas.push(lgaObj);
+
+                console.log(`saved LGA for "${lgaObj.stateName}": ${lgaObj.name}`);
+            }
+
+            if(!_.isEmpty(lgas)){
+                await models.IrevLga.query().insert(lgas);
+            }
+
+        }
+    }finally {
+        await models.IrevLga.knex();
+    }
+
+}
 
 exports.downloadDocs = async function(){
     const basePath = '/Volumes/T7/irev_data';
@@ -850,6 +991,8 @@ async function dbMigrationFilesGenerate(){
         await fs.writeFile(migName, text.replace(/^\s*[\r\n]/gm, ''));
     }
 }
+
+gulp.task('import:refdata:irev', importIrevRefdata);
 
 gulp.task('db:migration:generate', async function (done) {
     await dbMigrationFilesGenerate()
