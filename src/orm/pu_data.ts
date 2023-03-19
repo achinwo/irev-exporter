@@ -56,6 +56,7 @@ export class PuData extends DbModel {
 
     @col(SchemaType.text, {nullable: true}) comment: string;
     @col(SchemaType.string, {nullable: true}) agentPhoneNumber: string;
+    @col(SchemaType.string, {nullable: true}) source: string;
 
     @col(SchemaType.string, {nullable: true}) electionType: string;
 
@@ -115,6 +116,7 @@ export class PuData extends DbModel {
             isPuNameCorrect: toBool(puData.isPuNameCorrect),
 
             electionType: ElectionType.PRESIDENTIAL,
+            source: 'irev',
 
             createdById: 1,
             updatedById: 1

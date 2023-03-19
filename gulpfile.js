@@ -13,7 +13,7 @@ const {Bucket, Storage} = require('@google-cloud/storage');
 const https = require("https");
 const {knex, destKnex} = require('./src/lib/model');
 const url = require('url');
-const {STATES} = require('./src/ref_data');
+const {STATES, ElectionType} = require('./src/ref_data');
 const moment = require('moment');
 
 const TOKEN = process.env.SESSION_TOKEN;
@@ -629,25 +629,89 @@ gulp.task('upload:irev-results:s3', async () => {
 
 const Csv = require('csvtojson');
 
+const TEST = {
+    'Void Votes': '0',
+    'Accredited Voters': '102',
+    PDP: '3',
+    APC: '57',
+    NNPP: '',
+    SDP: '',
+    LP: '38',
+    ADC: '2',
+    Notes: '',
+    result: "{'url':'0bfc6d679e86aa90147d98f2d14dbcfa9cca9d6f800eb8a06ac5633d313267b1.jpeg','size':2953499,'width':4032,'height':3024,'filename':'29E0041D-8AD3-4B3E-92A1-778938DB7739.jpeg'}",
+    'PU identifier': '24-03-05-013',
+    Final: '',
+    'PU identifier2': '',
+    Name: 'Martins Adeolu',
+    'Phone Number': '70',
+    Created: '2023-03-19T09:47:02.681Z',
+    Updated: '2023-03-19T09:47:02.681Z'
+}
+
+
 gulp.task('import:grv-situation-room:csv', async () => {
 
     const rows = await Csv().fromFile('./election_results_2023_lagos.csv');
     const baseUrl = 'https://proton-uploads-production.s3.amazonaws.com/';
-    const puDataList = [];
+    let puDataList = [];
 
     const puRes = await models.IrevPu.query().where('state_name', 'LAGOS');
-    // const puMa =
+    const puMap = _.fromPairs(puRes.map(r => [r.puCode, r]));
+
+    const toInt = (value) => {
+        const v = parseInt(value);
+        return isNaN(v) ? null : v;
+    }
 
     for (const row of rows) {
-
+        const puCode = _.trim(row['PU identifier']).replaceAll('-', '/');
+        const pu = puMap[puCode];
         const docInfo = JSON.parse(row.result.replaceAll('\'', '"'));
-        console.log(row);
 
         const puData = {
+            name: pu.name,
 
+            puId: pu.puId,
+            puCode,
+            wardId: pu.wardId,
+            wardName: pu.wardName,
+
+            stateId: pu.stateId,
+            stateName: pu.stateName || null,
+
+            lgaId: pu.lgaId,
+            lgaName: pu.lgaName,
+
+            contributorUsername: _.trim(row['Name']),
+
+            documentUrl: `${baseUrl}${docInfo.url}`,
+            documentSize: docInfo.size,
+            documentType: path.extname(docInfo.url).slice(1),
+            documentUpdatedAt: new Date(row['Created']),
+
+            votesLp: toInt(row['LP']),
+            votesApc: toInt(row['APC']),
+            votesPdp: toInt(row['PDP']),
+            votesNnpp: toInt(row['NNPP']),
+            votesAdc: toInt(row['ADC']),
+            votesSdp: toInt(row['SDP']),
+
+            votesVoided: toInt(row['Void Votes']),
+            votersAccredited: toInt(row['Accredited Voters']),
+
+            electionType: ElectionType.GOVERNORSHIP,
+            comment: _.trim(row['Notes']),
+
+            agentPhoneNumber: _.trim(row['Phone Number']),
+            source: 'grv-situation-room',
+
+            createdById: 1,
+            updatedById: 1
         }
 
-        return
+        console.log(puData);
+        puDataList.push(puData);
     }
 
 });
