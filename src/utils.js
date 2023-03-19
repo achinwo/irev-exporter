@@ -81,7 +81,7 @@ export async function fetchWardData(wardId, opts={includePuData: true, electionT
 
     if(opts?.includePuData && electionType === ElectionType.PRESIDENTIAL){
         try{
-            const puData = await PuData.query().where('ward_id', wardId);
+            const puData = await PuData.query().where('ward_id', wardId).andWhere('election_type', ElectionType.PRESIDENTIAL);
 
             const recs = await User.query().select('display_name', 'contributor_id');
             const mapping = _.fromPairs(recs.map(r => [r.contributorId, r.displayName]));

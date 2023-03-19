@@ -127,6 +127,7 @@ export class PuData extends DbModel {
         const res = await PuData.query()
             .select('state_name', 'state_id')
             .count('state_name')
+            .where('election_type', ElectionType.PRESIDENTIAL)
             .groupBy('state_name', 'state_id');
 
         let rows = [];
@@ -149,6 +150,7 @@ export class PuData extends DbModel {
             .select('state_name', 'ward_name', 'ward_id')
             .count('ward_name', {as: 'wardCount'})
             .max('contributor_username as lastContributorUsername')
+            .where('election_type', ElectionType.PRESIDENTIAL)
             .groupBy('state_name', 'ward_name', 'ward_id') as unknown as {stateName: string, wardName: string, wardCount: string, lastContributorUsername: string}[];
 
         const recs = await User.query().select('display_name', 'contributor_id');

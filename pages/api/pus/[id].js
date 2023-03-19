@@ -1,6 +1,7 @@
 import _ from 'lodash';
 import {fetchWardData, STATES} from "../../../src/utils";
 import {PuData} from "../../../src/orm";
+import {ElectionType} from "../../../src/ref_data";
 
 export default async function userHandler(req, res) {
     const { query, method, body, headers } = req;
@@ -19,7 +20,7 @@ export default async function userHandler(req, res) {
             body.pu.ward.state_name = _.find(STATES, (s) => s.id === body.pu.ward.state_id)?.name;
 
             const puCode = body.pu.pu_code;
-            const existing = await PuData.query().where('pu_code', puCode).first();
+            const existing = await PuData.query().where('pu_code', puCode).andWhere('election_type', ElectionType.PRESIDENTIAL).first();
 
             if(existing){
                 res.status(400).json({errorMessage: `Submission exists for "${puCode}" by "${_.trim(existing.contributorUsername)}". Refresh the page and try again.`});
