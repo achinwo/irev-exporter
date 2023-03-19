@@ -3,6 +3,7 @@ import _ from 'lodash';
 import path from "path";
 import {PartialModelObject} from "objection";
 import {User} from "./user";
+import { ElectionType } from "../ref_data";
 
 export class PuData extends DbModel {
     static tableName = 'pu_data';
@@ -36,6 +37,11 @@ export class PuData extends DbModel {
     @col(SchemaType.integer, {nullable: true}) votesPdp: number;
     @col(SchemaType.integer, {nullable: true}) votesNnpp: number;
 
+    @col(SchemaType.integer, {nullable: true}) votesSdp: number;
+    @col(SchemaType.integer, {nullable: true}) votesAdc: number;
+
+    @col(SchemaType.integer, {nullable: true}) votesVoided: number;
+
     @col(SchemaType.boolean, {nullable: true}) isResultLegible: boolean; // deprecated
     @col(SchemaType.boolean, {nullable: true}) isPuNameCorrect: boolean; // deprecated
 
@@ -47,6 +53,11 @@ export class PuData extends DbModel {
     @col(SchemaType.boolean, {nullable: true}) isNoneEceightForm: boolean;
 
     @col(SchemaType.text, {nullable: true}) contributorUsername: string;
+
+    @col(SchemaType.text, {nullable: true}) comment: string;
+    @col(SchemaType.string, {nullable: true}) agentPhoneNumber: string;
+
+    @col(SchemaType.string, {nullable: true}) electionType: string;
 
     static async createOrUpdate({pu, puData, contributor}: {pu: any, puData: any, contributor: string}): Promise<PuData>{
         if(puData.id){
@@ -103,8 +114,10 @@ export class PuData extends DbModel {
             isResultLegible: toBool(puData.isResultLegible),
             isPuNameCorrect: toBool(puData.isPuNameCorrect),
 
-            createdById: 7,
-            updatedById: 7
+            electionType: ElectionType.PRESIDENTIAL,
+
+            createdById: 1,
+            updatedById: 1
         }
 
         return PuData.query().insertAndFetch(values);

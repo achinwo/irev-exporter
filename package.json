@@ -51,6 +51,7 @@
   "devDependencies": {
     "@google-cloud/storage": "^6.9.4",
     "autoprefixer": "^10.4.13",
+    "csvtojson": "^2.0.10",
     "dotenv": "^16.0.3",
     "gulp": "^4.0.2",
     "postcss": "^8.4.21",

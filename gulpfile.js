@@ -14,6 +14,7 @@ const https = require("https");
 const {knex, destKnex} = require('./src/lib/model');
 const url = require('url');
 const {STATES} = require('./src/ref_data');
+const moment = require('moment');
 
 const TOKEN = process.env.SESSION_TOKEN;
 
@@ -324,22 +325,22 @@ exports.fetchS3 = async function(){
     // //     key: 'irev-exporter/refdata/irev_lga_15.json'})
     // console.log('RESULT:', res);
 
-    const objs = await client.listBucketObjects(process.env.S3_BUCKET_NAME, 'irev-exporter/refdata/irev_lgas_');
-    console.log(objs);
+    const objs = await client.listBucketObjects(process.env.S3_BUCKET_NAME, 'irev-exporter/results/irev_guber');
+    //console.log(objs);
 
     const lgaKeys = objs.Contents.map(o => o.Key);
     console.log(lgaKeys);
 
-    for (const obj of objs.Contents) {
-        console.log(obj);
-    }
+    // for (const obj of objs.Contents) {
+    //     console.log(obj);
+    // }
 
-    // const fileStream = await client.readFile({
-    //     bucket: "citizens-bucket",
-    //     key: "Test.txt",
-    // });
-    //
-    // await fs.writeFile('./s3-file.txt', fileStream);
+    const fileStream = await client.readFile({
+        bucket: process.env.S3_BUCKET_NAME,
+        key: 'irev-exporter/results/irev_guber/delta/aniocha_north/10_01_01_001.pdf',
+    });
+
+    await fs.writeFile('./delta_result.pdf', fileStream);
 }
 
 exports.fetchStats = async function(){
@@ -570,6 +571,86 @@ async function downloadWardJson(){
 }
 
 gulp.task('download:api-json:guber', downloadWardJson);
+
+gulp.task('upload:irev-results:s3', async () => {
+    const client = getAwsClient();
+    const destPrefix = 'irev-exporter/results/irev_guber'
+
+    const basePath = `/Volumes/T7/irev_data_guber`;
+
+    for (const stateDirName of await fs.readdir(basePath)) {
+        const stateDirPath = path.join(basePath, stateDirName);
+        console.log('State path:', stateDirPath);
+
+        if(stateDirName === 'delta') continue;
+
+        for (const lgaDirName of await fs.readdir(stateDirPath)) {
+            const lgaDirPath = path.join(stateDirPath, lgaDirName);
+            console.log('LGA path:', lgaDirPath);
+
+            const lgaKeyPrefix = path.join(destPrefix, stateDirName, lgaDirName, '/');
+            const objs = await client.listBucketObjects(process.env.S3_BUCKET_NAME, lgaKeyPrefix);
+            const existingLgaResults = objs.Contents?.map(o => o.Key) || [];
+
+            const startTime = new Date().getTime();
+            let resultCount = 0;
+
+            for (const resultFileName of await fs.readdir(lgaDirPath)) {
+
+                const resultPath = path.join(lgaDirPath, resultFileName);
+                const resultKey = path.join(destPrefix, stateDirName, lgaDirName, resultFileName);
+
+                if(existingLgaResults.includes(resultKey)){
+                    console.log(`Result "${resultFileName}" previously uploaded, skipping...`);
+                    continue;
+                }
+
+                const res = await client.uploadFile(await fs.readFile(resultPath), {
+                        bucket: process.env.S3_BUCKET_NAME,
+                        key: resultKey}
+                    );
+
+                console.log(`Uploaded "${resultFileName}" to "${resultKey}" (${res.ETag})`);
+                resultCount += 1;
+            }
+
+            const endTime = new Date().getTime();
+            const duration = endTime - startTime;
+
+            console.log(`Uploading ${resultCount} results for "${lgaDirName}" LGA took ${moment.duration(duration).humanize()}`);
+        }
+    }
+
+    // const res = await client.uploadFile(await fs.readFile('./build/data_lgas_15.json'), {
+    //     bucket: process.env.S3_BUCKET_NAME,
+    //     key: 'irev-exporter/refdata/irev_lgas_15.json'}
+    // );
+});
+
+const Csv = require('csvtojson');
+
+gulp.task('import:grv-situation-room:csv', async () => {
+
+    const rows = await Csv().fromFile('./election_results_2023_lagos.csv');
+    const baseUrl = 'https://proton-uploads-production.s3.amazonaws.com/';
+    const puDataList = [];
+
+    const puRes = await models.IrevPu.query().where('state_name', 'LAGOS');
+    // const puMa =
+
+    for (const row of rows) {
+
+        const docInfo = JSON.parse(row.result.replaceAll('\'', '"'));
+        console.log(row);
+
+        const puData = {
+
+        }
+
+        return
+    }
+
+});
 
 async function downloadDocs(election='presidential'){
     const isPresidential = election === 'presidential';
