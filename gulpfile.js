@@ -305,10 +305,172 @@ async function importUsersFromPuData(){
             console.log('No new users to import!');
         }
     } finally {
-        await models.PuData.knex().destroy()
+        await models.PuData.knex().destroy();
     }
 }
 
+async function fetchAccreditationData(){
+    let results = {};
+    const baseDir = './build/cvr_data_states';
+    try {
+        for (const state of STATES) {
+            const stateDir = `${baseDir}/cvr_state_${state.id}`;
+            for (const lgaDirName of await fs.readdir(stateDir)) {
+                if(lgaDirName.startsWith('.') || lgaDirName === 'results.json') continue;
+
+                const lgaDirPath = `${stateDir}/${lgaDirName}`;
+
+                for (const resultFileName of await fs.readdir(lgaDirPath)) {
+                    if(!resultFileName.endsWith('.json')) continue;
+
+                    const data = require(`${stateDir}/${lgaDirName}/${resultFileName}`);
+                    //console.log(data);
+                    results[data.result.pu.delim.replaceAll('-', '/')] = {
+                        votersRegistered: _.toInteger(data.result.pu.registered_voters),
+                        syncedAccreditations: _.toInteger(data.result.synced_accreditations),
+                        resultUrl: data.result.result,
+                    }
+                }
+            }
+        }
+    } finally {
+        await models.PuData.knex().destroy();
+    }
+
+    return results;
+}
+
+exports.fetchDocumentsByDate = async function fetchDocumentsByDate(){
+    // pctUploadedFeb25: null,
+    // pctUploadedFeb28: null,
+    // pctUploadedMar10: null,
+
+    function dateCheck(from, to, check) {
+
+        let fDate, lDate, cDate;
+        fDate = Date.parse(from);
+        lDate = Date.parse(to);
+        cDate = Date.parse(check);
+
+        if((cDate <= lDate && cDate >= fDate)) {
+            return true;
+        }
+        return false;
+    }
+
+    let result = {};
+    //"updated_at": "2023-02-28T21:40:39.948Z"
+    for (const fileName of await fs.readdir('./build')) {
+        if(!fileName.startsWith('data_ward_')) continue;
+
+        const data = require(`./build/${fileName}`);
+        const stateId = _.toInteger(_.first(data.lgas).state_id);
+        let dates = result[stateId] || {feb25: 0, feb28: 0, mar10: 0, total: 0}
+
+        for (const pu of data.data) {
+            if(!pu.document?.url || (url.parse(pu.document?.url).pathname === '/')) continue;
+
+            if(dateCheck("2023-02-25T00:00:00Z", "2023-02-25T23:59:59Z", pu.document.updated_at)){
+                dates.feb25 += 1;
+            }else if(dateCheck("2023-02-28T00:00:00Z", "2023-02-28T23:59:59Z", pu.document.updated_at)){
+                dates.feb28 += 1;
+            }else if(dateCheck("2023-03-10T00:00:00Z", "2023-03-20T23:59:59Z", pu.document.updated_at)){
+                dates.mar10 += 1;
+            }
+
+            dates.total += 1;
+        }
+
+        result[stateId] = dates;
+    }
+    //console.log(result);
+    return result;
+}
+
+gulp.task('export:report', async () => {
+    const results = require('./data_accreditation.json'); //await fetchAccreditationData();
+    const docsByDate = await exports.fetchDocumentsByDate();
+    //await fs.writeFile('./data_accreditation.json', JSON.stringify(results, null, 4));
+    //console.log('saved accreditation');
+
+    const report = {};
+    try {
+        for (const state of STATES) {
+            const res = await models.IrevPu.query().count('*', {as: 'puCount'}).where('state_name', state.name).first();
+            const puDataRes = await models.PuData.query().count('*', {as: 'submittedCount'}).where('state_name', state.name).first();
+
+            const puDataResVotes = await models.PuData.query()
+                .select('votes_apc', 'votes_pdp', 'votes_lp', 'votes_nnpp', 'votes_cast')
+                .where('state_name', state.name);
+            const puCodeRes = await models.IrevPu.query().select('pu_code').where('state_name', state.name);
+
+            //console.log(res);
+            //return
+            const data = {
+                stateName: state.name,
+                puCount: _.toInteger(res.puCount),
+                transcribedCount: _.toInteger(puDataRes.submittedCount),
+                pctTranscribed: (((_.toInteger(puDataRes.submittedCount) || 0) / state.resultCount) * 100),
+                resultsCount: state.resultCount,
+                pctUploadedFeb25: ((docsByDate[state.id].feb25 / state.resultCount) * 100),
+                pctUploadedFeb28: ((docsByDate[state.id].feb28 / state.resultCount) * 100),
+                pctUploadedMar10: ((docsByDate[state.id].mar10 / state.resultCount) * 100),
+                votersRegistered: _.sum(puCodeRes.map(r => results[r.puCode]?.votersRegistered || 0)),
+                votersAccredited: _.sum(puCodeRes.map(r => results[r.puCode]?.syncedAccreditations || 0)),
+                ballotPapersCount: null,
+                totalVotesCast: _.sum(puDataResVotes.map(r => r.votesCast || 0)),
+                totalVotesInvalid: null,
+                totalVotesApc: _.sum(puDataResVotes.map(r => r.votesApc || 0)),
+                totalVotesPdp: _.sum(puDataResVotes.map(r => r.votesPdp || 0)),
+                totalVotesLp: _.sum(puDataResVotes.map(r => r.votesLp || 0)),
+                totalVotesNnpp: _.sum(puDataResVotes.map(r => r.votesNnpp || 0)),
+            }
+
+            report[state.name] = data;
+
+            //console.log(report);
+            //return
+        }
+
+        let rows = [];
+        for (const [stateName, data] of _.sortBy(_.toPairs(report), ([k, ]) => k)) {
+            rows.push({label: stateName, value: null});
+
+            for (const [key, value] of _.toPairs(data)) {
+                if(key === 'stateName') continue;
+                rows.push({label: _.startCase(key), value: value });
+            }
+
+            if(stateName !== 'ZAMFARA') rows.push({label: '', value: null });
+        }
+
+        const stream = await writeXlsxFile(rows, {schema: SCHEMA2});
+
+        const buffers = [];
+
+        for await (const data of stream) {
+            buffers.push(data);
+        }
+
+        const finalBuffer = Buffer.concat(buffers);
+        await fs.writeFile('./election_irev_stats.xlsx', finalBuffer);
+        console.log('Done');
+
+    } finally {
+        await models.IrevPu.knex().destroy();
+    }
+
+    console.log(report);
+})
+
+const SCHEMA2 = [
+    {column: 'Label', type: String, value: data => data.label},
+    {column: 'Value', type: Number, value: data => data.value},
+    // {column: 'Label', type: String, value: data => data.stateId ? _.toString(data.stateId) : null},
+    // {column: 'Value', type: String, value: data => data.stateName},
+    // {column: 'Label', type: String, value: data => data.stateId ? _.toString(data.stateId) : null},
+    // {column: 'Value', type: String, value: data => data.stateName},
+]
 
 const AwsClientS3 = require("aws-client-s3");
 const {User} = require("./src/orm");
