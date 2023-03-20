@@ -16,6 +16,9 @@ const url = require('url');
 const {STATES, ElectionType} = require('./src/ref_data');
 const moment = require('moment');
 
+const Csv = require('csvtojson');
+const writeXlsxFile = require("write-excel-file/node");
+
 const TOKEN = process.env.SESSION_TOKEN;
 
 const LOCALS = {
@@ -627,7 +630,6 @@ gulp.task('upload:irev-results:s3', async () => {
     // );
 });
 
-const Csv = require('csvtojson');
 
 const TEST = {
     'Void Votes': '0',
@@ -664,10 +666,18 @@ gulp.task('import:grv-situation-room:csv', async () => {
         return isNaN(v) ? null : v;
     }
 
+    let rowNum = 1;
     for (const row of rows) {
         const puCode = _.trim(row['PU identifier']).replaceAll('-', '/');
         const pu = puMap[puCode];
-        const docInfo = JSON.parse(row.result.replaceAll('\'', '"'));
+        const docInfo = _.trim(row.result) ? JSON.parse(row.result.replaceAll('\'', '"')) : null;
+
+        rowNum += 1;
+
+        if(!docInfo || toInt(row['APC']) > 100000){
+            console.error(`Invalid entry detected row #${rowNum}:`, row);
+            continue;
+        }
 
         const puData = {
             name: pu.name,
@@ -710,11 +720,74 @@ gulp.task('import:grv-situation-room:csv', async () => {
             updatedById: 1
         }
 
-        console.log(puData);
         puDataList.push(puData);
     }
 
+    try{
+        const chunked = _.chunk(puDataList, 999);
+
+        let batchIdx = 1;
+        for (const chunk of chunked) {
+            await models.PuData.query().insert(chunk);
+            console.log(`Inserted chunked data into "${models.PuData.tableName}": ${batchIdx} of ${chunked.length}`);
+            batchIdx += 1;
+        }
+
+    }finally {
+        await models.PuData.knex().destroy();
+    }
 });
+
+const SCHEMA = [
+    {column: 'Created At', type: Date, value: data => data.createdAt, format: 'dd/mm/yyyy hh:mm AM/PM'},
+    {column: 'Updated At', type: Date, value: data => data.updatedAt, format: 'dd/mm/yyyy hh:mm AM/PM'},
+    {column: 'Name', type: String, value: data => data.name},
+    {column: 'Pu Id', type: String, value: data => data.puId},
+    {column: 'Pu Code', type: String, value: data => data.puCode},
+    {column: 'Ward Id', type: String, value: data => data.wardId},
+    {column: 'Ward Name', type: String, value: data => data.wardName},
+    {column: 'State Id', type: String, value: data => data.stateId ? _.toString(data.stateId) : null},
+    {column: 'State Name', type: String, value: data => data.stateName},
+    {column: 'Document Url', type: String, value: data => data.documentUrl},
+    {column: 'Document Type', type: String, value: data => data.documentType},
+    {column: 'Document Size', type: Number, value: data => data.documentSize},
+    {column: 'Document Updated At', type: Date, value: data => data.documentUpdatedAt, format: 'dd/mm/yyyy hh:mm AM/PM'},
+    {column: 'Document Hash', type: String, value: data => data.documentHash},
+    {column: 'Votes Lp', type: Number, value: data => data.votesLp},
+    {column: 'Votes APC', type: Number, value: data => data.votesApc},
+    {column: 'Votes PDP', type: Number, value: data => data.votesPdp},
+    {column: 'Votes NNPP', type: Number, value: data => data.votesNnpp},
+    {column: 'Votes SDP', type: Number, value: data => data.votesSdp},
+    {column: 'Votes ADC', type: Number, value: data => data.votesAdc},
+    {column: 'Votes Voided', type: Number, value: data => data.votesCast},
+    {column: 'Voters Accredited', type: Number, value: data => data.votersAccredited},
+    {column: 'Contributor Display Name', type: String, value: data => data.contributorUsername},
+    {column: 'Lga Id', type: Number, value: data => data.lgaId},
+    {column: 'Lga Name', type: String, value: data => data.lgaName},
+
+    {column: 'Phone Number', type: String, value: data => data.agentPhoneNumber},
+    {column: 'Notes', type: String, value: data => data.comment},
+]
+
+
+gulp.task('export:excel:grv-data', async () => {
+    try{
+        const data = await models.PuData.query().where('source', 'grv-situation-room');
+        const stream = await writeXlsxFile(data, {schema: SCHEMA});
+
+        const buffers = [];
+
+        for await (const data of stream) {
+            buffers.push(data);
+        }
+
+        const finalBuffer = Buffer.concat(buffers);
+        await fs.writeFile('election_data_grv_CLEANED.xlsx', finalBuffer);
+        console.log('Done');
+    }finally {
+        await models.PuData.knex().destroy();
+    }
+})
 
 async function downloadDocs(election='presidential'){
     const isPresidential = election === 'presidential';

@@ -205,8 +205,8 @@ const App = () => {
         : null
     }
     <MenuItem onClick={handleMenuClose}>
-    <Link href={`/api/downloads?stateId=${stateId}`} underline="none">
-      {`Download Collated "${_.find(STATES, (s) => s.id === _.toInteger(stateId))?.name}" (.xlsx)`}
+    <Link href={`/api/downloads${stateId ? `?stateId=${stateId}` : ''}`} underline="none">
+      {`Download Collated${stateId ? ` ${_.find(STATES, (s) => s.id === _.toInteger(stateId))?.name}` : ''} (.xlsx)`}
     </Link>
   </MenuItem>
   </>;
@@ -248,20 +248,17 @@ const App = () => {
               </Box>
               <Stack direction={"row"}>
                   <div>
-                    {
-                        stateId &&
-                        <Button
-                            id="basic-button"
-                            aria-controls={open ? "basic-menu" : undefined}
-                            aria-haspopup="true"
-                            aria-expanded={open ? "true" : undefined}
-                            onClick={handleMenuClick}
-                            color={"secondary"}
-                            sx={{mt: 2, mr: 2}}
-                        >
-                          <DownloadRoundedIcon/>
-                        </Button>
-                    }
+                    <Button
+                        id="basic-button"
+                        aria-controls={open ? "basic-menu" : undefined}
+                        aria-haspopup="true"
+                        aria-expanded={open ? "true" : undefined}
+                        onClick={handleMenuClick}
+                        color={"secondary"}
+                        sx={{mt: 2, mr: 2}}
+                    >
+                      <DownloadRoundedIcon/>
+                    </Button>
 
                     <Menu
                       id="basic-menu"

@@ -11,7 +11,7 @@ export default async function handler(req, res) {
     const {method, query} = req;
     const stateId = _.toInteger(query.stateId);
 
-    if(method !== 'GET' || !stateId) return res.status(400).json({errorMessage: 'Bad Request', method, stateId});
+    if(method !== 'GET') return res.status(400).json({errorMessage: 'Bad Request', method, stateId});
 
     const options = {
         year: 'numeric',
@@ -21,10 +21,17 @@ export default async function handler(req, res) {
         minute: 'numeric'
     };
 
-    const data = await PuData.query().where('state_id', stateId).andWhere('election_type', ElectionType.PRESIDENTIAL);
-    const state = _.find(STATES, (s) => s.id === stateId);
+    let data, fileName;
+    if(stateId){
+        data = await PuData.query().where('state_id', stateId).andWhere('election_type', ElectionType.PRESIDENTIAL);
+        const state = _.find(STATES, (s) => s.id === stateId);
 
-    const fileName = `irev_export_${_.snakeCase(state.name)}_${_.snakeCase(new Date().toLocaleDateString("en-GB", options))}.xlsx`;
+        fileName = `irev_export_${_.snakeCase(state.name)}_${_.snakeCase(new Date().toLocaleDateString("en-GB", options))}.xlsx`;
+    } else {
+        data = await PuData.query().where('election_type', ElectionType.PRESIDENTIAL);
+        fileName = `irev_export_${_.snakeCase(new Date().toLocaleDateString("en-GB", options))}.xlsx`;
+    }
+
     console.log('export file name:', fileName);
 
     res.writeHead(200, {
