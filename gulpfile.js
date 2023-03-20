@@ -341,9 +341,6 @@ async function fetchAccreditationData(){
 }
 
 exports.fetchDocumentsByDate = async function fetchDocumentsByDate(){
-    // pctUploadedFeb25: null,
-    // pctUploadedFeb28: null,
-    // pctUploadedMar10: null,
 
     function dateCheck(from, to, check) {
 
@@ -352,10 +349,7 @@ exports.fetchDocumentsByDate = async function fetchDocumentsByDate(){
         lDate = Date.parse(to);
         cDate = Date.parse(check);
 
-        if((cDate <= lDate && cDate >= fDate)) {
-            return true;
-        }
-        return false;
+        return cDate <= lDate && cDate >= fDate;
     }
 
     let result = {};
@@ -397,11 +391,12 @@ gulp.task('export:report', async () => {
     try {
         for (const state of STATES) {
             const res = await models.IrevPu.query().count('*', {as: 'puCount'}).where('state_name', state.name).first();
-            const puDataRes = await models.PuData.query().count('*', {as: 'submittedCount'}).where('state_name', state.name).first();
+            const puDataRes = await models.PuData.query().count('*', {as: 'submittedCount'})
+                .where('state_name', state.name).andWhere('election_type', ElectionType.PRESIDENTIAL).first();
 
             const puDataResVotes = await models.PuData.query()
                 .select('votes_apc', 'votes_pdp', 'votes_lp', 'votes_nnpp', 'votes_cast')
-                .where('state_name', state.name);
+                .where('state_name', state.name).andWhere('election_type', ElectionType.PRESIDENTIAL);
             const puCodeRes = await models.IrevPu.query().select('pu_code').where('state_name', state.name);
 
             //console.log(res);
@@ -760,47 +755,102 @@ async function importIrevRefdata(){
 
 }
 
-async function downloadWardJson(){
-    const baseSrcDir = './build/guber';
+const HEADERS = {
+    'sec-ch-ua': '"Google Chrome";v="111", "Not(A:Brand";v="8", "Chromium";v="111"',
+    'sec-ch-ua-mobile': '?0',
+    'sec-ch-ua-platform': "macOS",
+    'sec-fetch-dest': 'document',
+    'sec-fetch-mode': 'navigate',
+    'sec-fetch-site': 'none',
+    'sec-fetch-user': '?1',
+    'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36',
+}
+
+async function * downloadWardJson(stateNames){
     const baseUrl = 'https://ncka74vel8.execute-api.eu-west-2.amazonaws.com/abuja-prod/elections';
+    const electionUrl = 'https://ncka74vel8.execute-api.eu-west-2.amazonaws.com/abuja-prod/elections?election_type=5f129a04df41d910dcdc1d51';
 
-    const wardRecs = await models.IrevWard.query().select('ward_uid', 'name', 'state_name').where('state_name', 'in',['LAGOS', 'RIVERS']);
+    let wardRecs;
+    if(!_.isEmpty(stateNames)){
+        wardRecs = await models.IrevWard.query().select('ward_uid', 'name', 'state_name').where('state_name', 'in', stateNames);
+    } else {
+        wardRecs = await models.IrevWard.query().select('ward_uid', 'name', 'state_name');
+    }
 
-    const elections = require(`${baseSrcDir}/data_elections.json`).data;
-
+    let elections = (await axios.get(electionUrl, {headers: HEADERS})).data;
 
     for (const wardRec of wardRecs) {
 
-        const electionId = _.find(elections, e => e.state.name === wardRec.stateName)._id;
+        const electionId = _.find(elections.data, e => e.state.name === wardRec.stateName)._id;
         const downloadUrl = `${baseUrl}/${electionId}/pus?ward=${wardRec.wardUid}`;
         console.log('fetching:', downloadUrl);
 
-        const headers = {
-            'sec-ch-ua': '"Google Chrome";v="111", "Not(A:Brand";v="8", "Chromium";v="111"',
-            'sec-ch-ua-mobile': '?0',
-            'sec-ch-ua-platform': "macOS",
-            'sec-fetch-dest': 'document',
-            'sec-fetch-mode': 'navigate',
-            'sec-fetch-site': 'none',
-            'sec-fetch-user': '?1',
-            'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36',
-        }
-
-        const res = await axios.get(downloadUrl, {headers});
-        const fullPath = `${baseSrcDir}/data_ward_${wardRec.wardUid}.json`;
+        const res = await axios.get(downloadUrl, {headers: HEADERS});
+        const fileName = `data_ward_${wardRec.wardUid}.json`;
 
         if(_.isEmpty(res.data.data)) continue;
 
-        const jsonExists = await fileExists(fullPath);
-
-        if(jsonExists) await fs.unlink(fullPath);
-
-        await fs.writeFile(fullPath, JSON.stringify(res.data, null, 4));
-        console.log(`saved data for "${wardRec.name}" ward in "${wardRec.stateName}"`);
+        yield {fileName, data: res.data};
+        console.log(`fetched for "${wardRec.name}" ward in "${wardRec.stateName}"`);
     }
 }
 
-gulp.task('download:api-json:guber', downloadWardJson);
+async function uploadToS3({fileName, data}) {
+    const client = getAwsClient();
+
+    const destPrefix = 'irev-exporter/results/irev_guber'
+    const refdataDestPrefix = 'irev-exporter/refdata/irev_guber'
+
+    const lgaObj = _.first(data.lgas);
+    const lgaDirName = _.snakeCase(lgaObj.name);
+    const wardObj = _.first(data.wards);
+    const stateRes = await models.IrevWard.query().select('state_name', 'state_id').where('ward_uid', wardObj._id);
+    const stateMap = _.fromPairs(stateRes.map(r => [_.toInteger(r.stateId), r.stateName]));
+    const stateDirName = _.snakeCase(stateMap[wardObj.state_id]);
+
+    const refdataKey = path.join(refdataDestPrefix, stateDirName, lgaDirName, fileName);
+    const refdataRes = await client.uploadFile(Buffer.from(JSON.stringify(data, null, 4)), {bucket: process.env.S3_BUCKET_NAME, key: refdataKey});
+    console.log(`Uploaded "${fileName}" to "${refdataKey}" (${refdataRes.ETag})`);
+
+    const lgaKeyPrefix = path.join(destPrefix, stateDirName, lgaDirName, '/');
+    const objs = await client.listBucketObjects(process.env.S3_BUCKET_NAME, lgaKeyPrefix);
+    const existingLgaResults = objs.Contents?.map(o => o.Key) || [];
+
+    const startTime = new Date().getTime();
+    let resultCount = 0;
+
+    for (const ward of data.data) {
+        if (!ward.document?.url || (url.parse(ward.document?.url).pathname === '/')) continue;
+
+        const ext = path.extname(ward.document.url);
+        const resultFileName = `${_.snakeCase(ward.polling_unit.pu_code)}${ext}`;
+
+        const docRes = await axios(ward.document.url, {responseType: 'arraybuffer'});
+
+        const resultKey = path.join(destPrefix, stateDirName, lgaDirName, resultFileName);
+
+        if(existingLgaResults.includes(resultKey)){
+            console.log(`Result "${resultFileName}" previously uploaded, skipping...`);
+            continue;
+        }
+
+        const res = await client.uploadFile(Buffer.from(docRes.data), {bucket: process.env.S3_BUCKET_NAME, key: resultKey});
+
+        console.log(`Uploaded "${resultFileName}" to "${resultKey}" (${res.ETag})`);
+        resultCount += 1;
+    }
+
+    const endTime = new Date().getTime();
+    const duration = endTime - startTime;
+
+    console.log(`Uploading ${resultCount} results for "${lgaDirName}" LGA took ${moment.duration(duration).humanize()}`);
+}
+
+gulp.task('upload:irev-guber:s3', async () => {
+    for await (const data of downloadWardJson()) {
+        await uploadToS3(data);
+    }
+});
 
 gulp.task('upload:irev-results:s3', async () => {
     const client = getAwsClient();
@@ -850,11 +900,6 @@ gulp.task('upload:irev-results:s3', async () => {
             console.log(`Uploading ${resultCount} results for "${lgaDirName}" LGA took ${moment.duration(duration).humanize()}`);
         }
     }
-
-    // const res = await client.uploadFile(await fs.readFile('./build/data_lgas_15.json'), {
-    //     bucket: process.env.S3_BUCKET_NAME,
-    //     key: 'irev-exporter/refdata/irev_lgas_15.json'}
-    // );
 });
 
 
