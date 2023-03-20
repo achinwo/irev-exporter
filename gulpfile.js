@@ -245,10 +245,25 @@ async function importUsersFromPuData(){
             .select('contributor_username')
             .count('pu_code', {as: 'entriesCount'})
             .min('created_at as firstDataEnteredAt')
-            //.where('contributor_username', '!=', adminContribId)
+            .where('election_type', ElectionType.PRESIDENTIAL)
             .groupBy('contributor_username');
 
-        //console.log(pus);
+        // const grvPus = await models.PuData.query()
+        //     .select('contributor_username')
+        //     .whereNot('source', 'irev')
+        //     .groupBy('contributor_username');
+        //
+        // const grvUsers = grvPus.map(p => _.trim(p.contributorUsername));
+        //
+        // console.log(grvUsers);
+        //
+        // if(grvUsers){
+        //     console.log(`Deleting ${grvUsers.length} users...`);
+        //     await models.User.query()
+        //         .whereIn('contributor_id', grvUsers)
+        //         .delete();
+        // }
+
         let newUsers = [];
         let idx = existingContribs.length + 1;
 
