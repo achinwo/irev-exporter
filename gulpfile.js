@@ -559,6 +559,56 @@ exports.fetchStats = async function(){
     console.log(JSON.stringify(newStates, null, 4));
 }
 
+exports.downloadCvrData = async function(){
+    const baseUrl = 'https://cvr.inecnigeria.org';
+    const statesPath = '/election_results/listResults/';
+    const localDir = './build';
+
+    const arg = _.toInteger(_.last(process.argv)) || null;
+
+    console.log('Selected state:', arg);
+
+    for (const idx of [...Array(37).keys()]) {
+        const stateId = idx + 1;
+        //const fullUrl = path.join(baseUrl, statesPath, `${stateId}.json`);
+
+        if(_.isInteger(arg) && stateId !== arg) continue;
+
+        //const response = await axios.get(fullUrl);
+        const stateDir = path.join(localDir, `cvr_state_${stateId}`);
+
+        //await fs.mkdir(stateDir);
+
+        const filePath = path.join(stateDir, 'results.json');
+        //await fs.writeFile(filePath, JSON.stringify(response.data, null, 4));
+        //console.log('saved result:', filePath);
+
+        const data = require(`./${filePath}`);
+
+        for (const result of data.stateResults.results) {
+            const wardId = _.snakeCase(result.ward);
+
+            const wardDir = path.join(stateDir, wardId);
+            const wardExists = await fileExists(wardDir);
+            if(!wardExists){
+                await fs.mkdir(wardDir);
+            }
+
+            const resultFilePath = path.join(wardDir, `${result.delim}.json`);
+            const resultExists = await fileExists(resultFilePath);
+
+            if(resultExists){
+                continue;
+            }
+
+            const response = await axios.get(result.link);
+
+            await fs.writeFile(resultFilePath, JSON.stringify(response.data, null, 4));
+            console.log('saved result:', resultFilePath);
+        }
+    }
+}
+
 exports.exportWardResults = async function(){
     const wardData = {};
     for(const fn of await fs.readdir('./build')) {
@@ -588,7 +638,7 @@ const fileExists = async (filePath) => {
         await fs.stat(filePath);
         return true;
     } catch (e) {
-        return e.code !== 'ENOENT';
+        return e.code !== 'ENOENT' || e.code === 'EEXIST';
     }
 };
 
@@ -1175,7 +1225,7 @@ async function _getDocData(url, excludeList, page) {
         const resultUrl = await page.evaluate(() => document.location.href);
 
         const docUrl = await page.evaluate(() => {
-            return document.querySelector('iframe').src;
+            return document.querySelector('iframe')?.src;
         });
 
         //console.log('Current Page:', url, docUrl, resultUrl);
