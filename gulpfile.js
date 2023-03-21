@@ -512,7 +512,7 @@ exports.fetchS3 = async function(){
 
     const fileStream = await client.readFile({
         bucket: process.env.S3_BUCKET_NAME,
-        key: 'irev-exporter/results/irev_guber/delta/aniocha_north/10_01_01_001.pdf',
+        key: 'irev-exporter/results/irev_guber/abia/bende/01_04_03_004.pdf',
     });
 
     await fs.writeFile('./delta_result.pdf', fileStream);
@@ -781,7 +781,13 @@ async function * downloadWardJson(stateNames){
 
     for (const wardRec of wardRecs) {
 
-        const electionId = _.find(elections.data, e => e.state.name === wardRec.stateName)._id;
+        const electionId = _.find(elections.data, e => e.state.name === wardRec.stateName)?._id; //fetched for "AMOKWE" ward in "ENUGU"
+
+        if(!electionId){
+            console.log(`Unable to resolve election id for ward state "${wardRec?.stateName}", skipping...`, wardRec);
+            continue;
+        }
+
         const downloadUrl = `${baseUrl}/${electionId}/pus?ward=${wardRec.wardUid}`;
         console.log('fetching:', downloadUrl);
 
