@@ -14,11 +14,12 @@ import {
 } from "@mui/material";
 import Box from "@mui/material/Box";
 import _ from "lodash";
-import React from "react";
 import url from "url";
 import LoadingButton from "@mui/lab/LoadingButton";
 import ReactPanZoom from 'react-image-pan-zoom-rotate';
 import {ElectionType, KEY_CONTRIBUTOR} from "./ref_data";
+import React, { useRef } from 'react'
+import { useIsVisible } from 'react-is-visible'
 
 const RESULT_ILLEGIBILITY_STATE = {
     LEGIBLE: false,
@@ -206,6 +207,8 @@ export const PollingUnitView = ({pollingUnit, puData, setPuData, isSubmitting, s
         minute: '2-digit'
     };
     const pu = pollingUnit;
+    const nodeRef = useRef();
+    const isVisible = useIsVisible(nodeRef);
 
     let priorVersionLabel = '';
     // if(!_.isEmpty(pu.old_documents)){
@@ -214,8 +217,8 @@ export const PollingUnitView = ({pollingUnit, puData, setPuData, isSubmitting, s
     //<Grid key={pu._id} item xs={12} sm={12} md={12} lg={12} style={{maxWidth: "100%"}}>
     return (
 
-        <Card elevation={4} xs={{mt: 20}} style={{maxWidth: "100%"}}>
-            <CardContent align="center" style={{maxWidth: "100%"}}>
+        <Card elevation={4} xs={{mt: 20}} style={{maxWidth: "100%", minHeight: '50vh'}} ref={nodeRef}>
+            {isVisible && <CardContent align="center" style={{maxWidth: "100%"}}>
                 <Typography>{capitalize(`${pu.name}`)}</Typography>
                 <Typography>{`PU Code: ${pu.pu_code}`}</Typography>
                 <Typography>{`Updated: ${new Date(pu.updated_at).toLocaleDateString("en-US", options)}${priorVersionLabel}`}</Typography>
@@ -255,7 +258,7 @@ export const PollingUnitView = ({pollingUnit, puData, setPuData, isSubmitting, s
                     </>
                 }
 
-            </CardContent>
+            </CardContent>}
         </Card>
     );
 }
