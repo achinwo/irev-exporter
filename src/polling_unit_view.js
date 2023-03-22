@@ -217,7 +217,7 @@ export const PollingUnitView = ({pollingUnit, puData, setPuData, isSubmitting, s
     //<Grid key={pu._id} item xs={12} sm={12} md={12} lg={12} style={{maxWidth: "100%"}}>
     return (
 
-        <Card elevation={4} xs={{mt: 20}} style={{maxWidth: "100%", minHeight: '70vh'}} ref={nodeRef}>
+        <Card elevation={4} xs={{mt: 20}} style={{maxWidth: "100%", minHeight: '50vh'}} ref={nodeRef}>
             {isVisible && <CardContent align="center" style={{maxWidth: "100%"}}>
                 <Typography>{capitalize(`${pu.name}`)}</Typography>
                 <Typography>{`PU Code: ${pu.pu_code}`}</Typography>
