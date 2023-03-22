@@ -208,7 +208,7 @@ export const PollingUnitView = ({pollingUnit, puData, setPuData, isSubmitting, s
     };
     const pu = pollingUnit;
     const nodeRef = useRef();
-    const isVisible = useIsVisible(nodeRef);
+    const isVisible = useIsVisible(nodeRef, {once: true});
 
     let priorVersionLabel = '';
     // if(!_.isEmpty(pu.old_documents)){
