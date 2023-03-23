@@ -231,7 +231,7 @@ export const PollingUnitView = ({pollingUnit, puData, setPuData, isSubmitting, s
                                 {
                                     pu.document.url.endsWith('.pdf') ?
                                         <div style={{maxWidth: "100%", height: '100%', position: 'relative'}}>
-                                            <iframe width={'80%'} height={'70vh'} src={pu.document?.url} frameBorder={0}
+                                            <iframe width={'80%'} height={'70vh'} src={`${pu.document?.url}#view=FitH`} frameBorder={0}
                                                     seamless style={{height: '70vh', marginTop: '1em'}}/>
 
                                         </div>
