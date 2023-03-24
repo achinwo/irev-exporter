@@ -232,7 +232,7 @@ export const PollingUnitView = ({pollingUnit, puData, setPuData, isSubmitting, s
                                     pu.document.url.endsWith('.pdf') ?
                                         <div style={{maxWidth: "100%", height: '100%', position: 'relative'}}>
                                             <embed width={'90%'} height={'auto'} src={`${pu.document?.url}#view=Fit&toolbar=1`} frameBorder={0}
-                                                    seamless style={{height: 'auto', marginTop: '1em'}}/>
+                                                    seamless style={{height: 'auto', minHeight:'30vh', marginTop: '1em'}}/>
 
                                         </div>
                                         :
