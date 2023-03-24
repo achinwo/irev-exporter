@@ -142,7 +142,7 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
                 setPuData({[evt.target.value]: true});
             }}>
                 <FormControlLabel style={{ width: 'auto' }} sx={{mr: 2}} value="isResultIllegible" control={<Radio  />} label="It is illegible" />
-                <FormControlLabel style={{ width: 'auto' }} sx={{ml: 2}} value="isNoneEceightForm" control={<Radio />} label="Not a presidential EC8" />
+                <FormControlLabel style={{ width: 'auto' }} sx={{ml: 2}} value="isNoneEceightForm" control={<Radio />} label={`Not a ${(electionType || ElectionType.PRESIDENTIAL).toLowerCase()} EC8`} />
             </RadioGroup>
         </FormControl>
         <br/>
