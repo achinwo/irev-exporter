@@ -5,7 +5,7 @@ export default async function userHandler(req, res) {
 
     switch (method) {
         case 'GET':
-            const data = await PuData.fetchStats();
+            const data = await PuData.fetchStats(query.electionType);
             res.status(200).json({data});
             break;
         default:

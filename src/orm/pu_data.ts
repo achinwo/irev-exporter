@@ -3,7 +3,7 @@ import _ from 'lodash';
 import path from "path";
 import {PartialModelObject} from "objection";
 import {User} from "./user";
-import { ElectionType } from "../ref_data";
+import {DataSource, ElectionType } from "../ref_data";
 
 export class PuData extends DbModel {
     static tableName = 'pu_data';
@@ -115,8 +115,8 @@ export class PuData extends DbModel {
             isResultLegible: toBool(puData.isResultLegible),
             isPuNameCorrect: toBool(puData.isPuNameCorrect),
 
-            electionType: ElectionType.PRESIDENTIAL,
-            source: 'irev',
+            electionType: puData.electionType ? puData.electionType : ElectionType.PRESIDENTIAL,
+            source: puData.source ? puData.source : DataSource.IREV,
 
             createdById: 1,
             updatedById: 1
@@ -125,11 +125,12 @@ export class PuData extends DbModel {
         return PuData.query().insertAndFetch(values);
     }
 
-    static async fetchStats(): Promise<{state: any[], ward: any[]}> {
+    static async fetchStats(electionType=ElectionType.PRESIDENTIAL): Promise<{state: any[], ward: any[]}> {
         const res = await PuData.query()
             .select('state_name', 'state_id')
             .count('state_name')
-            .where('election_type', ElectionType.PRESIDENTIAL)
+            .where('election_type', electionType ? electionType : ElectionType.PRESIDENTIAL)
+            .andWhere('source', DataSource.IREV)
             .groupBy('state_name', 'state_id');
 
         let rows = [];
@@ -152,7 +153,8 @@ export class PuData extends DbModel {
             .select('state_name', 'ward_name', 'ward_id')
             .count('ward_name', {as: 'wardCount'})
             .max('contributor_username as lastContributorUsername')
-            .where('election_type', ElectionType.PRESIDENTIAL)
+            .where('election_type', electionType ? electionType : ElectionType.PRESIDENTIAL)
+            .andWhere('source', DataSource.IREV)
             .groupBy('state_name', 'ward_name', 'ward_id') as unknown as {stateName: string, wardName: string, wardCount: string, lastContributorUsername: string}[];
 
         const recs = await User.query().select('display_name', 'contributor_id');

@@ -143,9 +143,15 @@ export function MainBody({ isLoadingPuData, selectedPu, stats, electionType}) {
             },
             {
                 field: 'resultCount',
-                headerName: 'IReV Results',
+                headerName: 'IReV Results (Pres)',
                 type: 'number',
-                width: 100,
+                width: 140,
+            },
+            {
+                field: 'resultGuberCount',
+                headerName: 'IReV Results (Gov)',
+                type: 'number',
+                width: 140,
             },
             {
                 field: 'submittedCount',

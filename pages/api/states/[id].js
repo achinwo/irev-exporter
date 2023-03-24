@@ -2,10 +2,11 @@
 import _ from 'lodash';
 import axios from "axios";
 import {STATES} from "../../../src/utils";
+import {ElectionType} from "../../../src/ref_data";
 
 let WARD_DATA = null;
 
-async function fetchWardData() {
+async function fetchWardData(electionType) {
     if(!WARD_DATA){
         const resp = await axios.get('https://storage.googleapis.com/joli-app-bucket/json-data/data_stats_ward.json');
         WARD_DATA = resp.data;
@@ -19,14 +20,14 @@ export default async function userHandler(req, res) {
 
     switch (method) {
         case 'GET':
-
+            const electionType = query.electionType || ElectionType.PRESIDENTIAL;
             const id = parseInt(query.id, 10);
             const state = _.find(STATES, (s) => s.id === id);
 
             const response = await axios.get(`https://storage.googleapis.com/joli-app-bucket/json-data/data_lgas_${id}.json`);
             state.lgas = response.data;
 
-            const wardData = await fetchWardData();
+            const wardData = await fetchWardData(electionType);
 
             for (const lga of state.lgas.data) {
                 for (const ward of lga.wards) {

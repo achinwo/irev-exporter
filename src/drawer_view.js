@@ -22,17 +22,18 @@ import {ElectionType, KEY_ELECTION_TYPE} from "./ref_data";
 
 export const WardSummaryView = ({ward, stats, electionType}) => {
     let wardStat = _.find(stats.ward, w => w.wardId === ward._id);
-    //console.log('WARD', ward);
+    console.log('WARD', wardStat, ward);
+    const getResult = (data) => data[electionType === ElectionType.PRESIDENTIAL ? 'resultCount' : 'resultGuberCount'];
 
     return <Stack direction={'row'} spacing={1}>
         <Chip label={`#${ward.code}`} size="small" />
         {
-            !_.isEmpty(wardStat) && electionType === ElectionType.PRESIDENTIAL ?
+            !_.isEmpty(wardStat) ?
                 <>
-                    <Chip label={`${wardStat.wardCount}${ward.stats ? '/' + ward.stats.resultCount : ''}`}
-                          color={_.toInteger(wardStat.wardCount) === ward.stats?.resultCount ? 'success' : "secondary"}
+                    <Chip label={`${wardStat.wardCount}${ward.stats ? '/' + getResult(ward.stats) : ''}`}
+                          color={_.toInteger(wardStat.wardCount) === getResult(ward.stats) ? 'success' : "secondary"}
                           title={`Results submitted`}
-                          variant={_.toInteger(wardStat.wardCount) >= ward.stats?.resultCount ? 'filled' : "outlined"} size="small" />
+                          variant={_.toInteger(wardStat.wardCount) >= getResult(ward.stats) ? 'filled' : "outlined"} size="small" />
                     <Chip sx={{maxWidth: 100}} title={`Last contributor ${wardStat.lastContributorUsername}`} icon={<FaceIcon />} label={wardStat.lastContributorUsername} color="primary"  variant="outlined" size="small" />
                 </>
 

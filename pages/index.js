@@ -71,7 +71,7 @@ const App = () => {
   const drawerWidth = 240;
 
   const fetchStates = async () => {
-    const response = await axios.get("/api/states");
+    const response = await axios.get(`/api/states?electionType=${electionType}`);
     setStates(response.data);
   };
 
@@ -96,7 +96,7 @@ const App = () => {
 
 
   useEffect(async () => {
-    const res = await axios.get('/api/states/stats');
+    const res = await axios.get(`/api/states/stats?electionType=${electionType}`);
     let rows = [];
     const {state: stateData, ward: wardData} = res.data.data;
 
@@ -105,6 +105,7 @@ const App = () => {
       const submitted = _.toInteger(stat?.submittedCount || 0);
       const row = {
         id: state.id,
+        resultGuberCount: state.resultGuberCount,
         progress: (submitted / state.resultCount) * 100,
         submittedCount: submitted,
         resultCount: state.resultCount,
@@ -116,8 +117,10 @@ const App = () => {
       rows.push(row);
     }
 
+    console.log('STATS', {state: rows, ward: wardData});
+
     setStats({state: rows, ward: wardData});
-  }, [stateId]);
+  }, [stateId, electionType]);
 
   useEffect(async () => {
     setIsContribFormValid(_.trim(contributorName) && _.trim(displayName || '') && _.trim(contributorName) !== _.trim(displayName || ''));
@@ -192,35 +195,33 @@ const App = () => {
     setContributorName(localStorage.getItem(KEY_CONTRIBUTOR));
   };
 
-  let xlsMenu = <>
-    {selectedLga ?
-        <>
-          <MenuItem onClick={handleMenuClose}>
-            <Link href={`/api/downloads/${selectedLga.lga.lga_id}?stateId=${selectedLga.state.state_id}`} underline="none">
-              {`Download LGA "${selectedLga.lga.name}"`}
-            </Link>
-          </MenuItem>
-          <Divider/>
-        </>
-        : null
-    }
+  let xlsMenu = [];
+
+  if(selectedLga){
+    xlsMenu.push(<MenuItem onClick={handleMenuClose} key={'menu-1'}>
+      <Link href={`/api/downloads/${selectedLga.lga.lga_id}?stateId=${selectedLga.state.state_id}`} underline="none">
+        {`Download LGA "${selectedLga.lga.name}"`}
+      </Link>
+    </MenuItem>);
+
+    xlsMenu.push(<Divider key={'menu-divider'}/>);
+  }
+
+  xlsMenu.push(
     <MenuItem onClick={handleMenuClose}>
     <Link href={`/api/downloads${stateId ? `?stateId=${stateId}` : ''}`} underline="none">
       {`Download Collated${stateId ? ` ${_.find(STATES, (s) => s.id === _.toInteger(stateId))?.name}` : ''} (.xlsx)`}
     </Link>
-  </MenuItem>
-  </>;
+  </MenuItem>);
 
   let view = xlsMenu;
   if (selectedPu) {
-    view = <>
-      <MenuItem onClick={handleMenuClose}>
+    view = _.concat(
+      [<MenuItem onClick={handleMenuClose} key={'menu-3'}>
         <Link href={`/api/downloads/${selectedPu.wards[0]._id}?stateId=${stateId}`} underline="none">
           {`Download Ward "${selectedPu.wards[0].name}"`}
         </Link>
-      </MenuItem>
-      {xlsMenu}
-    </>
+      </MenuItem>], xlsMenu);
   }
 
   return (

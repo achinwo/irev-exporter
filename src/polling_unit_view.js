@@ -17,7 +17,7 @@ import _ from "lodash";
 import url from "url";
 import LoadingButton from "@mui/lab/LoadingButton";
 import ReactPanZoom from 'react-image-pan-zoom-rotate';
-import {ElectionType, KEY_CONTRIBUTOR} from "./ref_data";
+import {DataSource, ElectionType, KEY_CONTRIBUTOR} from "./ref_data";
 import React, { useRef } from 'react'
 import { useIsVisible } from 'react-is-visible'
 
@@ -27,11 +27,11 @@ const RESULT_ILLEGIBILITY_STATE = {
     UNANSWERED: undefined
 }
 
-export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, isSubmitting, setIsSubmitting, setAlert}) => {
+export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, isSubmitting, setIsSubmitting, setAlert, electionType}) => {
     const pu = pollingUnit;
 
     const submitPollingData = async () => {
-        const url = `/api/pus/${pu._id}`;
+        const url = `/api/pus/${pu._id}?electionType=${electionType}`;
         console.log('submitted pu data url:', url, puData);
 
         const toBool = (value) => {
@@ -46,6 +46,8 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
             data = _.assign(data, {
                 isResultLegible: !toBool(data?.isResultIllegible),
                 isPuNameCorrect: !toBool(data?.containsIncorrectPuName),
+                electionType: electionType,
+                source: DataSource.IREV,
             });
 
             const contributor = globalThis?.localStorage?.getItem(KEY_CONTRIBUTOR);
@@ -55,7 +57,7 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
                 return;
             }
 
-            const resp = await axios.post(url, {pu, puData: data, contributor: contributor});
+            const resp = await axios.post(url, {pu, puData: data, contributor: contributor}, {headers: {'x-election-type': electionType}});
             console.log('submitted pu data', resp.data);
 
             setPuData(resp.data.data);
@@ -92,7 +94,7 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
         }
         <br/>
         {
-            [['votersAccredited', 'Accredited Voters'], ['votesCast', 'Total Votes']].map(([tag, label]) => {
+            [['votersAccredited', 'Accredited Voters'], ['votesCast', 'Total Valid Votes']].map(([tag, label]) => {
                 return <TextField label={label}
                                   key={tag}
                                   value={puData[tag]}
@@ -151,7 +153,7 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
         <FormControl fullWidth={true}>
             <FormLabel id="demo-error-radios">
                 <Typography variant="h6">
-                Can you read the presidential election voting numbers?
+                Can you read the {(electionType || ElectionType.PRESIDENTIAL).toLowerCase()} election voting numbers?
                 </Typography>
             </FormLabel>
             <RadioGroup row name="row-radio-buttons-group1" sx={{m: 2}} style={{display: 'flex', justifyContent: 'center',
@@ -232,7 +234,7 @@ export const PollingUnitView = ({pollingUnit, puData, setPuData, isSubmitting, s
                                     pu.document.url.endsWith('.pdf') ?
                                         <div style={{maxWidth: "100%", height: '100%', position: 'relative'}}>
                                             <embed width={'90%'} height={'auto'} src={`${pu.document?.url}#view=Fit&toolbar=1`} frameBorder={0}
-                                                    seamless style={{height: 'auto', minHeight:'30vh', marginTop: '1em'}}/>
+                                                    seamless style={{height: 'auto', minHeight:'60vh', marginTop: '1em'}}/>
 
                                         </div>
                                         :
@@ -243,11 +245,10 @@ export const PollingUnitView = ({pollingUnit, puData, setPuData, isSubmitting, s
                                             />
                                         </Box>
                                 }
-                                {
-                                    electionType === ElectionType.PRESIDENTIAL &&
-                                    <PollingResultQuestionnaireView pollingUnit={pu} puData={puData} setPuData={setPuData}
-                                                                    isSubmitting={isSubmitting} setIsSubmitting={setIsSubmitting} setAlert={setAlert} />
-                                }
+
+                                <PollingResultQuestionnaireView pollingUnit={pu} puData={puData} setPuData={setPuData}
+                                                                isSubmitting={isSubmitting} setIsSubmitting={setIsSubmitting}
+                                                                setAlert={setAlert} electionType={electionType} />
 
                             </Stack>
                         </CardMedia>

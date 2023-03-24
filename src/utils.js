@@ -6,7 +6,7 @@ import url from "url";
 import axios from "axios";
 import https from "https";
 import {PuData, User, IrevWard} from "./orm";
-import {ElectionType} from "./ref_data";
+import {DataSource, ElectionType} from "./ref_data";
 
 export async function archivePipe(destination, urls) {
     let proms = []
@@ -79,9 +79,9 @@ export async function fetchWardData(wardId, opts={includePuData: true, electionT
 
     data['polling_data'] = data['polling_data'] || {};
 
-    if(opts?.includePuData && electionType === ElectionType.PRESIDENTIAL){
+    if(opts?.includePuData){
         try{
-            const puData = await PuData.query().where('ward_id', wardId).andWhere('election_type', ElectionType.PRESIDENTIAL);
+            const puData = await PuData.query().where('ward_id', wardId).andWhere('election_type', electionType).andWhere('source', DataSource.IREV);
 
             const recs = await User.query().select('display_name', 'contributor_id');
             const mapping = _.fromPairs(recs.map(r => [r.contributorId, r.displayName]));

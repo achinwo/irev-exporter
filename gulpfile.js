@@ -518,8 +518,10 @@ exports.fetchS3 = async function(){
     await fs.writeFile('./delta_result.pdf', fileStream);
 }
 
-exports.fetchStats = async function(){
+async function fetchStats(){
+    const client = getAwsClient();
     const newStates = [];
+
     for (const state of STATES) {
         const lgaData = require(`./build/data_lgas_${state.id}`);
 
@@ -527,32 +529,66 @@ exports.fetchStats = async function(){
 
         let puCount = 0;
         let results = 0;
+        let resultsGuber = 0;
 
         for (const lga of lgaData.data) {
             for (const ward of lga.wards) {
-                const wardData = require(`./build/data_ward_${ward._id}.json`);
+                let wardData = require(`./build/data_ward_${ward._id}.json`);
+
                 puCount += wardData.data.length;
 
                 for (const pu of wardData.data) {
                     if(!pu.document?.url || (url.parse(pu.document?.url).pathname === '/')) continue;
                     results += 1;
                 }
+
+                const fileName = `data_ward_${ward._id}.json`;
+                const stateName = _.snakeCase(lga.state.name);
+                const lgaName = _.snakeCase(lga.lga.name);
+                const key = `irev-exporter/refdata/irev_guber/${stateName}/${lgaName}/${fileName}`;
+
+                let wardDataGuber;
+
+                try {
+                    const fileStream = await client.readFile({bucket: process.env.S3_BUCKET_NAME, key});
+
+                    let buf = [];
+                    for await (const chunk of fileStream) {
+                        buf.push(chunk);
+                    }
+
+                    wardDataGuber = JSON.parse(Buffer.concat(buf).toString());
+                } catch (e) {
+                    console.error(`[fetchStats] error fetching ward key "${key}"`, e);
+                    continue;
+                }
+
+                for (const puG of wardDataGuber.data) {
+                    if(!puG.document?.url || (url.parse(puG.document?.url).pathname === '/')) continue;
+                    resultsGuber += 1;
+                }
             }
         }
 
-        newStates.push({
+        const newState = {
             id: state.id,
             url: state.url,
             resultCount: results,
+            resultGuberCount: resultsGuber,
             wardCount: wardCount,
             lgaCount: lgaData.data.length,
             puCount: puCount,
             name: state.name,
-        })
+        };
+        newStates.push(newState);
+
+        console.log(`[fetchStats] completed state "${newState.name}": presidential=${newState.resultCount}, gubernatorial=${newState.resultGuberCount}`);
     }
 
     console.log(JSON.stringify(newStates, null, 4));
 }
+
+gulp.task('exports:stats', fetchStats);
 
 exports.downloadCvrData = async function(){
     const baseUrl = 'https://cvr.inecnigeria.org';
