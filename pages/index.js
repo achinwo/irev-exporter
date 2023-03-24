@@ -209,7 +209,7 @@ const App = () => {
 
   xlsMenu.push(
     <MenuItem onClick={handleMenuClose}>
-    <Link href={`/api/downloads${stateId ? `?stateId=${stateId}` : ''}`} underline="none">
+    <Link href={`/api/downloads${stateId ? `?stateId=${stateId}&electionType=${electionType}` : ''}`} underline="none">
       {`Download Collated${stateId ? ` ${_.find(STATES, (s) => s.id === _.toInteger(stateId))?.name}` : ''} (.xlsx)`}
     </Link>
   </MenuItem>);

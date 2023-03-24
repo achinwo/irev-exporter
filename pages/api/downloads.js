@@ -3,7 +3,7 @@ import {promisify} from 'util';
 import writeXlsxFile from 'write-excel-file/node'
 import _ from 'lodash';
 import {PuData, User} from "../../src/orm";
-import {ElectionType, STATES} from "../../src/ref_data";
+import {DataSource, ElectionType, STATES} from "../../src/ref_data";
 
 const pipeline = promisify(stream.pipeline);
 
@@ -23,7 +23,9 @@ export default async function handler(req, res) {
 
     let data, fileName;
     if(stateId){
-        data = await PuData.query().where('state_id', stateId).andWhere('election_type', ElectionType.PRESIDENTIAL);
+        data = await PuData.query().where('state_id', stateId)
+            .andWhere('election_type', query.electionType ? query.electionType : ElectionType.PRESIDENTIAL)
+            .andWhere('source', DataSource.IREV);
         const state = _.find(STATES, (s) => s.id === stateId);
 
         fileName = `irev_export_${_.snakeCase(state.name)}_${_.snakeCase(new Date().toLocaleDateString("en-GB", options))}.xlsx`;
@@ -88,4 +90,6 @@ const SCHEMA = [
     {column: 'Contains Alterations', type: Boolean, value: data => data.containsAlterations},
     {column: 'Is Inec Stamp Absent', type: Boolean, value: data => data.isInecStampAbsent},
     {column: 'Is Non-EC8 Form', type: Boolean, value: data => data.isNoneEceightForm},
+    {column: 'Election', type: String, value: data => data.electionType},
+    {column: 'Data Source', type: String, value: data => data.source},
 ]

@@ -22,22 +22,18 @@ import {ElectionType, KEY_ELECTION_TYPE} from "./ref_data";
 
 export const WardSummaryView = ({ward, stats, electionType}) => {
     let wardStat = _.find(stats.ward, w => w.wardId === ward._id);
-    console.log('WARD', wardStat, ward);
+    //console.log('WARD', wardStat, ward);
     const getResult = (data) => data[electionType === ElectionType.PRESIDENTIAL ? 'resultCount' : 'resultGuberCount'];
 
     return <Stack direction={'row'} spacing={1}>
         <Chip label={`#${ward.code}`} size="small" />
-        {
-            !_.isEmpty(wardStat) ?
-                <>
-                    <Chip label={`${wardStat.wardCount}${ward.stats ? '/' + getResult(ward.stats) : ''}`}
-                          color={_.toInteger(wardStat.wardCount) === getResult(ward.stats) ? 'success' : "secondary"}
-                          title={`Results submitted`}
-                          variant={_.toInteger(wardStat.wardCount) >= getResult(ward.stats) ? 'filled' : "outlined"} size="small" />
-                    <Chip sx={{maxWidth: 100}} title={`Last contributor ${wardStat.lastContributorUsername}`} icon={<FaceIcon />} label={wardStat.lastContributorUsername} color="primary"  variant="outlined" size="small" />
-                </>
-
-                : null
+        <Chip label={`${wardStat?.wardCount || ''}${ward.stats ? (wardStat?.wardCount && '/' || '') + getResult(ward.stats) : ''}`}
+              color={_.toInteger(wardStat?.wardCount || 0) === getResult(ward.stats) ? 'success' : "secondary"}
+              title={`Results submitted`}
+              variant={_.toInteger(wardStat?.wardCount || 0) >= getResult(ward.stats) ? 'filled' : "outlined"} size="small" />
+        { wardStat?.lastContributorUsername &&
+            <Chip sx={{maxWidth: 100}} title={`Last contributor ${wardStat.lastContributorUsername}`} icon={<FaceIcon/>}
+                  label={wardStat.lastContributorUsername} color="primary" variant="outlined" size="small"/>
         }
     </Stack>
 }

@@ -588,7 +588,7 @@ async function fetchStats(){
     console.log(JSON.stringify(newStates, null, 4));
 }
 
-gulp.task('exports:stats', fetchStats);
+gulp.task('export:stats', fetchStats);
 
 exports.downloadCvrData = async function(){
     const baseUrl = 'https://cvr.inecnigeria.org';
@@ -640,13 +640,39 @@ exports.downloadCvrData = async function(){
     }
 }
 
-exports.exportWardResults = async function(){
+async function exportWardResults(){
+    const client = getAwsClient();
     const wardData = {};
+
     for(const fn of await fs.readdir('./build')) {
         if (!fn.startsWith('data_ward_')) continue;
 
         const data = require(`./build/${fn}`);
         const numResults = _.sum(data.data.map((pu) => !pu.document?.url || (url.parse(pu.document?.url).pathname === '/') ? 0 : 1) || [0]);
+
+        const lga = _.first(data.lgas);
+        const state = _.find(STATES, (s) => s.id === lga.state_id);
+
+        const fileName = `data_ward_${_.first(data.wards)._id}.json`;
+        const stateName = _.snakeCase(state.name);
+        const lgaName = _.snakeCase(lga.name);
+        const key = `irev-exporter/refdata/irev_guber/${stateName}/${lgaName}/${fileName}`;
+
+        let numResultsGuber = 0;
+
+        try {
+            const fileStream = await client.readFile({bucket: process.env.S3_BUCKET_NAME, key});
+
+            let buf = [];
+            for await (const chunk of fileStream) {
+                buf.push(chunk);
+            }
+
+            const dataGuber = JSON.parse(Buffer.concat(buf).toString());
+            numResultsGuber = _.sum(dataGuber.data.map((pu) => !pu.document?.url || (url.parse(pu.document?.url).pathname === '/') ? 0 : 1) || [0]);
+        } catch (e) {
+            console.error(`[fetchStats] error fetching ward key "${key}": ${e}`);
+        }
 
         const ward = _.first(data.wards);
         const wardId = ward.ward_id;
@@ -658,11 +684,14 @@ exports.exportWardResults = async function(){
             stateId: ward.state_id,
             lgaId: ward.lga_id,
             resultCount: numResults,
+            resultGuberCount: numResultsGuber,
         };
     }
 
     await fs.writeFile('./build/data_stats_ward.json', JSON.stringify(wardData, null, 4));
 }
+
+gulp.task('export:stats:ward', exportWardResults);
 
 const fileExists = async (filePath) => {
     try {

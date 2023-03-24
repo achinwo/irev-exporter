@@ -6,9 +6,9 @@ import {ElectionType} from "../../../src/ref_data";
 
 let WARD_DATA = null;
 
-async function fetchWardData(electionType) {
+async function fetchWardData() {
     if(!WARD_DATA){
-        const resp = await axios.get('https://storage.googleapis.com/joli-app-bucket/json-data/data_stats_ward.json');
+        const resp = await axios.get('https://storage.googleapis.com/joli-app-bucket/json-data/data_stats_ward_v2.json');
         WARD_DATA = resp.data;
     }
 
@@ -27,7 +27,7 @@ export default async function userHandler(req, res) {
             const response = await axios.get(`https://storage.googleapis.com/joli-app-bucket/json-data/data_lgas_${id}.json`);
             state.lgas = response.data;
 
-            const wardData = await fetchWardData(electionType);
+            const wardData = await fetchWardData();
 
             for (const lga of state.lgas.data) {
                 for (const ward of lga.wards) {
