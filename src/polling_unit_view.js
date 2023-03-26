@@ -77,9 +77,16 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
         //['isNoneEceightForm', 'None EC8 form?'],
     ];
 
+    let partyFields = ['Lp', 'Nnpp', 'Pdp'];
+    if(electionType === ElectionType.GOVERNORSHIP){
+        partyFields = _.concat(['Apc', 'Apga'], partyFields);
+    }else{
+        partyFields = _.concat(['Apc'], partyFields);
+    }
+
     const legibleResultView = <Box sx={{'& > :not(style)': {m: 1, width: '25ch'},}}>
         {
-            ['Apc', 'Lp', 'Nnpp', 'Pdp'].map((tag, key) => {
+            partyFields.map((tag, key) => {
                 return <TextField label={tag.toUpperCase()}
                                   key={key}
                                   value={puData[`votes${tag}`]}
