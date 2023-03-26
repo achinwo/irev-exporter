@@ -13,7 +13,7 @@ const {Bucket, Storage} = require('@google-cloud/storage');
 const https = require("https");
 const {knex, destKnex} = require('./src/lib/model');
 const url = require('url');
-const {STATES, ElectionType} = require('./src/ref_data');
+const {STATES, ElectionType, DataSource} = require('./src/ref_data');
 const moment = require('moment');
 
 const Csv = require('csvtojson');
@@ -245,7 +245,7 @@ async function importUsersFromPuData(){
             .select('contributor_username')
             .count('pu_code', {as: 'entriesCount'})
             .min('created_at as firstDataEnteredAt')
-            .where('election_type', ElectionType.PRESIDENTIAL)
+            .where('source', DataSource.IREV)
             .groupBy('contributor_username');
 
         // const grvPus = await models.PuData.query()
@@ -994,6 +994,123 @@ const TEST = {
     Updated: '2023-03-19T09:47:02.681Z'
 }
 
+const toInt = (value) => {
+    const v = parseInt(value);
+    return isNaN(v) ? null : v;
+}
+
+gulp.task('import:enugu-situation-room:csv', async () => {
+    const rows = await Csv().fromFile('./inputs/enugu_east.csv');
+
+    console.log(rows[0]);
+    const puRes = await models.IrevPu.query()
+        .where('state_name', 'ENUGU')
+        .andWhere('lga_name', 'ENUGU EAST')
+        .orderBy([
+            {column: 'ward_id', order: 'asc'},
+            {column: 'name', order: 'asc'}
+        ]);
+
+    let puDataList = [];
+    const mapping = _.fromPairs(rows.map(r => [r['PU'], r]));
+    let unmapped = [];
+    let idx = 0;
+
+    const client = getAwsClient();
+    let wardData = {};
+
+    try {
+
+        for (const pu of puRes) {
+            const puName = pu.name.replaceAll('  ', ' ');
+            const row = mapping[puName];
+
+            delete mapping[puName];
+
+            if (!row) {
+                unmapped.push(pu.name);
+                continue;
+            }
+
+            const fileName = `data_ward_${pu.wardUid}.json`;
+            const stateName = _.snakeCase(pu.stateName);
+            const lgaName = _.snakeCase(pu.lgaName);
+            const key = `irev-exporter/refdata/irev_guber/${stateName}/${lgaName}/${fileName}`;
+
+            let data = wardData[key];
+
+            if (!data) {
+                const fileStream = await client.readFile({bucket: process.env.S3_BUCKET_NAME, key});
+
+                let buf = [];
+                for await (const chunk of fileStream) {
+                    buf.push(chunk);
+                }
+
+                data = wardData[key] = JSON.parse(Buffer.concat(buf).toString());
+            }
+
+            if (!data) continue;
+
+            const puG = _.find(data.data, (p) => p.pu_code === pu.puCode);
+
+            //console.log(data);
+
+            if (!puG.document?.url || (url.parse(puG.document?.url).pathname === '/')) continue;
+            //console.log(`wardName=${pu.wardName}, wardId=${pu.puId}, PU=${pu.name}, exPU=${row?.['PU']}`);
+
+            const puData = {
+                name: pu.name,
+
+                puId: pu.puId,
+                puCode: pu.puCode,
+                wardId: pu.wardUid,
+                wardName: pu.wardName,
+
+                stateId: pu.stateId,
+                stateName: pu.stateName || null,
+
+                lgaId: pu.lgaId,
+                lgaName: pu.lgaName,
+
+                contributorUsername: 'enugu-situation-room',
+
+                documentUrl: puG.document.url,
+                documentSize: puG.document.size,
+                documentType: path.extname(puG.document.url).slice(1),
+                documentUpdatedAt: new Date(puG.document.updated_at),
+                numberOfPrevDocuments: (puG.old_documents || []).length,
+
+                votesLp: toInt(row['LP']),
+                votesApc: toInt(row['APC']),
+                votesPdp: toInt(row['PDP']),
+                votesApga: toInt(row['APGA']),
+
+                votesCast: toInt(row['VALID VOTES']),
+                votersAccredited: toInt(row['IReV ACCRED VOTERS']),
+                votersAccreditedBvas: toInt(row['BVAS ACCRED  DATA']),
+                votersRegistered: toInt(row['REG VOTERS']),
+
+                electionType: ElectionType.GOVERNORSHIP,
+                comment: _.trim(row['REMARKS']),
+
+                source: DataSource.IREV,
+
+                createdById: 1,
+                updatedById: 1
+            }
+
+            puDataList.push(puData);
+            idx += 1;
+        }
+
+        await models.PuData.query().insert(puDataList);
+        console.log(`saved ${puDataList.length} records`, puDataList[0]);
+    } finally {
+        await models.PuData.knex().destroy();
+    }
+
+});
 
 gulp.task('import:grv-situation-room:csv', async () => {
 
@@ -1003,11 +1120,6 @@ gulp.task('import:grv-situation-room:csv', async () => {
 
     const puRes = await models.IrevPu.query().where('state_name', 'LAGOS');
     const puMap = _.fromPairs(puRes.map(r => [r.puCode, r]));
-
-    const toInt = (value) => {
-        const v = parseInt(value);
-        return isNaN(v) ? null : v;
-    }
 
     let rowNum = 1;
     for (const row of rows) {

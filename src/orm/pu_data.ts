@@ -30,6 +30,8 @@ export class PuData extends DbModel {
     @col(SchemaType.integer, {nullable: true}) numberOfPrevDocuments: number;
 
     @col(SchemaType.integer, {nullable: true}) votersAccredited: number;
+    @col(SchemaType.integer, {nullable: true}) votersAccreditedBvas: number;
+    @col(SchemaType.integer, {nullable: true}) votersRegistered: number;
     @col(SchemaType.integer, {nullable: true}) votesCast: number;
 
     @col(SchemaType.integer, {nullable: true}) votesLp: number;
@@ -39,6 +41,7 @@ export class PuData extends DbModel {
 
     @col(SchemaType.integer, {nullable: true}) votesSdp: number;
     @col(SchemaType.integer, {nullable: true}) votesAdc: number;
+    @col(SchemaType.integer, {nullable: true}) votesApga: number;
 
     @col(SchemaType.integer, {nullable: true}) votesVoided: number;
 
@@ -126,6 +129,8 @@ export class PuData extends DbModel {
     }
 
     static async fetchStats(electionType=ElectionType.PRESIDENTIAL): Promise<{state: any[], ward: any[]}> {
+
+
         const res = await PuData.query()
             .select('state_name', 'state_id')
             .count('state_name')
@@ -159,6 +164,8 @@ export class PuData extends DbModel {
 
         const recs = await User.query().select('display_name', 'contributor_id');
         const mapping = _.fromPairs(recs.map(r => [r.contributorId, r.displayName]));
+
+        console.log('[fetchStats] electionType:', electionType, wardRes);
 
         for (const ward of wardRes) {
             const contributor = mapping[_.trim(ward.lastContributorUsername)];

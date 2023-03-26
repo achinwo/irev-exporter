@@ -22,7 +22,7 @@ import {ElectionType, KEY_ELECTION_TYPE} from "./ref_data";
 
 export const WardSummaryView = ({ward, stats, electionType}) => {
     let wardStat = _.find(stats.ward, w => w.wardId === ward._id);
-    //console.log('WARD', wardStat, ward);
+    console.log('WARD', wardStat, ward);
     const getResult = (data) => data[electionType === ElectionType.PRESIDENTIAL ? 'resultCount' : 'resultGuberCount'];
 
     return <Stack direction={'row'} spacing={1}>
