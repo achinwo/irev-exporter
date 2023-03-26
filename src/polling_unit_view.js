@@ -79,7 +79,7 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
 
     const legibleResultView = <Box sx={{'& > :not(style)': {m: 1, width: '25ch'},}}>
         {
-            ['Apc', 'Lp', 'Nnpp', 'Pdp'].map((tag, key) => {
+            ['Apc', 'Lp', electionType === ElectionType.PRESIDENTIAL ? 'Nnpp' : 'Apga', 'Pdp'].map((tag, key) => {
                 return <TextField label={tag.toUpperCase()}
                                   key={key}
                                   value={puData[`votes${tag}`]}
