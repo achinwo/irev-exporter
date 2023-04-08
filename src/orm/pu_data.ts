@@ -165,7 +165,7 @@ export class PuData extends DbModel {
         const recs = await User.query().select('display_name', 'contributor_id');
         const mapping = _.fromPairs(recs.map(r => [r.contributorId, r.displayName]));
 
-        console.log('[fetchStats] electionType:', electionType, wardRes);
+        //console.log('[fetchStats] electionType:', electionType, wardRes);
 
         for (const ward of wardRes) {
             const contributor = mapping[_.trim(ward.lastContributorUsername)];
