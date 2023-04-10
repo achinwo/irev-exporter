@@ -232,11 +232,13 @@ class ImageWithFallback extends React.Component {
     }
 
     async fetchImage() {
-        const endpoint = `/api/doc?url=${encodeURI(this.props.pu.document.url)}`;
+        //const endpoint = `/api/doc?url=${encodeURI(this.props.pu.document.url)}`;
+        const endpoint = `${BASE_URL_KVDB}/api/polling-data/doc`;
+        console.log('[ImageWithFallback] endpoint', endpoint);
 
         try{
             this.props?.onConvertState('CONVERTING');
-            const response = await axios.get(endpoint, {responseType: "arraybuffer"})
+            const response = await axios.post(endpoint, {url: this.props.pu.document.url}, {responseType: "arraybuffer"})
             const buffer = Buffer.from(response.data, "binary");
             const blob = new Blob([buffer], { type: "image/png" });
             const urlCreator = window.URL || window.webkitURL;
@@ -292,7 +294,7 @@ export const PollingUnitView = ({pollingUnit, puData, setPuData, isSubmitting, s
     const pu = pollingUnit;
     const nodeRef = useRef();
     const isVisible = useIsVisible(nodeRef, {once: true});
-    const isPdf = pu.document.url.endsWith('.pdf');
+    const isPdf = pu.document?.url && (_.trim(url.parse(pu.document.url).pathname) !== '/') ? pu.document.url.endsWith('.pdf') : false;
 
     // const endpoint = `${BASE_URL_KVDB}/api/polling-data/doc`;
     // const response = await axios.post(endpoint, {url: query.url},{

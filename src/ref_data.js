@@ -10,7 +10,7 @@ module.exports.DataSource = {
 module.exports.KEY_CONTRIBUTOR = "contributor-name";
 module.exports.KEY_ELECTION_TYPE = "election-type";
 
-module.exports.BASE_URL_KVDB = process.env.BASE_URL_KVDB;
+module.exports.BASE_URL_KVDB = process.env.NEXT_PUBLIC_BASE_URL_KVDB;
 
 module.exports.STATES = [
     {
