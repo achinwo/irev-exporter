@@ -337,10 +337,11 @@ export const PollingUnitView = ({pollingUnit, puData, setPuData, isSubmitting, s
         return pu.document?.url && (_.trim(url.parse(pu.document.url).pathname) !== '/') ?
             <>
                 <Link href={pu.document?.url} rel="noopener noreferrer" target="_blank" sx={{mb: 4}}>Document
-                    Link {pu.document.url.endsWith('.pdf') ? '(PDF)' : '(JPG)'}</Link>
+                    Link {`${pu.document.url.endsWith('.pdf') ? '(PDF' : '(JPG'} - ${(pu.document.size / (1024 * 1024)).toFixed(2)}MB)`}</Link>
 
                 {isPdf ?
                     <LoadingButton
+                        sx={{marginLeft: 2}}
                         size="small"
                         color={puData?.imageConvertState === 'SUCCESS' ? "success" : 'primary'}
                         onClick={() => setPuData({forceImageConvert: puData?.forceImageConvert ? false : true})}
