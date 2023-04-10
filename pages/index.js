@@ -229,7 +229,7 @@ const App = () => {
       <MetaHead />
       <Box sx={{ display: "flex" }}>
         <CssBaseline />
-        <AppBar component="nav" color={'info'}>
+        <AppBar component="nav" color={'success'}>
           <Toolbar>
             <IconButton
               color="inherit"
