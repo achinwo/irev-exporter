@@ -17,7 +17,7 @@ import _ from "lodash";
 import url from "url";
 import LoadingButton from "@mui/lab/LoadingButton";
 import ReactPanZoom from 'react-image-pan-zoom-rotate';
-import {BASE_URL_KVDB, DataSource, ElectionType, KEY_CONTRIBUTOR} from "./ref_data";
+import {DataSource, ElectionType, KEY_CONTRIBUTOR} from "./ref_data";
 import React, { useRef } from 'react'
 import { useIsVisible } from 'react-is-visible'
 
@@ -205,80 +205,6 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
     </Box>;
 }
 
-class ImageWithFallback extends React.Component {
-    constructor(props) {
-        super(props);
-        this.state = {
-            imageSrc: null,
-            error: false,
-        };
-        this.handleError = this.handleError.bind(this);
-    }
-
-    componentDidUpdate(prevProps, prevState, snapshot) {
-        console.log(`[ImageWithFallback] prevProps:`, BASE_URL_KVDB, prevProps, this.props, prevState, this.props?.pu)
-
-        if(prevProps.convertPdf === this.props.convertPdf || (prevState.imageSrc && !this.state.imageSrc)) return;
-
-        if(this.props.convertPdf){
-            this.fetchImage()
-        } else {
-            this.setState({imageSrc: null});
-        }
-    }
-
-    componentDidMount() {
-        //this.props?.onConvertState(this.state.imageSrc && !this.state.error ? 'SUCCESS' : null);
-    }
-
-    async fetchImage() {
-        const endpoint = `/api/doc?url=${encodeURI(this.props.pu.document.url)}`;
-
-        try{
-            this.props?.onConvertState('CONVERTING');
-            const response = await axios.get(endpoint, {responseType: "arraybuffer"})
-            const buffer = Buffer.from(response.data, "binary");
-            const blob = new Blob([buffer], { type: "image/png" });
-            const urlCreator = window.URL || window.webkitURL;
-            const imageUrl = urlCreator.createObjectURL(blob);
-            this.setState({ imageSrc: imageUrl });
-            this.props?.onConvertState('SUCCESS');
-        } catch (error) {
-            console.error("[ImageWithFallback] Error fetching image:", error);
-            this.setState({ error: true });
-            this.props?.onConvertState('FAILED');
-        }
-    }
-
-    handleError() {
-        this.setState({
-            imageSrc: null,
-            error: true,
-        });
-    }
-
-    render() {
-        const { imageSrc, error } = this.state;
-        const { fallbackComponent: FallbackComponent } = this.props;
-
-        return (
-            <>
-                {imageSrc && !error ? (
-                    // <img src={imageSrc} alt="" onError={this.handleError} key={this.props?.pu?.pu_code}/>
-                    <Box style={{maxWidth: "100%", position: 'relative', overflow: 'hidden'}}>
-                        <ReactPanZoom
-                            image={imageSrc}
-                            alt={`Result for Polling Unit ${this.props.pu.pu_code}`}
-                        />
-                    </Box>
-                ) : (
-                    <FallbackComponent key={this.props?.pu?.pu_code} />
-                )}
-            </>
-        );
-    }
-}
-
 export const PollingUnitView = ({pollingUnit, puData, setPuData, isSubmitting, setIsSubmitting, setAlert, electionType}) => {
 
     const options = {
@@ -292,83 +218,6 @@ export const PollingUnitView = ({pollingUnit, puData, setPuData, isSubmitting, s
     const pu = pollingUnit;
     const nodeRef = useRef();
     const isVisible = useIsVisible(nodeRef, {once: true});
-    const isPdf = pu.document.url.endsWith('.pdf');
-
-    // const endpoint = `${BASE_URL_KVDB}/api/polling-data/doc`;
-    // const response = await axios.post(endpoint, {url: query.url},{
-    //     responseType: 'arraybuffer',
-    //     httpsAgent: new https.Agent({
-    //         rejectUnauthorized: false,
-    //     })});
-
-    function StandardViewer() {
-        return <>
-            {
-                isPdf ?
-                    <div style={{maxWidth: "100%", height: '100%', position: 'relative'}}>
-                        <embed width={'90%'} height={'auto'} src={`${pu.document?.url}#view=Fit&toolbar=1`} frameBorder={0}
-                               seamless style={{height: 'auto', minHeight:'60vh', marginTop: '1em'}}/>
-
-                    </div>
-                    :
-                    <Box style={{maxWidth: "100%", position: 'relative', overflow: 'hidden'}}>
-                        <ReactPanZoom
-                            image={pu.document.url}
-                            alt={`Result for Polling Unit ${pu.pu_code}`}
-                        />
-                    </Box>
-            }
-        </>;
-    }
-
-    const renderBody = () => {
-
-        const onConvertState = (imageConvertState) => {
-            setPuData({imageConvertState})
-        }
-
-        let label = 'Attempt Convert?';
-        if(puData?.imageConvertState === 'SUCCESS'){
-            label = 'Successful!';
-        } else if (puData?.imageConvertState === 'FAILED'){
-            label = 'Convert Failed!'
-        }
-
-        return pu.document?.url && (_.trim(url.parse(pu.document.url).pathname) !== '/') ?
-            <>
-                <Link href={pu.document?.url} rel="noopener noreferrer" target="_blank" sx={{mb: 4}}>Document
-                    Link {pu.document.url.endsWith('.pdf') ? '(PDF)' : '(JPG)'}</Link>
-
-                {isPdf ?
-                    <LoadingButton
-                        size="small"
-                        color={puData?.imageConvertState === 'SUCCESS' ? "success" : 'primary'}
-                        onClick={() => setPuData({forceImageConvert: puData?.forceImageConvert ? false : true})}
-                        loading={puData?.imageConvertState === 'CONVERTING'}
-                        loadingPosition="start"
-                        variant="text"
-                    >
-                        <span>{label}</span>
-                    </LoadingButton>
-                    : null}
-
-                <CardMedia style={{maxWidth: "100%", minHeight: '70vh'}}>
-                    <Stack>
-                        <ImageWithFallback convertPdf={puData?.forceImageConvert} onConvertState={onConvertState}
-                                           pu={pu} fallbackComponent={StandardViewer} />
-
-                        <PollingResultQuestionnaireView pollingUnit={pu} puData={puData} setPuData={setPuData}
-                                                        isSubmitting={isSubmitting} setIsSubmitting={setIsSubmitting}
-                                                        setAlert={setAlert} electionType={electionType} />
-
-                    </Stack>
-                </CardMedia>
-            </>
-            :
-            <>
-                <Typography>No Document</Typography>
-            </>
-    }
 
     let priorVersionLabel = '';
     // if(!_.isEmpty(pu.old_documents)){
@@ -382,7 +231,40 @@ export const PollingUnitView = ({pollingUnit, puData, setPuData, isSubmitting, s
                 <Typography>{capitalize(`${pu.name}`)}</Typography>
                 <Typography>{`PU Code: ${pu.pu_code}`}</Typography>
                 <Typography>{`Updated: ${new Date(pu.updated_at).toLocaleDateString("en-US", options)}${priorVersionLabel}`}</Typography>
-                {renderBody()}
+                {pu.document?.url && (_.trim(url.parse(pu.document.url).pathname) !== '/') ?
+                    <>
+                        <Link href={pu.document?.url} rel="noopener noreferrer" target="_blank" sx={{mb: 4}}>Document
+                            Link {pu.document.url.endsWith('.pdf') ? '(PDF)' : '(JPG)'}</Link>
+                        <CardMedia style={{maxWidth: "100%", minHeight: '70vh'}}>
+                            <Stack>
+                                {
+                                    pu.document.url.endsWith('.pdf') ?
+                                        <div style={{maxWidth: "100%", height: '100%', position: 'relative'}}>
+                                            <embed width={'90%'} height={'auto'} src={`${pu.document?.url}#view=Fit&toolbar=1`} frameBorder={0}
+                                                    seamless style={{height: 'auto', minHeight:'60vh', marginTop: '1em'}}/>
+
+                                        </div>
+                                        :
+                                        <Box style={{maxWidth: "100%", position: 'relative', overflow: 'hidden'}}>
+                                            <ReactPanZoom
+                                                image={pu.document.url}
+                                                alt={`Result for Polling Unit ${pu.pu_code}`}
+                                            />
+                                        </Box>
+                                }
+
+                                <PollingResultQuestionnaireView pollingUnit={pu} puData={puData} setPuData={setPuData}
+                                                                isSubmitting={isSubmitting} setIsSubmitting={setIsSubmitting}
+                                                                setAlert={setAlert} electionType={electionType} />
+
+                            </Stack>
+                        </CardMedia>
+                    </>
+                    :
+                    <>
+                        <Typography>No Document</Typography>
+                    </>
+                }
 
             </CardContent>}
         </Card>
