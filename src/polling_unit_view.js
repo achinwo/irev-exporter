@@ -20,6 +20,7 @@ import ReactPanZoom from 'react-image-pan-zoom-rotate';
 import {DataSource, ElectionType, KEY_CONTRIBUTOR} from "./ref_data";
 import React, { useRef } from 'react'
 import { useIsVisible } from 'react-is-visible'
+import WarningIcon from '@mui/icons-material/Warning';
 
 const RESULT_ILLEGIBILITY_STATE = {
     LEGIBLE: false,
@@ -175,10 +176,10 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
     </>
 
     const options = {
-        weekday: 'long',
-        year: 'numeric',
         month: 'long',
         day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
     };
 
     //isIllegibleResult === RESULT_ILLEGIBILITY_STATE.LEGIBLE ? '25ch' :
@@ -194,6 +195,8 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
 
                 (puData.createdAt ? <Typography sx={{fontStyle: 'italic'}} variant="subtitle1" style={{color: 'grey'}}>
                     Submitted by {puData.contributorUsername} on {new Date(puData.updatedAt).toLocaleDateString("en-US", options)}
+                    <Link href={puData.documentUrl} rel="noopener noreferrer" target="_blank" sx={{ml: 1}}>(Original Doc)</Link>
+                    {puData.documentSize === pu.document.size ? null : <WarningIcon title={'detected size mismatch from original submission'} fontSize={'small'} color={'warning'}/>}
                 </Typography> : null)
 
                 :
