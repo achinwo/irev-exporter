@@ -174,6 +174,13 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
         <br/>
     </>
 
+    const options = {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+    };
+
     //isIllegibleResult === RESULT_ILLEGIBILITY_STATE.LEGIBLE ? '25ch' :
     return <Box component="form" sx={{'& > :not(style)': {m: 1, width: '80%'},}} noValidate autoComplete="off">
         {isIllegibleResult === RESULT_ILLEGIBILITY_STATE.LEGIBLE ?
@@ -186,7 +193,7 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
             _.isUndefined(isIllegibleResult) || puData.createdAt ?
 
                 (puData.createdAt ? <Typography sx={{fontStyle: 'italic'}} variant="subtitle1" style={{color: 'grey'}}>
-                    Submitted by {puData.contributorUsername}
+                    Submitted by {puData.contributorUsername} on {new Date(puData.updatedAt).toLocaleDateString("en-US", options)}
                 </Typography> : null)
 
                 :
@@ -205,16 +212,18 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
     </Box>;
 }
 
+
+const options = {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+};
+
 export const PollingUnitView = ({pollingUnit, puData, setPuData, isSubmitting, setIsSubmitting, setAlert, electionType}) => {
 
-    const options = {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    };
     const pu = pollingUnit;
     const nodeRef = useRef();
     const isVisible = useIsVisible(nodeRef, {once: true});
