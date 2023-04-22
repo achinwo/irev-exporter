@@ -382,7 +382,7 @@ exports.fetchDocumentsByDate = async function fetchDocumentsByDate(){
 }
 
 gulp.task('export:report', async () => {
-    const results = require('./data_accreditation.json'); //await fetchAccreditationData();
+    const results = require('./inputs/data_accreditation.json'); //await fetchAccreditationData();
     const docsByDate = await exports.fetchDocumentsByDate();
     //await fs.writeFile('./data_accreditation.json', JSON.stringify(results, null, 4));
     //console.log('saved accreditation');
@@ -585,7 +585,8 @@ async function fetchStats(){
         console.log(`[fetchStats] completed state "${newState.name}": presidential=${newState.resultCount}, gubernatorial=${newState.resultGuberCount}`);
     }
 
-    console.log(JSON.stringify(newStates, null, 4));
+    await fs.writeFile('output/data_stats_ward.json', JSON.stringify(newStates, null, 4));
+    console.log('done!');
 }
 
 gulp.task('export:stats', fetchStats);
@@ -688,7 +689,7 @@ async function exportWardResults(){
         };
     }
 
-    await fs.writeFile('./build/data_stats_ward.json', JSON.stringify(wardData, null, 4));
+    await fs.writeFile('./outputs/data_stats_ward_v3.json', JSON.stringify(wardData, null, 4));
 }
 
 gulp.task('export:stats:ward', exportWardResults);

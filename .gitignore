@@ -23,7 +23,6 @@ lerna-debug.log*
 /build
 google-service-account.json
 google-credentials.json
-irev_data.json
 
 .idea
 
@@ -141,8 +140,6 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
-/election_results_2023_lagos.csv
-/election_data_grv_CLEANED.xlsx
-/data_accreditation.json
-/election_irev_stats.xlsx
+
 /inputs/
+/outputs/
