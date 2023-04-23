@@ -99,7 +99,7 @@ function PaginationView({setPuCode, puCodes, puData, componentId}) {
             variant="contained"
             onClick={(evt) => changePuCode(1)}
             endIcon={<NavigateNextIcon />}
-            disabled={currentIndex > puCodes.length - 1}
+            disabled={currentIndex >= (puCodes.length - 1)}
         >Next</Button>
     </>
 }
@@ -146,11 +146,11 @@ function PollingUnitReviewView({puData, puCodes}: {puData: models.PuData, puCode
                     <Stack direction={'row'} sx={{mt: 2, mr: 'auto', ml: 'auto'}}>
                         {
                             ['Apc', 'Lp', 'Nnpp', 'Pdp'].map((tag, key) => {
-                                return <Typography sx={{ml: 2}} key={key}><span style={{fontWeight: 'bold'}}>{tag.toUpperCase()}:</span> {puData[`votes${tag}`]}</Typography>
+                                return <Typography sx={{ml: 2}} key={key}><span style={{fontWeight: 'bold'}}>{tag.toUpperCase()}:</span> {puData[`votes${tag}`] || 'nil'}</Typography>
                             })
                         }
-                        <Typography sx={{ml: 2}}><span style={{fontWeight: 'bold'}}>Accredited Votes:</span> {puData.votersAccredited}</Typography>
-                        <Typography sx={{ml: 2}}><span style={{fontWeight: 'bold'}}>Total Votes:</span> {puData.votesCast}</Typography>
+                        <Typography sx={{ml: 2}}><span style={{fontWeight: 'bold'}}>Accredited Votes:</span> {puData.votersAccredited || 'Not Entered'}</Typography>
+                        <Typography sx={{ml: 2}}><span style={{fontWeight: 'bold'}}>Total Votes:</span> {puData.votesCast || 'Not Entered'}</Typography>
                     </Stack>
 
                     <Stack direction={'row'} sx={{mt: 2, mr: 'auto', ml: 'auto'}}>
