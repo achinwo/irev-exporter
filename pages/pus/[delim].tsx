@@ -8,7 +8,7 @@ import {
     CardContent, CardMedia, Chip, CircularProgress, Divider, FormControl, IconButton, InputLabel,
     Link,
     MenuItem,
-    Select, Stack,
+    Select, Stack, TextField,
     Typography, useMediaQuery, useTheme
 } from "@mui/material";
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
@@ -142,6 +142,16 @@ function PollingUnitReviewView({puData, puCodes}: {puData: models.PuData, puCode
                                 />
                             </Box>
                     }
+
+                    <Stack direction={'row'} sx={{mt: 2, mr: 'auto', ml: 'auto'}}>
+                        {
+                            ['Apc', 'Lp', 'Nnpp', 'Pdp'].map((tag, key) => {
+                                return <Typography sx={{ml: 2}} key={key}><span style={{fontWeight: 'bold'}}>{tag.toUpperCase()}:</span> {puData[`votes${tag}`]}</Typography>
+                            })
+                        }
+                        <Typography sx={{ml: 2}}><span style={{fontWeight: 'bold'}}>Accredited Votes:</span> {puData.votersAccredited}</Typography>
+                        <Typography sx={{ml: 2}}><span style={{fontWeight: 'bold'}}>Total Votes:</span> {puData.votesCast}</Typography>
+                    </Stack>
 
                     <Stack direction={'row'} sx={{mt: 2, mr: 'auto', ml: 'auto'}}>
                         <IconButton size={'large'} color="success" sx={{m: 4}}>
