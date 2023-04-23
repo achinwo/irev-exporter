@@ -5,7 +5,7 @@ import {PartialModelObject} from "objection";
 import {User} from "./user";
 import {DataSource, ElectionType } from "../ref_data";
 
-enum ReviewStatus {
+export enum ReviewStatus {
     RETURNED = 'RETURNED', VALIDATED = 'VALIDATED'
 }
 
