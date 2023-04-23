@@ -3,7 +3,7 @@ exports.up = function(knex) {
 		.alterTable('pu_data', (table) => {
 			table.string('reviewed_by_contributor_id');
 			table.dateTime('reviewed_at');
-			table.enum('reviewed_status', ['RETURNED', 'VALIDATED']);
+			table.enum('review_status', ['RETURNED', 'VALIDATED']);
 		});
 }
 exports.down = function(knex) {
@@ -11,7 +11,7 @@ exports.down = function(knex) {
 		.alterTable('pu_data', (table) => {
 			table.dropColumn('reviewed_by_contributor_id');
 			table.dropColumn('reviewed_at');
-			table.dropColumn('reviewed_status');
+			table.dropColumn('review_status');
 		});
 }
 exports.jsonSchema = {
@@ -167,7 +167,7 @@ exports.jsonSchema = {
             "type": "string",
             "format": "date-time"
         },
-        "reviewedStatus": {
+        "reviewStatus": {
             "type": "string",
             "enum": [
                 "RETURNED",

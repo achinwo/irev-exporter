@@ -5,6 +5,10 @@ import {PartialModelObject} from "objection";
 import {User} from "./user";
 import {DataSource, ElectionType } from "../ref_data";
 
+enum ReviewStatus {
+    RETURNED = 'RETURNED', VALIDATED = 'VALIDATED'
+}
+
 export class PuData extends DbModel {
     static tableName = 'pu_data';
 
@@ -65,7 +69,9 @@ export class PuData extends DbModel {
 
     @col(SchemaType.string, {nullable: true}) reviewedByContributorId: string;
     @col(SchemaType.datetime, {nullable: true}) reviewedAt: Date;
-    @col(SchemaType.string, {nullable: true, enum: ['RETURNED', 'VALIDATED']}) reviewedStatus: string;
+
+    @col(SchemaType.string, {nullable: true, enum: [ReviewStatus.RETURNED, ReviewStatus.VALIDATED]})
+    reviewStatus: string;
 
     static async createOrUpdate({pu, puData, contributor}: {pu: any, puData: any, contributor: string}): Promise<PuData>{
         if(puData.id){
