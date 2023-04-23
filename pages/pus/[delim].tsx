@@ -3,9 +3,9 @@ import * as models from '../../src/orm';
 import { ElectionType } from '../../src/ref_data';
 import Box from "@mui/material/Box";
 import {
-    Button,
+    Button, ButtonGroup,
     capitalize, Card,
-    CardContent, CardMedia, CircularProgress, IconButton,
+    CardContent, CardMedia, Chip, CircularProgress, Divider, IconButton,
     Link,
     MenuItem,
     Select, Stack,
@@ -114,7 +114,7 @@ function PollingUnitReviewView({puData, puCodes}: {puData: models.PuData, puCode
     const updatedTxt = `Updated: ${new Date(puData.updatedAt).toLocaleDateString("en-US", options)}`;
 
     // @ts-ignore
-    return <Card elevation={2} xs={{mt: 20}} style={{width: "100%", minHeight: '50vh'}}>
+    return <Card elevation={1} xs={{mt: 20}} style={{width: "100%", minHeight: '50vh'}}>
         {/* @ts-ignore */}
         <CardContent align="center" style={{width: "100%"}}>
             <Typography>{capitalize(`${puData.name}`)}</Typography>
@@ -164,7 +164,16 @@ function MainView({puData, setPuCode, puCodes, isLoadingPuData}) {
 
     return <Box sx={{ mt: 20, ml: {sm: 35, xs: 2}, mr: {sm: 4, xs: 0}}} style={{display: 'flex', flexDirection: 'column', minHeight: '70vh', width: '100%'}}>
 
-        <Box style={{display: 'flex', flexDirection: 'row', flexShrink: 1}}>
+        <ButtonGroup fullWidth={true} variant="outlined" sx={{mb: 2}}>
+            <Button color={'secondary'} variant={'outlined'} onClick={null}>Overvoting <Chip label="10k" sx={{display: {sx: 'none'}, ml: 1}} /></Button>
+            <Button color={'secondary'} variant={'contained'} onClick={null}>Missing Acc./Total Votes <Chip label="4k" sx={{display: {sx: 'none'}, ml: 1}} /></Button>
+            <Button color={'secondary'} variant={'outlined'} onClick={null}>Sum Votes {'>'} Ttl Votes <Chip label="5k" sx={{display: {sx: 'none'}, ml: 1}} /></Button>
+            <Button color={'secondary'} variant={'outlined'} onClick={null}>False Illegible <Chip label="2k" sx={{display: {sx: 'none'}, ml: 1}} /></Button>
+        </ButtonGroup>
+
+        {/*<Divider/>*/}
+
+        <Box sx={{mt: 4}} style={{display: 'flex', flexDirection: 'row', flexShrink: 1}}>
             <PaginationView puData={puData} puCodes={puCodes} setPuCode={setPuCode}/>
         </Box>
 
