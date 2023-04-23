@@ -5,7 +5,7 @@ import Box from "@mui/material/Box";
 import {
     Button, ButtonGroup,
     capitalize, Card,
-    CardContent, CardMedia, Chip, CircularProgress, Divider, FormControl, IconButton, InputLabel,
+    CardContent, CardMedia, Chip, CircularProgress, Divider, FormControl, Grid, IconButton, InputLabel,
     Link,
     MenuItem,
     Select, Stack, TextField,
@@ -18,6 +18,7 @@ import ReactPanZoom from "react-image-pan-zoom-rotate";
 import _ from 'lodash';
 import axios from "axios";
 import DoneOutlineIcon from '@mui/icons-material/DoneOutline';
+import DoneIcon from '@mui/icons-material/Done';
 import CloseIcon from '@mui/icons-material/Close';
 
 function goTo(page, title, url) {
@@ -143,28 +144,75 @@ function PollingUnitReviewView({puData, puCodes}: {puData: models.PuData, puCode
                             </Box>
                     }
 
-                    <Stack direction={'row'} sx={{mt: 2, mr: 'auto', ml: 'auto'}}>
-                        {
-                            ['Apc', 'Lp', 'Nnpp', 'Pdp'].map((tag, key) => {
-                                return <Typography sx={{ml: 2}} key={key}><span style={{fontWeight: 'bold'}}>{tag.toUpperCase()}:</span> {puData[`votes${tag}`] || 'nil'}</Typography>
-                            })
-                        }
-                        <Typography sx={{ml: 2}}><span style={{fontWeight: 'bold'}}>Accredited Votes:</span> {puData.votersAccredited || 'Not Entered'}</Typography>
-                        <Typography sx={{ml: 2}}><span style={{fontWeight: 'bold'}}>Total Votes:</span> {puData.votesCast || 'Not Entered'}</Typography>
-                    </Stack>
+                    <PuQuestionnaireView puData={puData}/>
 
                     <Stack direction={'row'} sx={{mt: 2, mr: 'auto', ml: 'auto'}}>
-                        <IconButton size={'large'} color="success" sx={{m: 4}}>
-                            <DoneOutlineIcon />
-                        </IconButton>
-                        <IconButton size={'large'} color="error" sx={{m: 4}}>
-                            <CloseIcon />
-                        </IconButton>
+                        <Button size={'large'} color={'success'} sx={{m: 4}}>
+                            <Stack justifyContent="center" alignItems="center">
+                                <DoneOutlineIcon fontSize={'large'} />
+                                <Typography>Valid</Typography>
+                            </Stack>
+                        </Button>
+
+                        <Button size={'large'} color={'error'} sx={{m: 4}}>
+                            <Stack justifyContent="center" alignItems="center">
+                                <CloseIcon fontSize={'large'} />
+                                <Typography>Return</Typography>
+                            </Stack>
+                        </Button>
                     </Stack>
                 </Stack>
             </CardMedia>
         </CardContent>
     </Card>
+}
+
+const NOT_ENTERED = 'Not Entered';
+
+function PuQuestionnaireView({puData}) {
+    const fields: [string, string, boolean][] = [
+        ['Accredited Votes', 'votersAccredited', false],
+        ['Total Valid Votes', 'votesCast', false],
+        ['Contains Alteration', 'containsAlterations', true],
+        ['Incorrect PU Name', 'containsIncorrectPuName', true],
+    ]
+    const gridArgs = {item: true, xs: 2, sm: 4, md: 3};
+    const gridArgs2 = {item: true, xs: 4, sm: 4, md: 6};
+
+    const makeStack = (label, val) => {
+        const [validatedLabel, setValidatedLabel] = useState<null | boolean>(val === NOT_ENTERED ? false : null);
+        const color = validatedLabel ? 'success' : (validatedLabel === null ? 'inherit' : 'error');
+        return <Button
+            variant={'outlined'}
+            color={color}
+            fullWidth={true}
+            onClick={() => setValidatedLabel(!validatedLabel)}
+            endIcon={validatedLabel ? <DoneIcon/> : (validatedLabel === null ? null : <CloseIcon />) }>
+                <Stack direction={'row'} divider={<Divider orientation={'vertical'} flexItem={true} sx={{ml: 1, mr: 1}}/>}>
+                    <Typography sx={{fontWeight: 'bold'}}>{label}</Typography>
+                    <Typography sx={{}}>{val}</Typography>
+                </Stack>
+            </Button>;
+    }
+
+    return <>
+        <Grid container spacing={{ xs: 2, md: 2 }} sx={{}} columns={{ xs: 4, sm: 8, md: 12 }}>
+            {['Apc', 'Lp', 'Nnpp', 'Pdp'].map((tag, key) => {
+                return <Grid key={key} {...gridArgs}>
+                    {makeStack(tag.toUpperCase(), puData[`votes${tag}`] || 'nil')}
+                </Grid>
+            })}
+
+            {
+                fields.map(([label, fieldName, isBool]) => {
+                    const val = isBool ? `${puData[fieldName] ?? false}` : puData[fieldName] || NOT_ENTERED;
+                    return <Grid key={fieldName} {...gridArgs2}>
+                        {makeStack(label, val)}
+                    </Grid>
+                })
+            }
+        </Grid>
+    </>
 }
 
 function MainView({puData, setPuCode, puCodes, isLoadingPuData}) {
