@@ -5,7 +5,7 @@ import Box from "@mui/material/Box";
 import {
     Button, ButtonGroup,
     capitalize, Card,
-    CardContent, CardMedia, Chip, CircularProgress, Divider, IconButton,
+    CardContent, CardMedia, Chip, CircularProgress, Divider, FormControl, IconButton, InputLabel,
     Link,
     MenuItem,
     Select, Stack,
@@ -55,7 +55,7 @@ const AppPuView = function ({puCodesSerialized, puSerialized, puDataSerialized})
     return <App pageTitle={'Data Review'} mainComponent={MainView} mainComponentProps={{puData, puCodes, setPuCode, isLoadingPuData}} stateId={puObj.stateId} electionType={ElectionType.PRESIDENTIAL}></App>;
 }
 
-function PaginationView({setPuCode, puCodes, puData}) {
+function PaginationView({setPuCode, puCodes, puData, componentId}) {
 
     const currentIndex = _.findIndex(puCodes, (p) => p.puCode === puData.puCode);
 
@@ -76,6 +76,8 @@ function PaginationView({setPuCode, puCodes, puData}) {
 
         <Box style={{flexGrow: 2}}>
             <Box sx={{mr: 'auto', ml: 'auto', minWidth: 25, maxWidth: '50vw'}} style={{display: 'flex', flexDirection: 'column'}}>
+                <FormControl variant="filled" sx={{ m: 1, minWidth: 120 }}>
+                    <InputLabel id={componentId}>Polling Unit</InputLabel>
                 <Select
                     sx={{}}
                     value={puData?.puCode}
@@ -88,11 +90,12 @@ function PaginationView({setPuCode, puCodes, puData}) {
                         })
                     }
                 </Select>
+                </FormControl>
             </Box>
         </Box>
 
         <Button
-            sx={{ borderRadius: 8 }}
+            sx={{ borderRadius: 8}}
             variant="contained"
             onClick={(evt) => changePuCode(1)}
             endIcon={<NavigateNextIcon />}
@@ -184,7 +187,7 @@ function MainView({puData, setPuCode, puCodes, isLoadingPuData}) {
         {/*<Divider/>*/}
 
         <Box sx={{mt: 4}} style={{display: 'flex', flexDirection: 'row', flexShrink: 1}}>
-            <PaginationView puData={puData} puCodes={puCodes} setPuCode={setPuCode}/>
+            <PaginationView  componentId={'pagination-top'} puData={puData} puCodes={puCodes} setPuCode={setPuCode}/>
         </Box>
 
         <Box sx={{mt: 2, mb: 2}} style={{display: 'flex', flexDirection: 'row', flexGrow: 2, width: '100%'}}>
@@ -194,7 +197,7 @@ function MainView({puData, setPuCode, puCodes, isLoadingPuData}) {
         </Box>
 
         <Box style={{display: 'flex', flexDirection: 'row', flexShrink: 1}}>
-            <PaginationView puData={puData} puCodes={puCodes} setPuCode={setPuCode}/>
+            <PaginationView componentId={'pagination-bottom'} puData={puData} puCodes={puCodes} setPuCode={setPuCode}/>
         </Box>
     </Box>
 }
