@@ -4,6 +4,8 @@ import path from "path";
 import {PartialModelObject} from "objection";
 import {User} from "./user";
 import {DataSource, ElectionType } from "../ref_data";
+import * as models from "./index";
+import {DataQualityIssue} from "../review_view";
 
 export enum ReviewStatus {
     RETURNED = 'RETURNED', VALIDATED = 'VALIDATED'
@@ -184,6 +186,84 @@ export class PuData extends DbModel {
         }
 
         return {state: rows, ward: wardRes};
+    }
+
+    static async fetchOvervoting(opts={limit: 100}){
+        return models.PuData.query()
+            .select('pu_code', 'name', 'reviewed_at', 'review_status')
+            .whereRaw('votes_cast > voters_accredited')
+            .andWhereRaw(`(review_status is null OR review_status != '${ReviewStatus.VALIDATED}')`)
+            .andWhere('election_type', ElectionType.PRESIDENTIAL)
+            .andWhere('source', 'irev')
+            .limit(opts?.limit ?? 100);
+    }
+
+    static async fetchInconsistentVotes(opts={limit: 100}){
+        return models.PuData.query()
+            .select('pu_code', 'name', 'reviewed_at', 'review_status')
+            .from(
+                models.PuData.query()
+                    .select('pu_code', 'name', 'reviewed_at', 'review_status', models.PuData.knex().raw('SUM(COALESCE(votes_lp, 0) + COALESCE(votes_apc, 0) + COALESCE(votes_pdp, 0) + COALESCE(votes_nnpp, 0))'))
+                    .where('election_type', ElectionType.PRESIDENTIAL)
+                    .andWhere('source', 'irev')
+                    .groupBy('pu_code', 'name', 'votes_cast', 'reviewed_at', 'review_status')
+                    .havingRaw('SUM(COALESCE(votes_lp, 0) + COALESCE(votes_apc, 0) + COALESCE(votes_pdp, 0) + COALESCE(votes_nnpp, 0)) > votes_cast')
+                    .as('tbl')
+            )
+    }
+
+    static async fetchUnenteredVotes(opts={limit: 100}){
+        return models.PuData.query()
+            .select('pu_code', 'name', 'reviewed_at', 'review_status')
+            .whereRaw('(votes_cast is null OR voters_accredited is null)')
+            .andWhereRaw(`(review_status is null OR review_status != '${ReviewStatus.VALIDATED}')`)
+            .andWhere('election_type', ElectionType.PRESIDENTIAL)
+            .andWhere('source', 'irev')
+            .limit(opts?.limit ?? 100);
+    }
+
+    static async fetchDataQualityStats(){
+        const overvotingRes = await models.PuData.query()
+            .count('*', {as: 'overvotingCount'})
+            .whereRaw('votes_cast > voters_accredited')
+            .andWhereRaw(`(review_status is null OR review_status != '${ReviewStatus.VALIDATED}')`)
+            .andWhere('election_type', ElectionType.PRESIDENTIAL)
+            .andWhere('source', 'irev').first();
+
+        const unRes = await models.PuData.query()
+            .count('*', {as: 'unenteredCount'})
+            .whereRaw('(votes_cast is null OR voters_accredited is null)')
+            .andWhereRaw(`(review_status is null OR review_status != '${ReviewStatus.VALIDATED}')`)
+            .andWhere('election_type', ElectionType.PRESIDENTIAL)
+            .andWhere('source', 'irev')
+            .first();
+
+    //     SELECT count(*) FROM
+    //     (
+    //         SELECT pu_code, SUM(COALESCE(votes_lp, 0) + COALESCE(votes_apc, 0) + COALESCE(votes_pdp, 0) + COALESCE(votes_nnpp, 0)) as votes_sum, votes_cast
+    //     FROM pu_data WHERE election_type='PRESIDENTIAL' AND source='irev' --AND pu_code = '22/05/11/013';
+    //     GROUP BY pu_code, votes_cast
+    //     HAVING SUM(COALESCE(votes_lp, 0) + COALESCE(votes_apc, 0) + COALESCE(votes_pdp, 0) + COALESCE(votes_nnpp, 0)) > votes_cast
+    // ) as tbl;
+
+        const gtRes = await models.PuData.query()
+                .count('*', {as: 'gtCount'})
+                .from(
+                    models.PuData.query()
+                        .select('pu_code', models.PuData.knex().raw('SUM(COALESCE(votes_lp, 0) + COALESCE(votes_apc, 0) + COALESCE(votes_pdp, 0) + COALESCE(votes_nnpp, 0))'))
+                        .where('election_type', ElectionType.PRESIDENTIAL)
+                        .andWhere('source', 'irev')
+                        .groupBy('pu_code', 'votes_cast')
+                        .havingRaw('SUM(COALESCE(votes_lp, 0) + COALESCE(votes_apc, 0) + COALESCE(votes_pdp, 0) + COALESCE(votes_nnpp, 0)) > votes_cast')
+                        .as('tbl')
+                ).first();
+
+        //console.log('VALUE:', gtRes);
+        return {
+            [DataQualityIssue.OVER_VOTING]: _.toInteger((overvotingRes as unknown as {overvotingCount: number}).overvotingCount),
+            [DataQualityIssue.UNENTERED_VOTES]: _.toInteger((unRes as unknown as {unenteredCount: number}).unenteredCount),
+            [DataQualityIssue.VOTES_GT_TTL_VOTES]: _.toInteger((gtRes as unknown as {gtCount: number}).gtCount),
+        }
     }
 
 }

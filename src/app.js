@@ -28,7 +28,7 @@ import {MainBody} from './main_view';
 import {ElectionType, KEY_CONTRIBUTOR, KEY_ELECTION_TYPE, STATES} from "./ref_data";
 import {AccountDiaglogView} from "./account_view";
 
-export const App = ({stateId: initialStateId, mainComponent, mainComponentProps, electionType: initialElectionType, pageTitle}) => {
+export const App = ({stateId: initialStateId, mainComponent, mainComponentProps, electionType: initialElectionType, pageTitle, suppressDrawer}) => {
     const [states, setStates] = useState([]);
     const [stateId, setStateId] = useState(initialStateId || null);
     const [selectedState, setSelectedState] = useState(null);
@@ -233,6 +233,8 @@ export const App = ({stateId: initialStateId, mainComponent, mainComponentProps,
                 <CssBaseline />
                 <AppBar component="nav" color={'info'}>
                     <Toolbar>
+
+                        { !suppressDrawer &&
                         <IconButton
                             color="inherit"
                             aria-label="open drawer"
@@ -242,6 +244,7 @@ export const App = ({stateId: initialStateId, mainComponent, mainComponentProps,
                         >
                             <MenuIcon />
                         </IconButton>
+                        }
 
                         <Box display="flex" alignItems="center" style={{ width: "100%" }}>
                             <Box flexGrow={1}>
@@ -299,7 +302,7 @@ export const App = ({stateId: initialStateId, mainComponent, mainComponentProps,
                             onBackdropClick: handleDrawerToggle,
                         }}
                         sx={{
-                            display: { xs: "block", sm: "none" },
+                            display: { xs: !suppressDrawer ? "block" : "none", sm: "none" },
                             "& .MuiDrawer-paper": {
                                 boxSizing: "border-box",
                                 width: drawerWidth,
@@ -317,7 +320,7 @@ export const App = ({stateId: initialStateId, mainComponent, mainComponentProps,
                     <Drawer
                         variant="permanent"
                         sx={{
-                            display: { xs: "none", sm: "block" },
+                            display: { xs: "none", sm: !suppressDrawer ? "block" : "none" },
                             "& .MuiDrawer-paper": {
                                 boxSizing: "border-box",
                                 width: drawerWidth,

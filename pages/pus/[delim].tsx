@@ -6,26 +6,21 @@ import _ from 'lodash';
 
 
 export async function getServerSideProps({params, query, resolvedUrl}) {
-    const {delim} = params;
-    let puCode, puData, puCodes;
+    const {delim, pu} = params;
+    console.log('[getServerSideProps]', query, params);
 
-    const issueNames = Object.values(DataQualityIssue).map(i => i.toLowerCase());
+    const issueNames = DataQualityIssue.values().map(i => i.toLowerCase());
+    let puCode = pu ? pu.replaceAll('-', '/') : null;
+    let puData, puCodes;
 
-    if(issueNames.includes(delim.toLowerCase())){
-        puCodes = await models.PuData.query()
-            .select('pu_code', 'name', 'reviewed_at', 'review_status')
-            .whereRaw('votes_cast > voters_accredited')
-            .andWhereRaw(`(review_status is null OR review_status != '${ReviewStatus.VALIDATED}')`)
-            .andWhere('election_type', ElectionType.PRESIDENTIAL)
-            .andWhere('source', 'irev')
-            .limit(100);
+    //
 
-        puCode = _.first(puCodes).puCode;
-
-        puData = await models.PuData.query()
-            .where('pu_code', puCode)
-            .andWhere('election_type', ElectionType.PRESIDENTIAL)
-            .andWhere('source', 'irev').first();
+    if(delim.toLowerCase() === DataQualityIssue.OVER_VOTING.toLowerCase()) {
+        puCodes = await models.PuData.fetchOvervoting({limit: 100});
+    } else if(delim.toLowerCase() === DataQualityIssue.UNENTERED_VOTES.toLowerCase()){
+        puCodes = await models.PuData.fetchUnenteredVotes({limit: 100});
+    } else if(delim.toLowerCase() === DataQualityIssue.VOTES_GT_TTL_VOTES.toLowerCase()){
+        puCodes = await models.PuData.fetchInconsistentVotes({limit: 100});
     } else {
         puCode = delim.replaceAll('-', '/');
 
@@ -41,12 +36,33 @@ export async function getServerSideProps({params, query, resolvedUrl}) {
             .andWhere('source', 'irev');
     }
 
-    const pu = await models.IrevPu.query().where('pu_code', puCode).first();
     puCodes = _.sortBy(puCodes, (o) => o.puCode);
 
-    console.log('[getServerSideProps] puCode:', puCode);
+    if(puCode && !_.find(puCodes, (p) => p.puCode)){
+        puCode = null;
+    }
+
+    puCode = puCode || _.first(puCodes).puCode;
+
+    const puObj = await models.IrevPu.query().where('pu_code', puCode).first();
+
+    puData = puData || (await models.PuData.query()
+        .where('pu_code', puCode)
+        .andWhere('election_type', ElectionType.PRESIDENTIAL)
+        .andWhere('source', 'irev').first());
+
+    const statsRaw = await models.PuData.fetchDataQualityStats();
+    let stats = {};
+
+    for (const [key, count] of _.toPairs(statsRaw)) {
+        stats[key] = {label: DataQualityIssue.labelFor(key), count};
+    }
+
+    console.log('[getServerSideProps] puCode:', puCode, stats);
     return {
-        props: {...params, puCode, puCodesSerialized: JSON.stringify(puCodes), puSerialized: JSON.stringify(pu.toJson()), puDataSerialized: JSON.stringify(puData.toJson()), query, resolvedUrl},
+        props: {...params, stats, puCode, puCodesSerialized: JSON.stringify(puCodes),
+            puSerialized: JSON.stringify(puObj.toJson()), puDataSerialized: JSON.stringify(puData.toJson()),
+            query, resolvedUrl},
     }
 }
 

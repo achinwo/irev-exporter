@@ -27,6 +27,27 @@ export enum DataQualityIssue {
     FALSE_ILLEGIBLE = 'FALSE_ILLEGIBLE'
 }
 
+export namespace DataQualityIssue {
+
+    export function values(): string[] {
+        return [
+            DataQualityIssue.UNENTERED_VOTES,
+            DataQualityIssue.VOTES_GT_TTL_VOTES,
+            DataQualityIssue.OVER_VOTING,
+            DataQualityIssue.FALSE_ILLEGIBLE,
+        ]
+    }
+
+    export function labelFor(val) {
+        return {
+            [DataQualityIssue.UNENTERED_VOTES]: 'Missing Acc./Total Votes',
+            [DataQualityIssue.VOTES_GT_TTL_VOTES]: 'Sum Votes > Ttl Votes',
+            [DataQualityIssue.OVER_VOTING]: 'Overvoting',
+            [DataQualityIssue.FALSE_ILLEGIBLE]: 'False Illegible'
+        }[val];
+    }
+}
+
 
 function goTo(page, title, url) {
     if ("undefined" !== typeof history.pushState) {
@@ -36,7 +57,7 @@ function goTo(page, title, url) {
     }
 }
 
-export const AppPuView = function ({puCodesSerialized, puSerialized, puDataSerialized}) {
+export const AppPuView = function ({stats, puCodesSerialized, puSerialized, puDataSerialized, delim}) {
     let puObj: models.IrevPu = JSON.parse(puSerialized);
     let initialPuData: models.PuData = JSON.parse(puDataSerialized);
     const puCodes: {name: string, puCode: string}[] = JSON.parse(puCodesSerialized);
@@ -53,14 +74,16 @@ export const AppPuView = function ({puCodesSerialized, puSerialized, puDataSeria
             .then((resp) => {
                 setPuData(resp.data.data);
 
-                goTo(newDelim, `PU - ${resp.data.data?.name}`, `/pus/${newDelim}`);
+                const isDq = DataQualityIssue.values().map(i => i.toLowerCase()).includes(delim.toLowerCase());
+                const newUrl = isDq ? `/pus/${delim}?pu=${newDelim}` : `/pus/${newDelim}`;
+                goTo(newDelim, `PU - ${resp.data.data?.name}`, newUrl);
             })
             .finally(() => setIsLoadingPuData(false));
 
     }, [puCode]);
 
     //console.log('AppPuView:', puCodes);
-    return <App pageTitle={'Data Review'} mainComponent={MainView} mainComponentProps={{puData, puCodes, setPuCode, isLoadingPuData}} stateId={puObj.stateId} electionType={ElectionType.PRESIDENTIAL}></App>;
+    return <App suppressDrawer={true} pageTitle={'Data Review'} mainComponent={MainView} mainComponentProps={{delim, puData, puCodes, setPuCode, isLoadingPuData, stats}} stateId={puObj.stateId} electionType={ElectionType.PRESIDENTIAL}></App>;
 }
 
 function PaginationView({setPuCode, puCodes, puData, componentId}) {
@@ -224,7 +247,16 @@ function PuQuestionnaireView({puData}) {
     </>
 }
 
-function MainView({puData, setPuCode, puCodes, isLoadingPuData}) {
+function formatToUnits(number, precision) {
+    const abbrev = ['', 'k', 'm', 'b', 't'];
+    const unrangifiedOrder = Math.floor(Math.log10(Math.abs(number)) / 3)
+    const order = Math.max(0, Math.min(unrangifiedOrder, abbrev.length -1 ))
+    const suffix = abbrev[order];
+
+    return (number / Math.pow(10, order * 3)).toFixed(precision) + suffix;
+}
+
+function MainView({puData, setPuCode, puCodes, isLoadingPuData, stats, delim}) {
     // const theme = useTheme();
     // const matches = useMediaQuery(theme.breakpoints.up('sm'));
 
@@ -241,14 +273,22 @@ function MainView({puData, setPuCode, puCodes, isLoadingPuData}) {
             <Chip label={chip} sx={{display: {sx: 'none'}, ml: 1}} />
         </Stack>
     }
-
-    return <Box sx={{ mt: 20, ml: {sm: 35, xs: 2}, mr: {sm: 4, xs: 0}}} style={{display: 'flex', flexDirection: 'column', minHeight: '70vh', width: '100%'}}>
+    //{ mt: 20, ml: {sm: 35, xs: 2}, mr: {sm: 4, xs: 0}}
+    return <Box sx={{ mt: 20, ml: 4, mr: 4}} style={{display: 'flex', flexDirection: 'column', minHeight: '70vh', width: '100%'}}>
 
         <ButtonGroup fullWidth={true} variant="outlined" sx={{mb: 2}}>
-            <Button color={'secondary'} variant={'outlined'} onClick={null}>{makeStack('Overvoting', '10k')}</Button>
-            <Button color={'secondary'} variant={'contained'} onClick={null}>{makeStack('Missing Acc./Total Votes', '4k')}</Button>
-            <Button color={'secondary'} variant={'outlined'} onClick={null}>{makeStack('Sum Votes > Ttl Votes', '5k')}</Button>
-            <Button color={'secondary'} variant={'outlined'} onClick={null}>{makeStack('False Illegible', '2.5k')}</Button>
+            {
+                _.toPairs(stats).map(([key, {label, count}]) => {
+                    return <Button
+                        href={`/pus/${key}`}
+                        color={'secondary'}
+                        key={key}
+                        variant={key === delim ? 'contained' : 'outlined'} onClick={null}>
+                        {makeStack(label, formatToUnits(count, 1))}
+                    </Button>
+                })
+            }
+
         </ButtonGroup>
 
         {/*<Divider/>*/}
