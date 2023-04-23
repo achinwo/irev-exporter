@@ -196,7 +196,7 @@ function PuQuestionnaireView({puData}) {
     }
 
     return <>
-        <Grid container spacing={{ xs: 2, md: 2 }} sx={{}} columns={{ xs: 4, sm: 8, md: 12 }}>
+        <Grid container spacing={{ xs: 2, md: 2 }} sx={{mt: 4}} columns={{ xs: 4, sm: 8, md: 12 }}>
             {['Apc', 'Lp', 'Nnpp', 'Pdp'].map((tag, key) => {
                 return <Grid key={key} {...gridArgs}>
                     {makeStack(tag.toUpperCase(), puData[`votes${tag}`] || 'nil')}

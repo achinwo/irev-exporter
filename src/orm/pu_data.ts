@@ -63,6 +63,10 @@ export class PuData extends DbModel {
 
     @col(SchemaType.string, {nullable: true}) electionType: string;
 
+    @col(SchemaType.string, {nullable: true}) reviewedByContributorId: string;
+    @col(SchemaType.datetime, {nullable: true}) reviewedAt: Date;
+    @col(SchemaType.string, {nullable: true, enum: ['RETURNED', 'VALIDATED']}) reviewedStatus: string;
+
     static async createOrUpdate({pu, puData, contributor}: {pu: any, puData: any, contributor: string}): Promise<PuData>{
         if(puData.id){
             return PuData.query().updateAndFetchById(puData.id, puData);

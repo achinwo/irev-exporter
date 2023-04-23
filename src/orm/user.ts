@@ -4,6 +4,8 @@ import jwt from "jwt-simple";
 import {SESSION_SECRET} from "../lib/model";
 import moment from "moment";
 import _ from 'lodash';
+import Protocol from "devtools-protocol";
+import integer = Protocol.integer;
 
 export class User extends DbModel implements UserInterface {
 
@@ -14,6 +16,8 @@ export class User extends DbModel implements UserInterface {
 
     @col(SchemaType.string, true) passwordHash: string;
     @col(SchemaType.string, true) email: string;
+
+    @col(SchemaType.integer, true) role: number;
 
     @col(SchemaType.datetime) activatedAt: Date;
     @col(SchemaType.datetime) firstContributedAt: Date;
