@@ -9,7 +9,7 @@ import {
     Link,
     MenuItem,
     Select, Stack,
-    Typography
+    Typography, useMediaQuery, useTheme
 } from "@mui/material";
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
@@ -162,13 +162,23 @@ function MainView({puData, setPuCode, puCodes, isLoadingPuData}) {
         return <CircularProgress color={"success"} size={200} />;
     }
 
+    const theme = useTheme();
+    const matches = useMediaQuery(theme.breakpoints.down('sm'));
+
+    const makeStack = (text, chip) => {
+        return <Stack direction={ matches ? 'column' : 'row'} alignItems={'center'}>
+            <Typography>{text}</Typography>
+            <Chip label={chip} sx={{display: {sx: 'none'}, ml: 1}} />
+        </Stack>
+    }
+
     return <Box sx={{ mt: 20, ml: {sm: 35, xs: 2}, mr: {sm: 4, xs: 0}}} style={{display: 'flex', flexDirection: 'column', minHeight: '70vh', width: '100%'}}>
 
         <ButtonGroup fullWidth={true} variant="outlined" sx={{mb: 2}}>
-            <Button color={'secondary'} variant={'outlined'} onClick={null}>Overvoting <Chip label="10k" sx={{display: {sx: 'none'}, ml: 1}} /></Button>
-            <Button color={'secondary'} variant={'contained'} onClick={null}>Missing Acc./Total Votes <Chip label="4k" sx={{display: {sx: 'none'}, ml: 1}} /></Button>
-            <Button color={'secondary'} variant={'outlined'} onClick={null}>Sum Votes {'>'} Ttl Votes <Chip label="5k" sx={{display: {sx: 'none'}, ml: 1}} /></Button>
-            <Button color={'secondary'} variant={'outlined'} onClick={null}>False Illegible <Chip label="2k" sx={{display: {sx: 'none'}, ml: 1}} /></Button>
+            <Button color={'secondary'} variant={'outlined'} onClick={null}>{makeStack('Overvoting', '10k')}</Button>
+            <Button color={'secondary'} variant={'contained'} onClick={null}>{makeStack('Missing Acc./Total Votes', '4k')}</Button>
+            <Button color={'secondary'} variant={'outlined'} onClick={null}>{makeStack('Sum Votes > Ttl Votes', '5k')}</Button>
+            <Button color={'secondary'} variant={'outlined'} onClick={null}>{makeStack('False Illegible', '2.5k')}</Button>
         </ButtonGroup>
 
         {/*<Divider/>*/}
