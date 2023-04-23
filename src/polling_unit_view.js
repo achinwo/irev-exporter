@@ -10,7 +10,7 @@ import {
     Link,
     Radio,
     RadioGroup, Stack,
-    TextField
+    TextField, IconButton
 } from "@mui/material";
 import Box from "@mui/material/Box";
 import _ from "lodash";
@@ -21,6 +21,7 @@ import {DataSource, ElectionType, KEY_CONTRIBUTOR} from "./ref_data";
 import React, { useRef } from 'react'
 import { useIsVisible } from 'react-is-visible'
 import WarningIcon from '@mui/icons-material/Warning';
+import VisibilitySharpIcon from '@mui/icons-material/VisibilitySharp';
 
 const RESULT_ILLEGIBILITY_STATE = {
     LEGIBLE: false,
@@ -195,8 +196,12 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
 
                 (puData.createdAt ? <Typography sx={{fontStyle: 'italic'}} variant="subtitle1" style={{color: 'grey'}}>
                     Submitted by {puData.contributorUsername} on {new Date(puData.updatedAt).toLocaleDateString("en-US", options)}
-                    <Link href={puData.documentUrl} rel="noopener noreferrer" target="_blank" sx={{ml: 1}}>(Original Doc)</Link>
+
+                    {/*<Link href={puData.documentUrl} rel="noopener noreferrer" target="_blank" sx={{ml: 2}}>(Original Doc)</Link>*/}
                     {puData.documentSize === pu.document.size ? null : <WarningIcon title={'detected size mismatch from original submission'} fontSize={'small'} color={'warning'}/>}
+                    <IconButton href={`/pus/${puData.puCode.replaceAll('/', '-')}`} rel="noopener noreferrer" target="_blank" color="success" sx={{ml: 2}}>
+                        <VisibilitySharpIcon />
+                    </IconButton>
                 </Typography> : null)
 
                 :
