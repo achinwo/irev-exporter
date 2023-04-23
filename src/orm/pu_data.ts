@@ -216,6 +216,7 @@ export class PuData extends DbModel {
         return models.PuData.query()
             .select('pu_code', 'name', 'reviewed_at', 'review_status')
             .whereRaw('(votes_cast is null OR voters_accredited is null)')
+            .andWhere('is_result_illegible', false)
             .andWhereRaw(`(review_status is null OR review_status != '${ReviewStatus.VALIDATED}')`)
             .andWhere('election_type', ElectionType.PRESIDENTIAL)
             .andWhere('source', 'irev')
