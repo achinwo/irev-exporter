@@ -175,6 +175,8 @@ function PuQuestionnaireView({puData}) {
         ['Total Valid Votes', 'votesCast', false],
         ['Contains Alteration', 'containsAlterations', true],
         ['Incorrect PU Name', 'containsIncorrectPuName', true],
+        ['INEC Stamp Absent', 'isInecStampAbsent', true],
+        ['Non-EC8 Form', 'isNoneEceightForm', true],
     ]
     const gridArgs = {item: true, xs: 2, sm: 4, md: 3};
     const gridArgs2 = {item: true, xs: 4, sm: 4, md: 6};
