@@ -6,7 +6,8 @@ import _ from 'lodash';
 
 
 export async function getServerSideProps({params, query, resolvedUrl}) {
-    const {delim, pu} = params;
+    const {delim} = params;
+    const {pu} = query;
     console.log('[getServerSideProps]', query, params);
 
     const issueNames = DataQualityIssue.values().map(i => i.toLowerCase());
