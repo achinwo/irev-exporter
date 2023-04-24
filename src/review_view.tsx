@@ -212,14 +212,14 @@ function PuQuestionnaireView({puData}) {
     const gridArgs2 = {item: true, xs: 4, sm: 4, md: 6};
 
     const makeStack = (label, val) => {
-        const [validatedLabel, setValidatedLabel] = useState<null | boolean>(val === NOT_ENTERED ? false : null);
-        const color = validatedLabel ? 'success' : (validatedLabel === null ? 'inherit' : 'error');
+        const [isValidatedLabel, setIsValidatedLabel] = useState<null | boolean>(val === NOT_ENTERED ? false : null);
+        const color = isValidatedLabel ? 'success' : (isValidatedLabel === null ? 'inherit' : 'error');
         return <Button
             variant={'outlined'}
             color={color}
             fullWidth={true}
-            onClick={() => setValidatedLabel(!validatedLabel)}
-            endIcon={validatedLabel ? <DoneIcon/> : (validatedLabel === null ? null : <CloseIcon />) }>
+            onClick={() => setIsValidatedLabel(isValidatedLabel === null ? false : !isValidatedLabel)}
+            endIcon={isValidatedLabel ? <DoneIcon/> : (isValidatedLabel === null ? null : <CloseIcon />) }>
             <Stack direction={'row'} divider={<Divider orientation={'vertical'} flexItem={true} sx={{ml: 1, mr: 1}}/>}>
                 <Typography sx={{fontWeight: 'bold'}}>{label}</Typography>
                 <Typography sx={{}}>{val}</Typography>
