@@ -274,7 +274,7 @@ function MainView({puData, setPuCode, puCodes, isLoadingPuData, stats, delim}) {
         </Stack>
     }
     //{ mt: 20, ml: {sm: 35, xs: 2}, mr: {sm: 4, xs: 0}}
-    return <Box sx={{ mt: 20, ml: 4, mr: 4}} style={{display: 'flex', flexDirection: 'column', minHeight: '70vh', width: '100%'}}>
+    return <Box sx={{ mt: 20, ml: 4, mr: 4, maxWidth: {xs: '100%', md: 1000}}} style={{display: 'flex', flexDirection: 'column', minHeight: '70vh'}}>
 
         <ButtonGroup fullWidth={true} variant="outlined" sx={{mb: 2}}>
             {

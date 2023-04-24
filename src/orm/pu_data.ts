@@ -200,13 +200,13 @@ export class PuData extends DbModel {
 
     static async fetchInconsistentVotes(opts={limit: 100}){
         return models.PuData.query()
-            .select('pu_code', 'name', 'reviewed_at', 'review_status')
+            .select('id', 'pu_code', 'name', 'reviewed_at', 'review_status')
             .from(
                 models.PuData.query()
-                    .select('pu_code', 'name', 'reviewed_at', 'review_status', models.PuData.knex().raw('SUM(COALESCE(votes_lp, 0) + COALESCE(votes_apc, 0) + COALESCE(votes_pdp, 0) + COALESCE(votes_nnpp, 0))'))
+                    .select('id', 'pu_code', 'name', 'reviewed_at', 'review_status', models.PuData.knex().raw('SUM(COALESCE(votes_lp, 0) + COALESCE(votes_apc, 0) + COALESCE(votes_pdp, 0) + COALESCE(votes_nnpp, 0))'))
                     .where('election_type', ElectionType.PRESIDENTIAL)
                     .andWhere('source', 'irev')
-                    .groupBy('pu_code', 'name', 'votes_cast', 'reviewed_at', 'review_status')
+                    .groupBy('id', 'pu_code', 'name', 'votes_cast', 'reviewed_at', 'review_status')
                     .havingRaw('SUM(COALESCE(votes_lp, 0) + COALESCE(votes_apc, 0) + COALESCE(votes_pdp, 0) + COALESCE(votes_nnpp, 0)) > votes_cast')
                     .as('tbl')
             )
@@ -251,10 +251,10 @@ export class PuData extends DbModel {
                 .count('*', {as: 'gtCount'})
                 .from(
                     models.PuData.query()
-                        .select('pu_code', models.PuData.knex().raw('SUM(COALESCE(votes_lp, 0) + COALESCE(votes_apc, 0) + COALESCE(votes_pdp, 0) + COALESCE(votes_nnpp, 0))'))
+                        .select('pu_code', 'id', models.PuData.knex().raw('SUM(COALESCE(votes_lp, 0) + COALESCE(votes_apc, 0) + COALESCE(votes_pdp, 0) + COALESCE(votes_nnpp, 0))'))
                         .where('election_type', ElectionType.PRESIDENTIAL)
                         .andWhere('source', 'irev')
-                        .groupBy('pu_code', 'votes_cast')
+                        .groupBy('id', 'pu_code', 'votes_cast')
                         .havingRaw('SUM(COALESCE(votes_lp, 0) + COALESCE(votes_apc, 0) + COALESCE(votes_pdp, 0) + COALESCE(votes_nnpp, 0)) > votes_cast')
                         .as('tbl')
                 ).first();
