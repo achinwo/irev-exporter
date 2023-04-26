@@ -8,7 +8,7 @@ let WARD_DATA = null;
 
 async function fetchWardData() {
     if(!WARD_DATA){
-        const resp = await axios.get('https://storage.googleapis.com/joli-app-bucket/json-data/data_stats_ward_v2.json');
+        const resp = await axios.get('https://storage.googleapis.com/joli-app-bucket/json-data/data_stats_ward_v3.json');
         WARD_DATA = resp.data;
     }
 
