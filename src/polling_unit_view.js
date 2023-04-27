@@ -33,7 +33,8 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
     const pu = pollingUnit;
 
     const submitPollingData = async () => {
-        const url = `/api/pus/${pu._id}?electionType=${electionType}`;
+        const recordId = puData?.createdAt ? puData.id : pu._id;
+        const url = `/api/pus/${recordId}?electionType=${electionType}`;
         console.log('submitted pu data url:', url, puData);
 
         const toBool = (value) => {
@@ -59,7 +60,15 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
                 return;
             }
 
-            const resp = await axios.post(url, {pu, puData: data, contributor: contributor}, {headers: {'x-election-type': electionType}});
+            const headers = {'x-election-type': electionType, 'x-user': contributor};
+
+            let resp;
+            if(puData?.createdAt){
+                resp = await axios.put(url, {data, contributor: contributor}, {headers});
+            } else {
+                resp = await axios.post(url, {pu, puData: data, contributor: contributor}, {headers});
+            }
+
             console.log('submitted pu data', resp.data);
 
             setPuData(resp.data.data);
@@ -183,6 +192,35 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
         minute: '2-digit'
     };
 
+    const submitPanelView = () => {
+        const reviewStatus = puData?.reviewStatus;
+
+        if(puData?.createdAt){
+            return <Typography sx={{fontStyle: 'italic'}} variant="subtitle1" style={{color: 'grey'}}>
+                Submitted by {puData.contributorUsername} on {new Date(puData.updatedAt).toLocaleDateString("en-US", options)}
+
+                {/*<Link href={puData.documentUrl} rel="noopener noreferrer" target="_blank" sx={{ml: 2}}>(Original Doc)</Link>*/}
+                {puData.documentSize === pu.document.size ? null : <WarningIcon title={'detected size mismatch from original submission'} fontSize={'small'} color={'warning'}/>}
+                <IconButton href={`/pus/${puData.puCode.replaceAll('/', '-')}`} rel="noopener noreferrer" target="_blank" color="success" sx={{ml: 2}}>
+                    <VisibilitySharpIcon />
+                </IconButton>
+            </Typography>;
+        } else if(_.isUndefined(isIllegibleResult)){
+            return null;
+        }
+
+        return <LoadingButton
+            size="medium"
+            color="secondary"
+            onClick={() => submitPollingData()}
+            loading={isSubmitting}
+            loadingPosition="start"
+            variant="outlined"
+        >
+            <span>Submit</span>
+        </LoadingButton>;
+    }
+
     //isIllegibleResult === RESULT_ILLEGIBILITY_STATE.LEGIBLE ? '25ch' :
     return <Box component="form" sx={{'& > :not(style)': {m: 1, width: '80%'},}} noValidate autoComplete="off">
         {isIllegibleResult === RESULT_ILLEGIBILITY_STATE.LEGIBLE ?
@@ -192,29 +230,7 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
         }
 
         {
-            _.isUndefined(isIllegibleResult) || puData.createdAt ?
-
-                (puData.createdAt ? <Typography sx={{fontStyle: 'italic'}} variant="subtitle1" style={{color: 'grey'}}>
-                    Submitted by {puData.contributorUsername} on {new Date(puData.updatedAt).toLocaleDateString("en-US", options)}
-
-                    {/*<Link href={puData.documentUrl} rel="noopener noreferrer" target="_blank" sx={{ml: 2}}>(Original Doc)</Link>*/}
-                    {puData.documentSize === pu.document.size ? null : <WarningIcon title={'detected size mismatch from original submission'} fontSize={'small'} color={'warning'}/>}
-                    <IconButton href={`/pus/${puData.puCode.replaceAll('/', '-')}`} rel="noopener noreferrer" target="_blank" color="success" sx={{ml: 2}}>
-                        <VisibilitySharpIcon />
-                    </IconButton>
-                </Typography> : null)
-
-                :
-                <LoadingButton
-                    size="medium"
-                    color="secondary"
-                    onClick={() => submitPollingData()}
-                    loading={isSubmitting}
-                    loadingPosition="start"
-                    variant="outlined"
-                >
-                    <span>Submit</span>
-                </LoadingButton>
+            submitPanelView()
         }
 
     </Box>;

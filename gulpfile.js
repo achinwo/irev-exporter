@@ -147,7 +147,7 @@ exports.exportLgas = async function() {
 }
 
 async function fetchWardData(wardId) {
-    const filePath = `./build/data_ward_${wardId}.json`
+    const filePath = `./build/wards/data_ward_${wardId}.json`
     let data = null;
 
     try {
@@ -169,6 +169,19 @@ async function fetchWardData(wardId) {
 
     return data;
 }
+
+gulp.task('fetch:wards:presidential', async () => {
+    try{
+        const wards = await models.IrevWard.query();
+
+        for (const ward of wards) {
+            await fetchWardData(ward.wardUid);
+        }
+
+    }finally {
+        await models.IrevWard.knex().destroy();
+    }
+})
 
 const Knex = require('knex');
 const {migrations, seeds, pool} = require('./knexfile')[process.env.NODE_ENV || 'development'];
@@ -648,7 +661,10 @@ async function exportWardResults(){
     for(const fn of await fs.readdir('./build')) {
         if (!fn.startsWith('data_ward_')) continue;
 
-        const data = require(`./build/${fn}`);
+        const savedData = require(`./build/${fn}`);
+
+        const data = await fetchWardData(_.first(savedData.wards)._id);
+
         const numResults = _.sum(data.data.map((pu) => !pu.document?.url || (url.parse(pu.document?.url).pathname === '/') ? 0 : 1) || [0]);
 
         const lga = _.first(data.lgas);
