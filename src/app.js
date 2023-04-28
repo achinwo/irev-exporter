@@ -98,7 +98,7 @@ export const App = ({stateId: initialStateId, mainComponent, mainComponentProps,
     useEffect(async () => {
         const res = await axios.get(`/api/states/stats?electionType=${electionType}`);
         let rows = [];
-        const {state: stateData, ward: wardData} = res.data.data;
+        const {state: stateData, ward: wardData, validationReturned} = res.data.data;
 
         for (const state of STATES) {
             const stat = _.find(stateData || res.data.data, s => s.id === state.id);
@@ -117,9 +117,12 @@ export const App = ({stateId: initialStateId, mainComponent, mainComponentProps,
             rows.push(row);
         }
 
-        console.log('STATS', {state: rows, ward: wardData});
+        const stats = {state: rows, ward: wardData,
+            validationReturned, validationReturnedWards: validationReturned.map(r => r.wardId)};
 
-        setStats({state: rows, ward: wardData});
+        console.log('STATS', stats);
+
+        setStats(stats);
     }, [stateId, electionType]);
 
     useEffect(async () => {

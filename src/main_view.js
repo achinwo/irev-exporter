@@ -59,8 +59,11 @@ export function MainBody({ isLoadingPuData, selectedPu, stats, electionType}) {
     }
 
     if (selectedPu?.data) {
+
+        const puList = _.sortBy(selectedPu.data || [], p => puData[p.pu_code]?.reviewStatus ? '00/00/00/00' : p.pu_code);
+
         return (
-            <Grid xs={12} sm={10} lg={8} style={{ maxHeight: "100%" }}>
+            <Grid xs={12} sm={10} lg={8} sx={{ml: {sm: 35, xs: 2}, mr: {sm: 4, xs: 0}, maxWidth: {xs: '100%', md: 1000}}} style={{ maxHeight: "100%" }}>
                 <InfiniteScroll
                     dataLength={selectedPu?.data?.length}
                     next={() => null}
@@ -70,7 +73,7 @@ export function MainBody({ isLoadingPuData, selectedPu, stats, electionType}) {
                     // Let's get rid of second scroll bar
                     style={{ overflow: "unset", marginTop: "8em" }}
                 >
-                    {selectedPu?.data?.map((pu, index) => {
+                    {puList.map((pu, index) => {
                         const setPuDataById = (res) => {
                             setPuData((prev) => {
                                 prev[pu.pu_code] = _.assign(prev[pu.pu_code] || {}, res);
@@ -78,8 +81,10 @@ export function MainBody({ isLoadingPuData, selectedPu, stats, electionType}) {
                             });
                         };
 
+
+
                         return (
-                            <Box style={{ height: "100%", width: "100%" }} sx={{ mb: 5 }}>
+                            <Box style={{ height: "100%", width: "100%" }} sx={{ mb: 5 }} key={`pu-container-${index}`}>
                                 <PollingUnitView
                                     pollingUnit={pu}
                                     key={`pus-${index}`}
@@ -106,63 +111,8 @@ export function MainBody({ isLoadingPuData, selectedPu, stats, electionType}) {
             </Grid>
         );
     } else {
-
-        const columns = [
-            { field: 'id', headerName: 'ID', width: 50 },
-            {
-                field: 'name',
-                headerName: 'State',
-                width: 120,
-            },
-            {
-                field: 'progress',
-                headerName: 'Progress',
-                type: 'string',
-                width: 100,
-                renderCell: (params) => {
-                    return `${params.value.toFixed(2)}%`
-                }
-            },
-            {
-                field: 'puCount',
-                headerName: 'Polling Units',
-                type: 'number',
-                width: 100,
-            },
-            {
-                field: 'lgaCount',
-                headerName: 'LGAs',
-                type: 'number',
-                width: 100,
-            },
-            {
-                field: 'wardCount',
-                headerName: 'Wards',
-                type: 'number',
-                width: 100,
-            },
-            {
-                field: 'resultCount',
-                headerName: 'IReV Results (Pres)',
-                type: 'number',
-                width: 140,
-            },
-            {
-                field: 'resultGuberCount',
-                headerName: 'IReV Results (Gov)',
-                type: 'number',
-                width: 140,
-            },
-            {
-                field: 'submittedCount',
-                headerName: 'Transcribed',
-                type: 'number',
-                width: 100,
-            }
-        ];
-
         return (
-            <Grid xs={12} sm={6} md={8} sx={{ mt: 20 }} style={{}}>
+            <Grid xs={12} sm={6} md={8} sx={{ mt: 20, ml: {sm: 35, xs: 2}, mr: {sm: 4, xs: 0}}} style={{}}>
                 <Card>
                     <CardHeader>
 
@@ -178,7 +128,7 @@ export function MainBody({ isLoadingPuData, selectedPu, stats, electionType}) {
                         <Box sx={{ height: 500, width: '100%' }}>
                             <DataGrid
                                 rows={stats.state}
-                                columns={columns}
+                                columns={COLUMNS}
                                 disableRowSelectionOnClick
                             />
                         </Box>
@@ -188,3 +138,58 @@ export function MainBody({ isLoadingPuData, selectedPu, stats, electionType}) {
         );
     }
 }
+
+
+const COLUMNS = [
+    { field: 'id', headerName: 'ID', width: 50 },
+    {
+        field: 'name',
+        headerName: 'State',
+        width: 120,
+    },
+    {
+        field: 'progress',
+        headerName: 'Progress',
+        type: 'string',
+        width: 100,
+        renderCell: (params) => {
+            return `${params.value.toFixed(2)}%`
+        }
+    },
+    {
+        field: 'puCount',
+        headerName: 'Polling Units',
+        type: 'number',
+        width: 100,
+    },
+    {
+        field: 'lgaCount',
+        headerName: 'LGAs',
+        type: 'number',
+        width: 100,
+    },
+    {
+        field: 'wardCount',
+        headerName: 'Wards',
+        type: 'number',
+        width: 100,
+    },
+    {
+        field: 'resultCount',
+        headerName: 'IReV Results (Pres)',
+        type: 'number',
+        width: 140,
+    },
+    {
+        field: 'resultGuberCount',
+        headerName: 'IReV Results (Gov)',
+        type: 'number',
+        width: 140,
+    },
+    {
+        field: 'submittedCount',
+        headerName: 'Transcribed',
+        type: 'number',
+        width: 100,
+    }
+];

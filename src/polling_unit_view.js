@@ -1,27 +1,27 @@
 import axios from "axios";
 import {
     capitalize, Card, CardContent, CardMedia, Typography,
-    Button,
     Checkbox,
     FormControl,
     FormControlLabel,
     FormLabel,
-    Grid,
     Link,
     Radio,
     RadioGroup, Stack,
-    TextField, IconButton
+    TextField, IconButton, Chip
 } from "@mui/material";
 import Box from "@mui/material/Box";
 import _ from "lodash";
 import url from "url";
 import LoadingButton from "@mui/lab/LoadingButton";
 import ReactPanZoom from 'react-image-pan-zoom-rotate';
-import {DataSource, ElectionType, KEY_CONTRIBUTOR} from "./ref_data";
-import React, { useRef } from 'react'
-import { useIsVisible } from 'react-is-visible'
+import {DataSource, ElectionType, KEY_CONTRIBUTOR, ReviewStatus} from "./ref_data";
+import React, { useRef } from 'react';
+import { useIsVisible } from 'react-is-visible';
 import WarningIcon from '@mui/icons-material/Warning';
 import VisibilitySharpIcon from '@mui/icons-material/VisibilitySharp';
+import VerifiedSharpIcon from '@mui/icons-material/VerifiedSharp';
+import ErrorSharpIcon from '@mui/icons-material/ErrorSharp';
 
 const RESULT_ILLEGIBILITY_STATE = {
     LEGIBLE: false,
@@ -31,6 +31,9 @@ const RESULT_ILLEGIBILITY_STATE = {
 
 export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, isSubmitting, setIsSubmitting, setAlert, electionType}) => {
     const pu = pollingUnit;
+
+    const isValidated = puData.reviewStatus === ReviewStatus.VALIDATED;
+    let ValidationIcon = isValidated ? VerifiedSharpIcon : ErrorSharpIcon;
 
     const submitPollingData = async () => {
         const recordId = puData?.createdAt ? puData.id : pu._id;
@@ -46,7 +49,7 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
         try{
             let data = puData || {votesLp: undefined, votesNnpp: undefined, votesPdp: undefined, votesApc: undefined};
 
-            data = _.assign(data, {
+            data = _.assign({}, data, {
                 isResultLegible: !toBool(data?.isResultIllegible),
                 isPuNameCorrect: !toBool(data?.containsIncorrectPuName),
                 electionType: electionType,
@@ -64,6 +67,7 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
 
             let resp;
             if(puData?.createdAt){
+                data.reviewedByContributorId = data.reviewedAt = data.reviewStatus = null;
                 resp = await axios.put(url, {data, contributor: contributor}, {headers});
             } else {
                 resp = await axios.post(url, {pu, puData: data, contributor: contributor}, {headers});
@@ -193,18 +197,46 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
     };
 
     const submitPanelView = () => {
-        const reviewStatus = puData?.reviewStatus;
 
         if(puData?.createdAt){
-            return <Typography sx={{fontStyle: 'italic'}} variant="subtitle1" style={{color: 'grey'}}>
-                Submitted by {puData.contributorUsername} on {new Date(puData.updatedAt).toLocaleDateString("en-US", options)}
+            return <Stack alignItems={'center'} spacing={2}>
+                <Stack direction={'row'} alignItems={'center'} spacing={1}>
+                    <Typography sx={{fontStyle: 'italic'}} variant="subtitle1" style={{color: 'grey'}}>
+                        Submitted by {puData.contributorUsername} on {new Date(puData.updatedAt).toLocaleDateString("en-US", options)}
+                    </Typography>
+                    {puData.documentSize === pu.document.size ? null : <WarningIcon title={'detected size mismatch from original submission'} fontSize={'small'} color={'warning'}/>}
 
-                {/*<Link href={puData.documentUrl} rel="noopener noreferrer" target="_blank" sx={{ml: 2}}>(Original Doc)</Link>*/}
-                {puData.documentSize === pu.document.size ? null : <WarningIcon title={'detected size mismatch from original submission'} fontSize={'small'} color={'warning'}/>}
-                <IconButton href={`/pus/${puData.puCode.replaceAll('/', '-')}`} rel="noopener noreferrer" target="_blank" color="success" sx={{ml: 2}}>
-                    <VisibilitySharpIcon />
-                </IconButton>
-            </Typography>;
+
+                    <IconButton href={`/pus/${puData.puCode.replaceAll('/', '-')}`} rel="noopener noreferrer" target="_blank" color="success">
+                        {puData.reviewStatus ? <ValidationIcon color={isValidated ? 'success' : 'error'}/> : <VisibilitySharpIcon />}
+                    </IconButton>
+                </Stack>
+
+                {
+                    (puData?.reviewStatus && !isValidated && puData?.comment) &&
+                    <Stack direction={'row'} alignItems={'center'} spacing={1}>
+                        <Typography sx={{fontWeight: 'bold'}}>Review Comment:</Typography>
+                        {puData.comment.split(',').map((fld, idx) => {
+                            return <Chip key={idx} label={_.startCase(fld)}/>
+                        })}
+                    </Stack>
+                }
+
+                {
+                    (puData?.reviewStatus && !isValidated) &&
+                    <LoadingButton
+                        size="medium"
+                        color="secondary"
+                        onClick={() => submitPollingData()}
+                        loading={isSubmitting}
+                        loadingPosition="start"
+                        variant="outlined"
+                    >
+                        <span>Resubmit</span>
+                    </LoadingButton>
+                }
+            </Stack>
+
         } else if(_.isUndefined(isIllegibleResult)){
             return null;
         }
@@ -229,10 +261,7 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
             (isIllegibleResult === RESULT_ILLEGIBILITY_STATE.ILLEGIBLE ? illegibleResultView : unansweredView)
         }
 
-        {
-            submitPanelView()
-        }
-
+        {submitPanelView()}
     </Box>;
 }
 
@@ -253,23 +282,43 @@ export const PollingUnitView = ({pollingUnit, puData, setPuData, isSubmitting, s
     const isVisible = useIsVisible(nodeRef, {once: true});
 
     let priorVersionLabel = '';
-    // if(!_.isEmpty(pu.old_documents)){
-    //
-    // }
-    //<Grid key={pu._id} item xs={12} sm={12} md={12} lg={12} style={{maxWidth: "100%"}}>
-    return (
 
-        <Card elevation={4} xs={{mt: 20}} style={{maxWidth: "100%", minHeight: '50vh'}} ref={nodeRef}>
+    if(puData.puCode === '01/01/03/043') {
+        console.log('[PollingUnitView] pudata', puData);
+    }
+
+    let border = {};
+
+    const isValidated = puData.reviewStatus === ReviewStatus.VALIDATED;
+    let ValidationIcon = isValidated ? VerifiedSharpIcon : ErrorSharpIcon;
+
+    if(puData.reviewStatus){
+        border = {border: 1, borderColor: isValidated ? 'success.main' : 'error.main'};
+    }
+
+    return (
+        <Card elevation={4} xs={{mt: 20}} sx={border} style={{maxWidth: "100%"}} ref={nodeRef}>
             {isVisible && <CardContent align="center" style={{maxWidth: "100%"}}>
-                <Typography>{capitalize(`${pu.name}`)}</Typography>
-                <Typography>{`PU Code: ${pu.pu_code}`}</Typography>
-                <Typography>{`Updated: ${new Date(pu.updated_at).toLocaleDateString("en-US", options)}${priorVersionLabel}`}</Typography>
+
+                <Stack alignItems={'center'}>
+                    <Typography>{capitalize(`${pu.name}`)}</Typography>
+                    <Stack direction={'row'} spacing={1}>
+                        <Typography>{`PU Code: ${pu.pu_code}`}</Typography>
+                        { puData.reviewStatus && <ValidationIcon color={isValidated ? 'success' : 'error'}/>}
+                    </Stack>
+                    <Typography>{`Updated: ${new Date(pu.updated_at).toLocaleDateString("en-US", options)}${priorVersionLabel}`}</Typography>
+                    {
+                        puData.reviewStatus && <Typography sx={{fontStyle: 'italic', mb: 2}} style={{color: 'gray'}}>{`Reviewed By: ${puData.reviewedByContributorId}`}</Typography>
+                    }
+                </Stack>
+
                 {pu.document?.url && (_.trim(url.parse(pu.document.url).pathname) !== '/') ?
                     <>
                         <Link href={pu.document?.url} rel="noopener noreferrer" target="_blank" sx={{mb: 4}}>Document
                             Link {pu.document.url.endsWith('.pdf') ? '(PDF)' : '(JPG)'}</Link>
-                        <CardMedia style={{maxWidth: "100%", minHeight: '70vh'}}>
+                        <CardMedia style={{maxWidth: "100%"}}>
                             <Stack>
+                                <Box style={{maxWidth: "100%", position: 'relative', overflow: 'hidden'}}>
                                 {
                                     pu.document.url.endsWith('.pdf') ?
                                         <div style={{maxWidth: "100%", height: '100%', position: 'relative'}}>
@@ -278,14 +327,12 @@ export const PollingUnitView = ({pollingUnit, puData, setPuData, isSubmitting, s
 
                                         </div>
                                         :
-                                        <Box style={{maxWidth: "100%", position: 'relative', overflow: 'hidden'}}>
-                                            <ReactPanZoom
-                                                image={pu.document.url}
-                                                alt={`Result for Polling Unit ${pu.pu_code}`}
-                                            />
-                                        </Box>
+                                        <ReactPanZoom
+                                            image={pu.document.url}
+                                            alt={`Result for Polling Unit ${pu.pu_code}`}
+                                        />
                                 }
-
+                                </Box>
                                 <PollingResultQuestionnaireView pollingUnit={pu} puData={puData} setPuData={setPuData}
                                                                 isSubmitting={isSubmitting} setIsSubmitting={setIsSubmitting}
                                                                 setAlert={setAlert} electionType={electionType} />

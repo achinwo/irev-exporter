@@ -1,18 +1,22 @@
-module.exports.ElectionType = {
+export const ElectionType = {
     PRESIDENTIAL: 'PRESIDENTIAL',
     GOVERNORSHIP: 'GOVERNORSHIP',
 }
 
-module.exports.DataSource = {
+export const DataSource = {
     IREV: 'irev'
 };
 
-module.exports.KEY_CONTRIBUTOR = "contributor-name";
-module.exports.KEY_ELECTION_TYPE = "election-type";
+export const KEY_CONTRIBUTOR = "contributor-name";
+export const KEY_ELECTION_TYPE = "election-type";
 
-module.exports.BASE_URL_KVDB = process.env.BASE_URL_KVDB;
+export enum ReviewStatus {
+    RETURNED = 'RETURNED', VALIDATED = 'VALIDATED'
+}
 
-module.exports.STATES = [
+export const BASE_URL_KVDB = process.env.BASE_URL_KVDB;
+
+export const STATES = [
     {
         "id": 1,
         "url": "https://www.inecelectionresults.ng/elections/63f8f25b594e164f8146a213?state=1",

@@ -3,13 +3,11 @@ import _ from 'lodash';
 import path from "path";
 import {PartialModelObject} from "objection";
 import {User} from "./user";
-import {DataSource, ElectionType } from "../ref_data";
+import {DataSource, ElectionType, ReviewStatus} from "../ref_data";
 import * as models from "./index";
 import {DataQualityIssue} from "../review_view";
 
-export enum ReviewStatus {
-    RETURNED = 'RETURNED', VALIDATED = 'VALIDATED'
-}
+
 
 export class PuData extends DbModel {
     static tableName = 'pu_data';
@@ -140,8 +138,14 @@ export class PuData extends DbModel {
         return PuData.query().insertAndFetch(values);
     }
 
-    static async fetchStats(electionType=ElectionType.PRESIDENTIAL): Promise<{state: any[], ward: any[]}> {
+    static async fetchStats(electionType=ElectionType.PRESIDENTIAL): Promise<{state: any[], ward: any[], validationReturned: {wardId: string, stateId: string}[]}> {
 
+        const validationReturned = await PuData.query()
+            .select('ward_id', 'state_id')
+            .where('election_type', electionType ? electionType : ElectionType.PRESIDENTIAL)
+            .andWhere('source', DataSource.IREV)
+            .andWhere('review_status', ReviewStatus.RETURNED)
+            .groupBy('ward_id', 'state_id');
 
         const res = await PuData.query()
             .select('state_name', 'state_id')
@@ -185,7 +189,7 @@ export class PuData extends DbModel {
             ward.lastContributorUsername = contributor || '(unknown)';
         }
 
-        return {state: rows, ward: wardRes};
+        return {state: rows, ward: wardRes, validationReturned};
     }
 
     static async fetchOvervoting(opts={limit: 100}){

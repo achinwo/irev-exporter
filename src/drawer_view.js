@@ -18,6 +18,7 @@ import React from "react";
 import _ from "lodash";
 import FaceIcon from "@mui/icons-material/Face";
 import {ElectionType, KEY_ELECTION_TYPE} from "./ref_data";
+import ErrorSharpIcon from '@mui/icons-material/ErrorSharp';
 
 
 export const WardSummaryView = ({ward, stats, electionType}) => {
@@ -85,12 +86,16 @@ export const DrawerView = ({handleDrawerToggle, state, lga, ward, pu, setWard, s
                     </MenuItem>
 
                     {states.map((state, idx) => {
+                        const containsReturnState = _.sumBy(stats.validationReturned, (r) => r.stateId == state.id ? 1 : 0);
                         return (
                             <MenuItem
                                 value={_.toString(state.id - 1)}
                                 key={`tab-${idx}`}
                             >
-                                {state.name}
+                                <Stack spacing={1} direction={'row'}>
+                                    {containsReturnState ? <Chip size={'small'} label={containsReturnState} color={'error'}/> : null}
+                                    <Typography>{state.name}</Typography>
+                                </Stack>
                             </MenuItem>
                         );
                     })}
@@ -112,6 +117,9 @@ export const DrawerView = ({handleDrawerToggle, state, lga, ward, pu, setWard, s
             }
         >
             {(selectedState?.lgas?.data || []).map((lga, idx) => {
+
+                const containsReturnLga = _.find(lga.wards, w => (stats.validationReturnedWards || []).includes(w._id));
+
                 return (
                     <>
                         <ListItem
@@ -122,7 +130,12 @@ export const DrawerView = ({handleDrawerToggle, state, lga, ward, pu, setWard, s
                             }
                             key={idx}
                         >
-                            <ListItemText primary={lga.lga.name}/>
+                            <ListItemText primary={
+                                <Stack sx={{pl: containsReturnLga ? 0 : 2 }} spacing={1} direction={'row'}>
+                                    {containsReturnLga ? <ErrorSharpIcon fontSize={'small'} color={'error'}/> : null}
+                                    <Typography>{lga.lga.name}</Typography>
+                                </Stack>
+                            }/>
                             {lga.lga.lga_id === selectedLga?.lga.lga_id ? (
                                 <ExpandLess/>
                             ) : (
@@ -136,12 +149,12 @@ export const DrawerView = ({handleDrawerToggle, state, lga, ward, pu, setWard, s
                             unmountOnExit
                             key={idx}
                         >
-                            <List component="div" disablePadding>
+                            <List component="div" disablePadding={true}>
                                 {lga.wards.map((ward, idx) => {
+                                    const containsReturn = (stats.validationReturnedWards || []).includes(ward._id);
                                     return (
                                         <ListItemButton
                                             key={idx}
-                                            sx={{pl: 4}}
                                             onClick={() => {
                                                 setWard(ward);
                                                 handleDrawerToggle();
@@ -149,8 +162,17 @@ export const DrawerView = ({handleDrawerToggle, state, lga, ward, pu, setWard, s
                                             selected={ward._id === selectedWard?._id}
                                         >
                                             <ListItemText
-                                                primary={ward.name}
-                                                secondary={<WardSummaryView ward={ward} puData={puData} stats={stats} electionType={electionType}/>}
+                                                primary={
+                                                    <Stack sx={{pl: containsReturn ? 0 : 2 }} spacing={1} direction={'row'}>
+                                                        {containsReturn ? <ErrorSharpIcon fontSize={'small'} color={'error'}/> : null}
+                                                        <Typography>{ward.name}</Typography>
+                                                    </Stack>
+                                                }
+                                                secondary={
+                                                <Stack sx={{pl: 2}} direction={'row'}>
+                                                    <WardSummaryView ward={ward} puData={puData} stats={stats} electionType={electionType}/>
+                                                </Stack>
+                                            }
                                             />
                                         </ListItemButton>
                                     );

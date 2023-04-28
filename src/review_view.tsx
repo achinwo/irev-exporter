@@ -145,7 +145,9 @@ function PollingUnitReviewView({puData, puCodes}: {puData: models.PuData, puCode
         minute: '2-digit'
     };
     // @ts-ignore
-    const updatedTxt = `Updated: ${new Date(puData.updatedAt).toLocaleDateString("en-US", options)}`;
+    const updatedTxt = `Submitted: ${new Date(puData.createdAt).toLocaleDateString("en-US", options)}`;
+    // @ts-ignore
+    const submittedAtTxt = new Date(puData.updatedAt).toLocaleDateString("en-US", options)
 
     // @ts-ignore
     return <Card elevation={1} xs={{mt: 20}} style={{width: "100%", minHeight: '50vh'}}>
@@ -154,6 +156,9 @@ function PollingUnitReviewView({puData, puCodes}: {puData: models.PuData, puCode
             <Typography>{capitalize(`${puData.name}`)}</Typography>
             <Typography>{`PU Code: ${puData.puCode}`}</Typography>
             <Typography>{updatedTxt}</Typography>
+            <Typography sx={{mb: 1}}>
+                Submitted by: {puData.contributorUsername}
+            </Typography>
             <Link href={puData.documentUrl} rel="noopener noreferrer" target="_blank" sx={{mb: 4}}>Document
                 Link {puData.documentUrl.endsWith('.pdf') ? '(PDF)' : '(JPG)'}</Link>
             <CardMedia style={{maxWidth: "100%", minHeight: '70vh'}}>
