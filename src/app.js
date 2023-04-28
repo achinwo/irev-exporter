@@ -221,7 +221,7 @@ export const App = ({stateId: initialStateId, mainComponent, mainComponentProps,
     if (selectedPu) {
         view = _.concat(
             [<MenuItem onClick={handleMenuClose} key={'menu-3'}>
-                <Link href={`/api/downloads/${selectedPu.wards[0]._id}?stateId=${stateId}`} underline="none">
+                <Link href={`/api/downloads/${selectedPu.wards[0]._id}`} underline="none">
                     {`Download Ward "${selectedPu.wards[0].name}"`}
                 </Link>
             </MenuItem>], xlsMenu);
