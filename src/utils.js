@@ -88,8 +88,11 @@ export async function fetchWardData(wardId, opts={includePuData: true, electionT
 
             for (const ward of puData) {
                 const contributor = mapping[_.trim(ward.contributorUsername)];
+                const contributorRev = mapping[_.trim(ward.reviewedByContributorId)];
                 if(!contributor) console.error(`Unable to map contributor username "${ward.contributorUsername}"`);
+
                 ward.contributorUsername = contributor || '(unknown)';
+                ward.reviewedByContributorId = contributorRev || '(unknown reviewer)';
             }
 
             data['polling_data'] = _.transform(puData, (result, item) => {

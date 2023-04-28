@@ -351,6 +351,7 @@ export const App = ({stateId: initialStateId, mainComponent, mainComponentProps,
                 <AccountDiaglogView handleClose={handleClose} isOpen={isOpen} setIsOpen={setIsOpen}
                                     displayName={displayName} contributorName={contributorName}
                                     setDisplayName={setDisplayName} setContributorName={setContributorName}
+                                    currentUser={currentUser}
                                     isContribFormValid={isContribFormValid} saveContributorName={saveContributorName}/>
             </Box>
             <Analytics />

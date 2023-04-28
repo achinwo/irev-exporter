@@ -20,6 +20,7 @@ import axios from "axios";
 import DoneOutlineIcon from '@mui/icons-material/DoneOutline';
 import DoneIcon from '@mui/icons-material/Done';
 import CloseIcon from '@mui/icons-material/Close';
+import HomeSharpIcon from '@mui/icons-material/HomeSharp';
 
 
 export enum DataQualityIssue {
@@ -83,7 +84,15 @@ export const AppPuView = function ({stats, puCodesSerialized, puSerialized, puDa
     }, [puCode]);
 
     //console.log('AppPuView:', puCodes);
-    return <App suppressDrawer={true} pageTitle={'Data Review'} mainComponent={MainView} mainComponentProps={{delim, puData, puCodes, setPuCode, isLoadingPuData, stats}} stateId={puObj.stateId} electionType={ElectionType.PRESIDENTIAL}></App>;
+
+    const pageTitle = <Stack spacing={2} direction={'row'} alignItems={'center'}>
+        <IconButton size={'small'} href={'/'}>
+            <HomeSharpIcon fontSize={'medium'}/>
+        </IconButton>
+        <Typography variant={'h6'}>Data Review</Typography>
+    </Stack>
+
+    return <App suppressDrawer={true} pageTitle={pageTitle} mainComponent={MainView} mainComponentProps={{delim, puData, puCodes, setPuCode, isLoadingPuData, stats}} stateId={puObj.stateId} electionType={ElectionType.PRESIDENTIAL}></App>;
 }
 
 function PaginationView({setPuCode, puCodes, puData, componentId}) {
@@ -155,10 +164,8 @@ function PollingUnitReviewView({puData, puCodes}: {puData: models.PuData, puCode
         <CardContent align="center" style={{width: "100%"}}>
             <Typography>{capitalize(`${puData.name}`)}</Typography>
             <Typography>{`PU Code: ${puData.puCode}`}</Typography>
-            <Typography>{updatedTxt}</Typography>
-            <Typography sx={{mb: 1}}>
-                Submitted by: {puData.contributorUsername}
-            </Typography>
+            <Typography>{`State/LGA: ${puData.stateName} | ${puData.lgaName}`}</Typography>
+            <Typography>{updatedTxt} <span style={{fontWeight: 'bolder'}}>by {puData.contributorUsername}</span></Typography>
             <Link href={puData.documentUrl} rel="noopener noreferrer" target="_blank" sx={{mb: 4}}>Document
                 Link {puData.documentUrl.endsWith('.pdf') ? '(PDF)' : '(JPG)'}</Link>
             <CardMedia style={{maxWidth: "100%", minHeight: '70vh'}}>
@@ -211,6 +218,7 @@ function PuQuestionnaireView({puData}) {
         ['Contains Alteration', 'containsAlterations', true],
         ['Incorrect PU Name', 'containsIncorrectPuName', true],
         ['INEC Stamp Absent', 'isInecStampAbsent', true],
+        ['Can\'t Read Votes', 'isResultIllegible', true],
         ['Non-EC8 Form', 'isNoneEceightForm', true],
     ]
     const gridArgs = {item: true, xs: 2, sm: 4, md: 3};

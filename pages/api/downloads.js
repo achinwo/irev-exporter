@@ -47,9 +47,12 @@ export default async function handler(req, res) {
     try {
         for (const row of data) {
             const contribId = _.trim(row.contributorUsername);
+            const contribIdRev = _.trim(row.reviewedByContributorId);
             delete row['contributorUsername'];
+            delete row['reviewedByContributorId'];
 
             row.contributorDisplayname = mapping[contribId] || '(unmapped contributor)';
+            row.reviewedByContributorId = mapping[contribIdRev] || '(unmapped reviewer)';
         }
 
         const fileStream = await writeXlsxFile(data, {schema: SCHEMA});
@@ -90,6 +93,11 @@ const SCHEMA = [
     {column: 'Contains Alterations', type: Boolean, value: data => data.containsAlterations},
     {column: 'Is Inec Stamp Absent', type: Boolean, value: data => data.isInecStampAbsent},
     {column: 'Is Non-EC8 Form', type: Boolean, value: data => data.isNoneEceightForm},
+
+    {column: 'Review Status', type: Boolean, value: data => data.reviewStatus},
+    {column: 'Reviewed At', type: Boolean, value: data => data.reviewedAt},
+    {column: 'Reviewer Display Name', type: Boolean, value: data => data.reviewedByContributorId},
+
     {column: 'Election', type: String, value: data => data.electionType},
     {column: 'Data Source', type: String, value: data => data.source},
 ]

@@ -207,7 +207,7 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
                     {puData.documentSize === pu.document.size ? null : <WarningIcon title={'detected size mismatch from original submission'} fontSize={'small'} color={'warning'}/>}
 
 
-                    <IconButton href={`/pus/${puData.puCode.replaceAll('/', '-')}`} rel="noopener noreferrer" target="_blank" color="success">
+                    <IconButton href={`/pus/${puData.puCode.replaceAll('/', '-')}`} color="success">
                         {puData.reviewStatus ? <ValidationIcon color={isValidated ? 'success' : 'error'}/> : <VisibilitySharpIcon />}
                     </IconButton>
                 </Stack>
@@ -302,9 +302,13 @@ export const PollingUnitView = ({pollingUnit, puData, setPuData, isSubmitting, s
 
                 <Stack alignItems={'center'}>
                     <Typography>{capitalize(`${pu.name}`)}</Typography>
-                    <Stack direction={'row'} spacing={1}>
+                    <Stack direction={'row'} spacing={1} alignItems={'center'}>
                         <Typography>{`PU Code: ${pu.pu_code}`}</Typography>
-                        { puData.reviewStatus && <ValidationIcon color={isValidated ? 'success' : 'error'}/>}
+                        { puData.reviewStatus &&
+                            <IconButton href={`/pus/${puData.puCode.replaceAll('/', '-')}`} color="success">
+                                <ValidationIcon color={isValidated ? 'success' : 'error'}/>
+                            </IconButton>
+                        }
                     </Stack>
                     <Typography>{`Updated: ${new Date(pu.updated_at).toLocaleDateString("en-US", options)}${priorVersionLabel}`}</Typography>
                     {

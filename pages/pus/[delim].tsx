@@ -1,8 +1,8 @@
 import {AppPuView, DataQualityIssue} from "../../src/review_view";
 import * as models from '../../src/orm';
-import {ReviewStatus} from '../../src/orm/pu_data';
 import { ElectionType } from '../../src/ref_data';
 import _ from 'lodash';
+import {User} from "../../src/orm";
 
 
 export async function getServerSideProps({params, query, resolvedUrl}) {
@@ -51,6 +51,12 @@ export async function getServerSideProps({params, query, resolvedUrl}) {
         .where('pu_code', puCode)
         .andWhere('election_type', ElectionType.PRESIDENTIAL)
         .andWhere('source', 'irev').first());
+
+    const recs = await User.query().select('display_name', 'contributor_id');
+    const mapping = _.fromPairs(recs.map(r => [r.contributorId, r.displayName]));
+
+    puData.contributorUsername = mapping[_.trim(puData.contributorUsername)] || '(unknown)';
+    puData.reviewedByContributorId = mapping[_.trim(puData.reviewedByContributorId)] || '(unknown reviewer)';
 
     const statsRaw = await models.PuData.fetchDataQualityStats();
     let stats = {};
