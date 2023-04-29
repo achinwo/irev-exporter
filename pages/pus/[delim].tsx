@@ -22,6 +22,8 @@ export async function getServerSideProps({params, query, resolvedUrl}) {
         puCodes = await models.PuData.fetchUnenteredVotes({limit: 100});
     } else if(delim.toLowerCase() === DataQualityIssue.VOTES_GT_TTL_VOTES.toLowerCase()){
         puCodes = await models.PuData.fetchInconsistentVotes({limit: 100});
+    } else if(delim.toLowerCase() === DataQualityIssue.FALSE_ILLEGIBLE.toLowerCase()){
+        puCodes = await models.PuData.fetchFalseIllegibles({limit: 100});
     } else {
         puCode = delim.replaceAll('-', '/');
 

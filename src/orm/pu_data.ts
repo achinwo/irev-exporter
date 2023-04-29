@@ -230,6 +230,16 @@ export class PuData extends DbModel {
             .limit(opts?.limit ?? 100);
     }
 
+    static async fetchFalseIllegibles(opts={limit: 100}){
+        return models.PuData.query()
+            .select('pu_code', 'name', 'reviewed_at', 'review_status')
+            .where('is_result_illegible', true)
+            .andWhere('voters_accredited_bvas', '>', 100)
+            .andWhere('election_type', ElectionType.PRESIDENTIAL)
+            .andWhere('source', 'irev')
+            .limit(opts?.limit ?? 100);
+    }
+
     static async fetchDataQualityStats(){
         const overvotingRes = await models.PuData.query()
             .count('*', {as: 'overvotingCount'})
@@ -266,11 +276,20 @@ export class PuData extends DbModel {
                         .as('tbl')
                 ).first();
 
+        const illegRes = await models.PuData.query()
+            .count('*', {as: 'illegCount'})
+            .where('is_result_illegible', true)
+            .andWhere('voters_accredited_bvas', '>', 100)
+            .andWhere('election_type', ElectionType.PRESIDENTIAL)
+            .andWhere('source', 'irev')
+            .first();
+
         //console.log('VALUE:', gtRes);
         return {
             [DataQualityIssue.OVER_VOTING]: _.toInteger((overvotingRes as unknown as {overvotingCount: number}).overvotingCount),
             [DataQualityIssue.UNENTERED_VOTES]: _.toInteger((unRes as unknown as {unenteredCount: number}).unenteredCount),
             [DataQualityIssue.VOTES_GT_TTL_VOTES]: _.toInteger((gtRes as unknown as {gtCount: number}).gtCount),
+            [DataQualityIssue.FALSE_ILLEGIBLE]: _.toInteger((illegRes as unknown as {illegCount: number}).illegCount),
         }
     }
 
