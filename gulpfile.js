@@ -947,6 +947,13 @@ gulp.task('enrich:pus:cvr', async () => {
         for (const stateDirName of await fs.readdir(baseDir)) {
             if (stateDirName.startsWith('.')) continue;
 
+            const [_cvr, _state, stateIdStr] = stateDirName.split('_', 4);
+
+            if(_.toInteger(stateIdStr) < 19){
+                console.log('skipping state:', stateDirName);
+                continue;
+            }
+
             for (const wardDirName of await fs.readdir(path.join(baseDir, stateDirName))) {
                 if (wardDirName === 'results.json' || wardDirName.startsWith('.')) continue;
 
@@ -972,7 +979,7 @@ gulp.task('enrich:pus:cvr', async () => {
                         votersAccreditedBvas: synced_accreditations,
                         votersRegisteredCvr: registered_voters,
                         documentCvrUrl: result
-                    }).where('pu_code', puCode);
+                    }).where('pu_code', puCode).andWhere('election_type', ElectionType.PRESIDENTIAL);
 
                     console.log('updated:', stateDirName, wardDirName, puCode, res, res2);
                 }

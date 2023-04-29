@@ -214,6 +214,7 @@ const NOT_ENTERED = 'Not Entered';
 function PuQuestionnaireView({puData}) {
     const fields: [string, string, boolean][] = [
         ['Accredited Votes', 'votersAccredited', false],
+        ['Accredited Votes (BVAS)', 'votersAccreditedBvas', false],
         ['Total Valid Votes', 'votesCast', false],
         ['Contains Alteration', 'containsAlterations', true],
         ['Incorrect PU Name', 'containsIncorrectPuName', true],
@@ -230,6 +231,7 @@ function PuQuestionnaireView({puData}) {
         return <Button
             variant={'outlined'}
             color={color}
+            disabled={label === 'Accredited Votes (BVAS)'}
             fullWidth={true}
             onClick={() => setIsValidatedLabel(isValidatedLabel === null ? false : !isValidatedLabel)}
             endIcon={isValidatedLabel ? <DoneIcon/> : (isValidatedLabel === null ? null : <CloseIcon />) }>
