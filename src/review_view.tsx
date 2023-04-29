@@ -170,6 +170,8 @@ function PollingUnitReviewView({puData, puCodes}: {puData: models.PuData, puCode
                 Link {puData.documentUrl.endsWith('.pdf') ? '(PDF)' : '(JPG)'}</Link>
             <CardMedia style={{maxWidth: "100%", minHeight: '70vh'}}>
                 <Stack style={{width: '100%'}}>
+
+                    <Box style={{maxWidth: "100%", minHeight: '40vh', position: 'relative', overflow: 'hidden'}}>
                     {
                         puData.documentUrl.endsWith('.pdf') ?
                             <div style={{maxWidth: "100%", height: '100%', position: 'relative'}}>
@@ -178,13 +180,12 @@ function PollingUnitReviewView({puData, puCodes}: {puData: models.PuData, puCode
 
                             </div>
                             :
-                            <Box style={{maxWidth: "100%", position: 'relative', overflow: 'hidden'}}>
                                 <ReactPanZoom
                                     image={puData.documentUrl}
                                     alt={`Result for Polling Unit ${puData.puCode}`}
                                 />
-                            </Box>
                     }
+                    </Box>
 
                     <PuQuestionnaireView puData={puData}/>
 
