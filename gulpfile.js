@@ -940,6 +940,50 @@ gulp.task('upload:irev-guber:s3', async () => {
     }
 });
 
+gulp.task('enrich:pus:cvr', async () => {
+    const baseDir = '/Users/anthony/Downloads/cvr_data_states';
+
+    try {
+        for (const stateDirName of await fs.readdir(baseDir)) {
+            if (stateDirName.startsWith('.')) continue;
+
+            for (const wardDirName of await fs.readdir(path.join(baseDir, stateDirName))) {
+                if (wardDirName === 'results.json' || wardDirName.startsWith('.')) continue;
+
+                const resultsDirPath = path.join(baseDir, stateDirName, wardDirName);
+
+                for (const resultFileName of await fs.readdir(resultsDirPath)) {
+                    if (resultFileName.startsWith('.')) continue;
+
+                    const resultFilePath = path.join(resultsDirPath, resultFileName);
+                    const data = require(resultFilePath);
+                    const {pu, synced_accreditations, result} = data.result;
+                    const {registered_voters, delim} = pu;
+
+                    const puCode = delim.replaceAll('-', '/');
+
+                    const res = await models.IrevPu.query().update({
+                        votersAccredited: synced_accreditations,
+                        votersRegistered: registered_voters,
+                        documentCvrUrl: result
+                    }).where('pu_code', puCode);
+
+                    const res2 = await models.PuData.query().update({
+                        votersAccreditedBvas: synced_accreditations,
+                        votersRegisteredCvr: registered_voters,
+                        documentCvrUrl: result
+                    }).where('pu_code', puCode);
+
+                    console.log('updated:', stateDirName, wardDirName, puCode, res, res2);
+                }
+            }
+        }
+
+    }finally {
+        await models.IrevPu.knex().destroy();
+    }
+})
+
 gulp.task('upload:irev-results:s3', async () => {
     const client = getAwsClient();
     const destPrefix = 'irev-exporter/results/irev_guber'

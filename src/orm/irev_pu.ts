@@ -40,6 +40,10 @@ export class IrevPu extends DbModel {
 
     @col(SchemaType.integer, {nullable: false}) numberOfPrevDocuments: number;
 
+    @col(SchemaType.integer, {nullable: true}) votersAccredited: number;
+    @col(SchemaType.integer, {nullable: true}) votersRegistered: number;
+    @col(SchemaType.text, {nullable: true}) documentCvrUrl: number;
+
     static extractFromJsonData(data: any): PartialModelObject<IrevPu> {
         let res = IrevPu.extractFromData(data, IrevPu.columns());
         res.documentType = res?.documentUrl ? path.extname(res.documentUrl).slice(1) : null;

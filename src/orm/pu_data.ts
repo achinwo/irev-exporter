@@ -26,6 +26,8 @@ export class PuData extends DbModel {
     @col(SchemaType.integer, {nullable: true}) lgaId: number;
     @col(SchemaType.string, {nullable: true}) lgaName: string;
 
+    @col(SchemaType.text, {nullable: true}) documentCvrUrl: string;
+
     @col(SchemaType.text, {nullable: false}) documentUrl: string;
     @col(SchemaType.string, {nullable: false}) documentType: string;
     @col(SchemaType.integer, {nullable: false}) documentSize: number;
@@ -35,6 +37,7 @@ export class PuData extends DbModel {
 
     @col(SchemaType.integer, {nullable: true}) votersAccredited: number;
     @col(SchemaType.integer, {nullable: true}) votersAccreditedBvas: number;
+    @col(SchemaType.integer, {nullable: true}) votersRegisteredCvr: number;
     @col(SchemaType.integer, {nullable: true}) votersRegistered: number;
     @col(SchemaType.integer, {nullable: true}) votesCast: number;
 
