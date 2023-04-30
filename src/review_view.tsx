@@ -250,18 +250,17 @@ function PollingUnitReviewView({puData, currentUser}: {puData: models.PuData, cu
 const NOT_ENTERED = 'Not Entered';
 
 function PuQuestionnaireView({puData}) {
-    const fields: [string, string, boolean][] = [
-        ['Accredited Votes', 'votersAccredited', false],
-        ['Accredited Votes (BVAS)', 'votersAccreditedBvas', false],
-        ['Total Valid Votes', 'votesCast', false],
-        ['Contains Alteration', 'containsAlterations', true],
-        ['Incorrect PU Name', 'containsIncorrectPuName', true],
-        ['INEC Stamp Absent', 'isInecStampAbsent', true],
-        ['Can\'t Read Votes', 'isResultIllegible', true],
-        ['Non-EC8 Form', 'isNoneEceightForm', true],
+    const fields: [string, string, boolean, boolean][] = [
+        ['Accredited Votes', 'votersAccredited', false, true],
+        ['Accredited Votes (BVAS)', 'votersAccreditedBvas', false, false],
+        ['Total Valid Votes', 'votesCast', false, true],
+        ['Contains Alteration', 'containsAlterations', true, true],
+        ['Incorrect PU Name', 'containsIncorrectPuName', true, true],
+        ['INEC Stamp Absent', 'isInecStampAbsent', true, true],
+        ['Can\'t Read Votes', 'isResultIllegible', true, false],
+        ['Non-EC8 Form', 'isNoneEceightForm', true, false],
     ]
-    const gridArgs = {item: true, xs: 2, sm: 4, md: 3};
-    const gridArgs2 = {item: true, xs: 4, sm: 4, md: 6};
+    const gridArgs = {item: true, xs: 2, sm: 4, md: 3, display: puData.isResultIllegible ? 'none' : 'initial'};
 
     const makeStack = (label, val) => {
         const [isValidatedLabel, setIsValidatedLabel] = useState<null | boolean>(val === NOT_ENTERED ? false : null);
@@ -289,9 +288,9 @@ function PuQuestionnaireView({puData}) {
             })}
 
             {
-                fields.map(([label, fieldName, isBool]) => {
+                fields.map(([label, fieldName, isBool, hideOnIlleligible]) => {
                     const val = isBool ? `${puData[fieldName] ?? false}` : puData[fieldName] || NOT_ENTERED;
-                    return <Grid key={fieldName} {...gridArgs2}>
+                    return <Grid key={fieldName} item xs={4} sm={4} md={6} display={hideOnIlleligible && puData.isResultIllegible ? 'none' : 'initial'}>
                         {makeStack(label, val)}
                     </Grid>
                 })
@@ -451,7 +450,9 @@ function MainView({puData, setPuCode, puCodes, isLoadingPuData, stats, delim, cu
 
 
         {isLoadingPuData ?
-            <CircularProgress color={"success"} style={{width: '100%'}} size={200} />
+            <Box style={{display: 'flex', flexDirection: 'row', justifyContent: 'center', alignItems: 'center', flexGrow: 2, width: '100%'}}>
+                <CircularProgress color={"success"} size={200} />
+            </Box>
             :
 
             (puData ?
