@@ -546,7 +546,7 @@ async function fetchStats(){
 
         for (const lga of lgaData.data) {
             for (const ward of lga.wards) {
-                let wardData = require(`./build/data_ward_${ward._id}.json`);
+                let wardData = require(`./build/wards/data_ward_${ward._id}.json`);
 
                 puCount += wardData.data.length;
 
@@ -598,7 +598,7 @@ async function fetchStats(){
         console.log(`[fetchStats] completed state "${newState.name}": presidential=${newState.resultCount}, gubernatorial=${newState.resultGuberCount}`);
     }
 
-    await fs.writeFile('output/data_stats_ward.json', JSON.stringify(newStates, null, 4));
+    await fs.writeFile('outputs/data_stats_state.json', JSON.stringify(newStates, null, 4));
     console.log('done!');
 }
 

@@ -21,7 +21,7 @@ export const STATES = [
     {
         "id": 1,
         "url": "https://www.inecelectionresults.ng/elections/63f8f25b594e164f8146a213?state=1",
-        "resultCount": 3555,
+        "resultCount": 3576,
         "resultGuberCount": 3989,
         "wardCount": 184,
         "lgaCount": 17,
@@ -31,7 +31,7 @@ export const STATES = [
     {
         "id": 2,
         "url": "https://www.inecelectionresults.ng/elections/63f8f25b594e164f8146a213?state=2",
-        "resultCount": 4014,
+        "resultCount": 4057,
         "resultGuberCount": 3906,
         "wardCount": 226,
         "lgaCount": 21,
@@ -41,7 +41,7 @@ export const STATES = [
     {
         "id": 3,
         "url": "https://www.inecelectionresults.ng/elections/63f8f25b594e164f8146a213?state=3",
-        "resultCount": 3998,
+        "resultCount": 4021,
         "resultGuberCount": 4046,
         "wardCount": 329,
         "lgaCount": 31,
@@ -51,7 +51,7 @@ export const STATES = [
     {
         "id": 4,
         "url": "https://www.inecelectionresults.ng/elections/63f8f25b594e164f8146a213?state=4",
-        "resultCount": 4555,
+        "resultCount": 4761,
         "resultGuberCount": 4836,
         "wardCount": 326,
         "lgaCount": 21,
@@ -61,7 +61,7 @@ export const STATES = [
     {
         "id": 5,
         "url": "https://www.inecelectionresults.ng/elections/63f8f25b594e164f8146a213?state=5",
-        "resultCount": 5261,
+        "resultCount": 5273,
         "resultGuberCount": 5093,
         "wardCount": 212,
         "lgaCount": 20,
@@ -81,7 +81,7 @@ export const STATES = [
     {
         "id": 7,
         "url": "https://www.inecelectionresults.ng/elections/63f8f25b594e164f8146a213?state=7",
-        "resultCount": 4706,
+        "resultCount": 4732,
         "resultGuberCount": 4678,
         "wardCount": 276,
         "lgaCount": 23,
@@ -91,7 +91,7 @@ export const STATES = [
     {
         "id": 8,
         "url": "https://www.inecelectionresults.ng/elections/63f8f25b594e164f8146a213?state=8",
-        "resultCount": 4911,
+        "resultCount": 4978,
         "resultGuberCount": 5053,
         "wardCount": 312,
         "lgaCount": 27,
@@ -101,7 +101,7 @@ export const STATES = [
     {
         "id": 9,
         "url": "https://www.inecelectionresults.ng/elections/63f8f25b594e164f8146a213?state=9",
-        "resultCount": 3132,
+        "resultCount": 3152,
         "resultGuberCount": 3212,
         "wardCount": 193,
         "lgaCount": 18,
@@ -111,7 +111,7 @@ export const STATES = [
     {
         "id": 10,
         "url": "https://www.inecelectionresults.ng/elections/63f8f25b594e164f8146a213?state=10",
-        "resultCount": 5466,
+        "resultCount": 5608,
         "resultGuberCount": 5556,
         "wardCount": 270,
         "lgaCount": 25,
@@ -121,7 +121,7 @@ export const STATES = [
     {
         "id": 11,
         "url": "https://www.inecelectionresults.ng/elections/63f8f25b594e164f8146a213?state=11",
-        "resultCount": 2845,
+        "resultCount": 2855,
         "resultGuberCount": 2801,
         "wardCount": 171,
         "lgaCount": 13,
@@ -131,7 +131,7 @@ export const STATES = [
     {
         "id": 12,
         "url": "https://www.inecelectionresults.ng/elections/63f8f25b594e164f8146a213?state=12",
-        "resultCount": 4147,
+        "resultCount": 4395,
         "resultGuberCount": 2618,
         "wardCount": 192,
         "lgaCount": 18,
@@ -151,7 +151,7 @@ export const STATES = [
     {
         "id": 14,
         "url": "https://www.inecelectionresults.ng/elections/63f8f25b594e164f8146a213?state=14",
-        "resultCount": 4046,
+        "resultCount": 4047,
         "resultGuberCount": 4074,
         "wardCount": 260,
         "lgaCount": 17,
@@ -161,7 +161,7 @@ export const STATES = [
     {
         "id": 15,
         "url": "https://www.inecelectionresults.ng/elections/63f8f25b594e164f8146a213?state=15",
-        "resultCount": 2642,
+        "resultCount": 2644,
         "resultGuberCount": 0,
         "wardCount": 62,
         "lgaCount": 6,
@@ -181,7 +181,7 @@ export const STATES = [
     {
         "id": 17,
         "url": "https://www.inecelectionresults.ng/elections/63f8f25b594e164f8146a213?state=17",
-        "resultCount": 3365,
+        "resultCount": 4132,
         "resultGuberCount": 0,
         "wardCount": 305,
         "lgaCount": 27,
@@ -191,7 +191,7 @@ export const STATES = [
     {
         "id": 18,
         "url": "https://www.inecelectionresults.ng/elections/63f8f25b594e164f8146a213?state=18",
-        "resultCount": 4109,
+        "resultCount": 4239,
         "resultGuberCount": 4327,
         "wardCount": 287,
         "lgaCount": 27,
@@ -201,7 +201,7 @@ export const STATES = [
     {
         "id": 19,
         "url": "https://www.inecelectionresults.ng/elections/63f8f25b594e164f8146a213?state=19",
-        "resultCount": 7257,
+        "resultCount": 7435,
         "resultGuberCount": 7495,
         "wardCount": 255,
         "lgaCount": 23,
@@ -211,7 +211,7 @@ export const STATES = [
     {
         "id": 20,
         "url": "https://www.inecelectionresults.ng/elections/63f8f25b594e164f8146a213?state=20",
-        "resultCount": 9854,
+        "resultCount": 9896,
         "resultGuberCount": 9331,
         "wardCount": 484,
         "lgaCount": 44,
@@ -221,7 +221,7 @@ export const STATES = [
     {
         "id": 21,
         "url": "https://www.inecelectionresults.ng/elections/63f8f25b594e164f8146a213?state=21",
-        "resultCount": 5994,
+        "resultCount": 6367,
         "resultGuberCount": 6488,
         "wardCount": 361,
         "lgaCount": 34,
@@ -231,7 +231,7 @@ export const STATES = [
     {
         "id": 22,
         "url": "https://www.inecelectionresults.ng/elections/63f8f25b594e164f8146a213?state=22",
-        "resultCount": 3348,
+        "resultCount": 3418,
         "resultGuberCount": 3630,
         "wardCount": 225,
         "lgaCount": 21,
@@ -241,7 +241,7 @@ export const STATES = [
     {
         "id": 23,
         "url": "https://www.inecelectionresults.ng/elections/63f8f25b594e164f8146a213?state=23",
-        "resultCount": 3364,
+        "resultCount": 3376,
         "resultGuberCount": 0,
         "wardCount": 239,
         "lgaCount": 21,
@@ -251,7 +251,7 @@ export const STATES = [
     {
         "id": 24,
         "url": "https://www.inecelectionresults.ng/elections/63f8f25b594e164f8146a213?state=24",
-        "resultCount": 2443,
+        "resultCount": 2455,
         "resultGuberCount": 2880,
         "wardCount": 193,
         "lgaCount": 16,
@@ -261,7 +261,7 @@ export const STATES = [
     {
         "id": 25,
         "url": "https://www.inecelectionresults.ng/elections/63f8f25b594e164f8146a213?state=25",
-        "resultCount": 12836,
+        "resultCount": 13065,
         "resultGuberCount": 13165,
         "wardCount": 245,
         "lgaCount": 20,
@@ -271,7 +271,7 @@ export const STATES = [
     {
         "id": 26,
         "url": "https://www.inecelectionresults.ng/elections/63f8f25b594e164f8146a213?state=26",
-        "resultCount": 2974,
+        "resultCount": 3112,
         "resultGuberCount": 3237,
         "wardCount": 147,
         "lgaCount": 13,
@@ -291,7 +291,7 @@ export const STATES = [
     {
         "id": 28,
         "url": "https://www.inecelectionresults.ng/elections/63f8f25b594e164f8146a213?state=28",
-        "resultCount": 4719,
+        "resultCount": 4724,
         "resultGuberCount": 5003,
         "wardCount": 236,
         "lgaCount": 20,
@@ -301,7 +301,7 @@ export const STATES = [
     {
         "id": 29,
         "url": "https://www.inecelectionresults.ng/elections/63f8f25b594e164f8146a213?state=29",
-        "resultCount": 3883,
+        "resultCount": 3888,
         "resultGuberCount": 3009,
         "wardCount": 203,
         "lgaCount": 18,
@@ -311,7 +311,7 @@ export const STATES = [
     {
         "id": 30,
         "url": "https://www.inecelectionresults.ng/elections/63f8f25b594e164f8146a213?state=30",
-        "resultCount": 3534,
+        "resultCount": 3545,
         "resultGuberCount": 3763,
         "wardCount": 332,
         "lgaCount": 30,
@@ -321,7 +321,7 @@ export const STATES = [
     {
         "id": 31,
         "url": "https://www.inecelectionresults.ng/elections/63f8f25b594e164f8146a213?state=31",
-        "resultCount": 5722,
+        "resultCount": 5753,
         "resultGuberCount": 2575,
         "wardCount": 351,
         "lgaCount": 33,
@@ -331,7 +331,7 @@ export const STATES = [
     {
         "id": 32,
         "url": "https://www.inecelectionresults.ng/elections/63f8f25b594e164f8146a213?state=32",
-        "resultCount": 4865,
+        "resultCount": 4866,
         "resultGuberCount": 3087,
         "wardCount": 207,
         "lgaCount": 17,
@@ -341,7 +341,7 @@ export const STATES = [
     {
         "id": 33,
         "url": "https://www.inecelectionresults.ng/elections/63f8f25b594e164f8146a213?state=33",
-        "resultCount": 5483,
+        "resultCount": 5948,
         "resultGuberCount": 6059,
         "wardCount": 319,
         "lgaCount": 23,
@@ -351,7 +351,7 @@ export const STATES = [
     {
         "id": 34,
         "url": "https://www.inecelectionresults.ng/elections/63f8f25b594e164f8146a213?state=34",
-        "resultCount": 3277,
+        "resultCount": 3369,
         "resultGuberCount": 2023,
         "wardCount": 244,
         "lgaCount": 23,
@@ -371,7 +371,7 @@ export const STATES = [
     {
         "id": 36,
         "url": "https://www.inecelectionresults.ng/elections/63f8f25b594e164f8146a213?state=36",
-        "resultCount": 2614,
+        "resultCount": 2658,
         "resultGuberCount": 2701,
         "wardCount": 178,
         "lgaCount": 17,
@@ -381,7 +381,7 @@ export const STATES = [
     {
         "id": 37,
         "url": "https://www.inecelectionresults.ng/elections/63f8f25b594e164f8146a213?state=37",
-        "resultCount": 2785,
+        "resultCount": 3056,
         "resultGuberCount": 3287,
         "wardCount": 147,
         "lgaCount": 14,
