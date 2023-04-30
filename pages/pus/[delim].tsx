@@ -36,10 +36,7 @@ export async function getServerSideProps({params, query, resolvedUrl}) {
     } else {
         puCode = delim.replaceAll('-', '/');
 
-        puData = await models.PuData.query()
-            .where('pu_code', puCode)
-            .andWhere('election_type', ElectionType.PRESIDENTIAL)
-            .andWhere('source', 'irev').first();
+        puData = await models.PuData.fetchByPuCode(puCode);
 
         puCodes = await models.PuData.query()
             .select('pu_code', 'name', 'reviewed_at', 'review_status')

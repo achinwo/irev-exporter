@@ -26,7 +26,7 @@ import MetaHead from "../src/MetaHead";
 import {DrawerView} from './drawer_view';
 import {MainBody} from './main_view';
 import {ElectionType, KEY_CONTRIBUTOR, KEY_CONTRIBUTOR_DISPLAYNAME, KEY_ELECTION_TYPE, STATES} from "./ref_data";
-import {AccountDiaglogView} from "./account_view";
+import {AccountDiaglogView, fullValidator} from "./account_view";
 
 export const App = ({stateId: initialStateId, mainComponent, mainComponentProps, electionType: initialElectionType, pageTitle, suppressDrawer}) => {
     const [states, setStates] = useState([]);
@@ -200,6 +200,8 @@ export const App = ({stateId: initialStateId, mainComponent, mainComponentProps,
         setContributorName(localStorage.getItem(KEY_CONTRIBUTOR));
     };
 
+    const isFullValidator = fullValidator(currentUser?.role);
+
     let xlsMenu = [];
 
     if(selectedLga){
@@ -258,30 +260,33 @@ export const App = ({stateId: initialStateId, mainComponent, mainComponentProps,
                                 </Typography>
                             </Box>
                             <Stack direction={"row"}>
-                                <div>
-                                    <Button
-                                        id="basic-button"
-                                        aria-controls={open ? "basic-menu" : undefined}
-                                        aria-haspopup="true"
-                                        aria-expanded={open ? "true" : undefined}
-                                        onClick={handleMenuClick}
-                                        color={"secondary"}
-                                        sx={{mt: 2, mr: 2}}
-                                    >
-                                        <DownloadRoundedIcon/>
-                                    </Button>
+                                {
+                                    isFullValidator &&
+                                    <div>
+                                        <Button
+                                            id="basic-button"
+                                            aria-controls={open ? "basic-menu" : undefined}
+                                            aria-haspopup="true"
+                                            aria-expanded={open ? "true" : undefined}
+                                            onClick={handleMenuClick}
+                                            color={"secondary"}
+                                            sx={{mt: 2, mr: 2}}
+                                        >
+                                            <DownloadRoundedIcon/>
+                                        </Button>
 
-                                    <Menu
-                                        id="basic-menu"
-                                        anchorEl={anchorEl}
-                                        open={open}
-                                        onClose={handleMenuClose}
-                                        MenuListProps={{
-                                            "aria-labelledby": "basic-button",
-                                        }}>
-                                        {view}
-                                    </Menu>
-                                </div>
+                                        <Menu
+                                            id="basic-menu"
+                                            anchorEl={anchorEl}
+                                            open={open}
+                                            onClose={handleMenuClose}
+                                            MenuListProps={{
+                                                "aria-labelledby": "basic-button",
+                                            }}>
+                                            {view}
+                                        </Menu>
+                                    </div>
+                                }
 
                                 <IconButton
                                     onClick={() => setIsOpen(!isOpen)}
