@@ -93,6 +93,9 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
         </Stack>
     </Button>;
 
+    const isIllegibleResult = puData?.isResultIllegible;
+    const isIllegibleValue = puData?.createdAt ? (puData.isNoneEceightForm ? 'isNoneEceightForm' : 'isResultIllegible') : undefined
+
     const fieldsInfo = [
         ['containsIncorrectPuName', 'Incorrect PU name?'],
         ['isInecStampAbsent', 'INEC stamp absent?'],
@@ -156,13 +159,11 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
             })
         }
         <br/>
-        {legibilityResetButton}
+        {(_.isUndefined(isIllegibleValue) || puData?.reviewStatus === ReviewStatus.RETURNED) && legibilityResetButton}
         <br/>
     </Box>;
 
 
-    const isIllegibleResult = puData?.isResultIllegible;
-    const isIllegibleValue = puData?.createdAt ? (puData.isNoneEceightForm ? 'isNoneEceightForm' : 'isResultIllegible') : undefined
 
     const illegibleResultView = <>
         <FormControl disabled={puData?.reviewStatus === ReviewStatus.VALIDATED || (!_.isUndefined(isIllegibleValue) && puData?.reviewStatus !== ReviewStatus.RETURNED)}
@@ -177,7 +178,7 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
                 <FormControlLabel style={{ width: 'auto' }} sx={{mr: 2}} value="isResultIllegible" control={<Radio  />} label="It is illegible" />
                 <FormControlLabel style={{ width: 'auto' }} sx={{ml: 2}} value="isNoneEceightForm" control={<Radio />} label={`Not a ${(electionType || ElectionType.PRESIDENTIAL).toLowerCase()} EC8`} />
             </RadioGroup>
-            {legibilityResetButton}
+            {(_.isUndefined(isIllegibleValue) || puData?.reviewStatus === ReviewStatus.RETURNED) && legibilityResetButton}
         </FormControl>
         <br/>
     </>
