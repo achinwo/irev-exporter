@@ -67,7 +67,7 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
 
             let resp;
             if(puData?.createdAt){
-                data.reviewedByContributorId = data.reviewedAt = data.reviewStatus = null;
+                data.reviewedByContributorId = data.reviewedAt = data.reviewStatus = data.comment = null;
                 resp = await axios.put(url, {data, contributor: contributor}, {headers});
             } else {
                 resp = await axios.post(url, {pu, puData: data, contributor: contributor}, {headers});
@@ -155,7 +155,7 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
     const isIllegibleValue = puData?.createdAt ? (puData.isNoneEceightForm ? 'isNoneEceightForm' : 'isResultIllegible') : undefined
 
     const illegibleResultView = <>
-        <FormControl disabled={!_.isUndefined(isIllegibleValue)} fullWidth={true}>
+        <FormControl disabled={!_.isUndefined(isIllegibleValue) && puData?.reviewStatus !== ReviewStatus.RETURNED} fullWidth={true}>
             <FormLabel>
                 <Typography variant="h6">Why is this result invalid?</Typography>
             </FormLabel>
