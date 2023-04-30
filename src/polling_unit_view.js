@@ -8,7 +8,7 @@ import {
     Link,
     Radio,
     RadioGroup, Stack,
-    TextField, IconButton, Chip
+    TextField, IconButton, Chip, Button
 } from "@mui/material";
 import Box from "@mui/material/Box";
 import _ from "lodash";
@@ -22,6 +22,7 @@ import WarningIcon from '@mui/icons-material/Warning';
 import VisibilitySharpIcon from '@mui/icons-material/VisibilitySharp';
 import VerifiedSharpIcon from '@mui/icons-material/VerifiedSharp';
 import ErrorSharpIcon from '@mui/icons-material/ErrorSharp';
+import UndoSharpIcon from '@mui/icons-material/UndoSharp';
 
 const RESULT_ILLEGIBILITY_STATE = {
     LEGIBLE: false,
@@ -85,6 +86,13 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
         }
     }
 
+    const legibilityResetButton = <Button onClick={() => setPuData({isResultIllegible: undefined})}>
+        <Stack alignItems={'center'}>
+            <UndoSharpIcon/>
+            <Typography fontSize={'small'}>Reset</Typography>
+        </Stack>
+    </Button>;
+
     const fieldsInfo = [
         ['containsIncorrectPuName', 'Incorrect PU name?'],
         ['isInecStampAbsent', 'INEC stamp absent?'],
@@ -139,7 +147,7 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
                             <Checkbox
                                 checked={puData[fieldName]}
                                 onChange={(evt) => {
-                                    setPuData({[fieldName]: evt.target.value});
+                                    setPuData({[fieldName]: !puData[fieldName]});
                                 }}
                             />
                         }
@@ -148,6 +156,8 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
             })
         }
         <br/>
+        {legibilityResetButton}
+        <br/>
     </Box>;
 
 
@@ -155,17 +165,19 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
     const isIllegibleValue = puData?.createdAt ? (puData.isNoneEceightForm ? 'isNoneEceightForm' : 'isResultIllegible') : undefined
 
     const illegibleResultView = <>
-        <FormControl disabled={!_.isUndefined(isIllegibleValue) && puData?.reviewStatus !== ReviewStatus.RETURNED} fullWidth={true}>
+        <FormControl disabled={puData?.reviewStatus === ReviewStatus.VALIDATED || (!_.isUndefined(isIllegibleValue) && puData?.reviewStatus !== ReviewStatus.RETURNED)}
+                     fullWidth={true}>
             <FormLabel>
                 <Typography variant="h6">Why is this result invalid?</Typography>
             </FormLabel>
             <RadioGroup row name="row-radio-buttons-group" sx={{m: 2}} value={isIllegibleValue} style={{display: 'flex', justifyContent: 'center',
                 alignItems: 'center'}}  onChange={(evt) => {
-                setPuData({[evt.target.value]: true});
+                setPuData({[evt.target.value]: !puData[evt.target.value]});
             }}>
                 <FormControlLabel style={{ width: 'auto' }} sx={{mr: 2}} value="isResultIllegible" control={<Radio  />} label="It is illegible" />
                 <FormControlLabel style={{ width: 'auto' }} sx={{ml: 2}} value="isNoneEceightForm" control={<Radio />} label={`Not a ${(electionType || ElectionType.PRESIDENTIAL).toLowerCase()} EC8`} />
             </RadioGroup>
+            {legibilityResetButton}
         </FormControl>
         <br/>
     </>

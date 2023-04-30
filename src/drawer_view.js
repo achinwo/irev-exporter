@@ -110,6 +110,7 @@ export const DrawerView = ({handleDrawerToggle, state, lga, ward, pu, setWard, s
 
         <Divider/>
         <List
+            disablePadding={true}
             subheader={
                 <ListSubheader component="div" id="nested-list-subheader">
                     LGAs
@@ -123,6 +124,8 @@ export const DrawerView = ({handleDrawerToggle, state, lga, ward, pu, setWard, s
                 return (
                     <>
                         <ListItem
+                            disablePadding={true}
+                            sx={{pr: 2}}
                             onClick={() =>
                                 setSelectedLga(
                                     lga.lga.lga_id === selectedLga?.lga.lga_id ? null : lga
@@ -130,8 +133,8 @@ export const DrawerView = ({handleDrawerToggle, state, lga, ward, pu, setWard, s
                             }
                             key={`lga-level-${idx}`}
                         >
-                            <ListItemText primary={
-                                <Stack sx={{pl: containsReturnLga ? 0 : 2 }} spacing={1} direction={'row'}>
+                            <ListItemText disablePadding={true} primary={
+                                <Stack sx={{pl: containsReturnLga ? 1 : 4, pb: 1}} spacing={1} direction={'row'}>
                                     {containsReturnLga ? <ErrorSharpIcon fontSize={'small'} color={'error'}/> : null}
                                     <Typography>{lga.lga.name}</Typography>
                                 </Stack>
