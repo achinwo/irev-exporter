@@ -68,7 +68,7 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
 
             let resp;
             if(puData?.createdAt){
-                data.reviewedByContributorId = data.reviewedAt = data.reviewStatus = data.comment = null;
+                data.reviewedByContributorId = data.reviewedAt = data.reviewStatus = null;
                 resp = await axios.put(url, {data, contributor: contributor}, {headers});
             } else {
                 resp = await axios.post(url, {pu, puData: data, contributor: contributor}, {headers});
