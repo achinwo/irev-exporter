@@ -1,6 +1,6 @@
 import {App} from './app';
 import * as models from './orm';
-import { ElectionType } from './ref_data';
+import {ElectionType, KEY_CONTRIBUTOR, KEY_CONTRIBUTOR_DISPLAYNAME, KEY_ELECTION_TYPE} from './ref_data';
 import Box from "@mui/material/Box";
 import {
     Button, ButtonGroup,
@@ -8,7 +8,7 @@ import {
     CardContent, CardMedia, Chip, CircularProgress, Divider, FormControl, Grid, IconButton, InputLabel,
     Link,
     MenuItem,
-    Select, Stack, TextField,
+    Select, Stack, TextField, ToggleButton, ToggleButtonGroup,
     Typography, useMediaQuery, useTheme
 } from "@mui/material";
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
@@ -21,6 +21,14 @@ import DoneOutlineIcon from '@mui/icons-material/DoneOutline';
 import DoneIcon from '@mui/icons-material/Done';
 import CloseIcon from '@mui/icons-material/Close';
 import HomeSharpIcon from '@mui/icons-material/HomeSharp';
+import LoadingButton from "@mui/lab/LoadingButton";
+
+import GroupsSharpIcon from '@mui/icons-material/GroupsSharp';
+import FilterListSharpIcon from '@mui/icons-material/FilterListSharp';
+import PersonSharpIcon from '@mui/icons-material/PersonSharp';
+import HistoryToggleOffSharpIcon from '@mui/icons-material/HistoryToggleOffSharp';
+import HistorySharpIcon from '@mui/icons-material/HistorySharp';
+import {fullValidator} from "./account_view";
 
 
 export enum DataQualityIssue {
@@ -66,9 +74,27 @@ export const AppPuView = function ({stats, puCodesSerialized, puSerialized, puDa
     const [puCode, setPuCode] = useState(initialPuData?.puCode || null);
     const [puData, setPuData] = useState<models.PuData>(initialPuData);
     const [isLoadingPuData, setIsLoadingPuData] = useState<boolean>(false);
+    const [currentUser, setCurrentUser] = useState<any>(null);
 
     useEffect(() => {
-        if(puCode === puData?.puCode) return;
+        const contributor = localStorage.getItem(KEY_CONTRIBUTOR);
+
+        if(!contributor) return;
+
+        const resp = axios.get(`/api/users/${encodeURIComponent(_.trim(contributor))}`)
+            .then((resp) => {
+                setCurrentUser(resp.data.data);
+                localStorage.setItem(KEY_CONTRIBUTOR_DISPLAYNAME, resp.data.data?.displayName && _.toString(resp.data.data.displayName) || null);
+            })
+            .catch((e) => {
+                console.error('Unable to fetch user by conributor id:', contributor, e.stack);
+            });
+
+    }, []);
+
+    useEffect(() => {
+        if(puCode === puData?.puCode || !puCode) return;
+
         const newDelim = puCode.replaceAll('/', '-');
         setIsLoadingPuData(true);
         axios.get(`/api/pu_data/${newDelim}`)
@@ -76,7 +102,18 @@ export const AppPuView = function ({stats, puCodesSerialized, puSerialized, puDa
                 setPuData(resp.data.data);
 
                 const isDq = DataQualityIssue.values().map(i => i.toLowerCase()).includes(delim.toLowerCase());
-                const newUrl = isDq ? `/pus/${delim}?pu=${newDelim}` : `/pus/${newDelim}`;
+
+
+                const params = new URLSearchParams(location.search);
+                if(isDq){
+                    params.set('pu', newDelim);
+                } else {
+                    params.delete('pu');
+                }
+                 //isDq ? `/pus/${delim}?pu=${newDelim}` : `/pus/${newDelim}`);
+
+                const newUrl = `/pus/${isDq ? delim : newDelim}?${params.toString()}`;
+
                 goTo(newDelim, `PU - ${resp.data.data?.name}`, newUrl);
             })
             .finally(() => setIsLoadingPuData(false));
@@ -92,7 +129,7 @@ export const AppPuView = function ({stats, puCodesSerialized, puSerialized, puDa
         <Typography variant={'h6'}>Data Review</Typography>
     </Stack>
 
-    return <App suppressDrawer={true} pageTitle={pageTitle} mainComponent={MainView} mainComponentProps={{delim, puData, puCodes, setPuCode, isLoadingPuData, stats}} stateId={puObj.stateId} electionType={ElectionType.PRESIDENTIAL}></App>;
+    return <App suppressDrawer={true} pageTitle={pageTitle} mainComponent={MainView} mainComponentProps={{delim, puData, puCodes, setPuCode, isLoadingPuData, stats, currentUser}} stateId={puObj?.stateId} electionType={ElectionType.PRESIDENTIAL}></App>;
 }
 
 function PaginationView({setPuCode, puCodes, puData, componentId}) {
@@ -144,7 +181,7 @@ function PaginationView({setPuCode, puCodes, puData, componentId}) {
     </>
 }
 
-function PollingUnitReviewView({puData, puCodes}: {puData: models.PuData, puCodes: string[]}) {
+function PollingUnitReviewView({puData, currentUser}: {puData: models.PuData, currentUser: any}) {
     const options = {
         weekday: 'long',
         year: 'numeric',
@@ -165,7 +202,7 @@ function PollingUnitReviewView({puData, puCodes}: {puData: models.PuData, puCode
             <Typography>{capitalize(`${puData.name}`)}</Typography>
             <Typography>{`PU Code: ${puData.puCode}`}</Typography>
             <Typography>{`State/LGA: ${puData.stateName} | ${puData.lgaName}`}</Typography>
-            <Typography>{updatedTxt} <span style={{fontWeight: 'bolder'}}>by {puData.contributorUsername}</span></Typography>
+            <Typography>{updatedTxt} by <span style={{fontWeight: 'bolder'}}>{puData.contributorUsername}</span></Typography>
             <Link href={puData.documentUrl} rel="noopener noreferrer" target="_blank" sx={{mb: 4}}>Document
                 Link {puData.documentUrl.endsWith('.pdf') ? '(PDF)' : '(JPG)'}</Link>
             <CardMedia style={{maxWidth: "100%", minHeight: '70vh'}}>
@@ -190,7 +227,7 @@ function PollingUnitReviewView({puData, puCodes}: {puData: models.PuData, puCode
                     <PuQuestionnaireView puData={puData}/>
 
                     <Stack direction={'row'} sx={{mt: 2, mr: 'auto', ml: 'auto'}}>
-                        <Button size={'large'} color={'success'} sx={{m: 4}}>
+                        <Button size={'large'} color={'success'} sx={{m: 4}} disabled={!fullValidator(currentUser)}>
                             <Stack justifyContent="center" alignItems="center">
                                 <DoneOutlineIcon fontSize={'large'} />
                                 <Typography>Valid</Typography>
@@ -264,6 +301,9 @@ function PuQuestionnaireView({puData}) {
 }
 
 function formatToUnits(number, precision) {
+
+    if(number < 1000) return number.toFixed(0);
+
     const abbrev = ['', 'k', 'm', 'b', 't'];
     const unrangifiedOrder = Math.floor(Math.log10(Math.abs(number)) / 3)
     const order = Math.max(0, Math.min(unrangifiedOrder, abbrev.length -1 ))
@@ -272,13 +312,50 @@ function formatToUnits(number, precision) {
     return (number / Math.pow(10, order * 3)).toFixed(precision) + suffix;
 }
 
-function MainView({puData, setPuCode, puCodes, isLoadingPuData, stats, delim}) {
+function MainView({puData, setPuCode, puCodes, isLoadingPuData, stats, delim, currentUser}) {
     // const theme = useTheme();
-    // const matches = useMediaQuery(theme.breakpoints.up('sm'));
 
-    if (isLoadingPuData) {
-        return <CircularProgress color={"success"} size={200} />;
-    }
+    const [currentContrib, setCurrentContrib] = useState<string>(null);
+    const [currentCreatedAfter, setCurrentCreatedAfter] = useState<string>(null);
+
+    const [currentDisplayName, setcurrentDisplayName] = useState<string>(null);
+
+    const [contribId, setContribId] = useState<string>(null);
+    const [createdAfter, setCreatedAfter] = useState<string>(null);
+    const [destUrl, setDestUrl] = useState<string>(null);
+
+    const [loadingIssue, setLoadingIssue] = useState<string | null>(null);
+
+    useEffect(() => {
+        const params = new URLSearchParams(globalThis?.window?.location?.search);
+        const addressContrib = params.get('displayName') || '';
+        const addressCreatedAfter = params.get('createdAfter') || '';
+
+        setCreatedAfter(addressCreatedAfter);
+        setContribId(addressContrib ? 'mine' : '');
+        setcurrentDisplayName(localStorage?.getItem(KEY_CONTRIBUTOR_DISPLAYNAME));
+
+        setCurrentContrib(addressContrib ? 'mine' : '');
+        setCurrentCreatedAfter(addressCreatedAfter);
+    }, [currentContrib, currentCreatedAfter]);
+
+    useEffect(() => {
+        const params = new URLSearchParams(globalThis?.window?.location?.search);
+        if(createdAfter) {
+            params.set('createdAfter', createdAfter);
+        }else {
+            params.delete('createdAfter');
+        }
+
+        if(contribId) {
+            const myDisplayName = localStorage.getItem(KEY_CONTRIBUTOR_DISPLAYNAME);
+            params.set('displayName', contribId === 'mine' && myDisplayName ? myDisplayName : '');
+        }else {
+            params.delete('displayName');
+        }
+
+        setDestUrl(`${window.location.pathname}?${params.toString()}`);
+    }, [contribId, createdAfter]);
 
     const theme = useTheme();
     const matches = useMediaQuery(theme.breakpoints.down('sm'));
@@ -290,37 +367,106 @@ function MainView({puData, setPuCode, puCodes, isLoadingPuData, stats, delim}) {
         </Stack>
     }
     //{ mt: 20, ml: {sm: 35, xs: 2}, mr: {sm: 4, xs: 0}}
-    return <Box sx={{ mt: 20, ml: 4, mr: 4, maxWidth: {xs: '100%', md: 1000}}} style={{display: 'flex', flexDirection: 'column', minHeight: '70vh'}}>
+    return <Stack spacing={4} alignItems={'center'} sx={{ mt: 20, ml: 4, mr: 4, maxWidth: {xs: '100%', md: 1000}}} style={{display: 'flex', flexDirection: 'column', minHeight: '70vh'}}>
 
-        <ButtonGroup fullWidth={true} variant="outlined" sx={{mb: 2}}>
+        <Stack direction="row" alignItems={'center'} spacing={4}>
+            <Stack direction={'row'} spacing={2} style={{color: 'gray'}} alignItems={'center'}>
+                <FilterListSharpIcon/>
+                { matches ? null : <Typography variant={'h6'} style={{flexGrow: 2}}>Filters</Typography>}
+            </Stack>
+
+            <ToggleButtonGroup
+                value={contribId}
+                disabled={!currentDisplayName}
+                exclusive
+                onChange={(evt, value) => {
+                    if(value === contribId || value == null) return;
+                    setContribId(value);
+                }}
+                aria-label="text alignment"
+            >
+                <ToggleButton value="" aria-label="laptop">
+                    <Stack direction={'row'} spacing={2}>
+                        <GroupsSharpIcon/>
+                        { matches ? null : <Typography>Everyone</Typography>}
+                    </Stack>
+                </ToggleButton>
+                <ToggleButton value="mine" aria-label="laptop">
+                    <Stack direction={'row'} spacing={2}>
+                        <PersonSharpIcon/>
+                        { matches ? null : <Typography>Mine Only</Typography>}
+                    </Stack>
+                </ToggleButton>
+            </ToggleButtonGroup>
+
+            <ToggleButtonGroup
+                value={createdAfter}
+                exclusive={true}
+                onChange={(evt, value) => {
+                    console.log('REVIEW_VIEW', {currentContrib, contribId, currentCreatedAfter, createdAfter, value});
+                    if(value === createdAfter || value == null) return;
+                    setCreatedAfter(value);
+                }}>
+                <ToggleButton value="">
+                    <Stack direction={'row'} spacing={2}>
+                        <HistorySharpIcon/>
+                        { matches ? null : <Typography>All Time</Typography>}
+                    </Stack>
+                </ToggleButton>
+                <ToggleButton value="2023-04-16">
+                    <Stack direction={'row'} spacing={2}>
+                        <HistoryToggleOffSharpIcon/>
+                        { matches ? null : <Typography>From April 16th</Typography>}
+                    </Stack>
+                </ToggleButton>
+            </ToggleButtonGroup>
+            <Button size={'large'} disabled={currentContrib === contribId && currentCreatedAfter === createdAfter} href={destUrl}>
+                Apply
+            </Button>
+        </Stack>
+
+        <ButtonGroup fullWidth={true} variant="outlined">
             {
                 _.toPairs(stats).map(([key, {label, count}]) => {
-                    return <Button
-                        href={`/pus/${key}`}
+
+                    return <LoadingButton
+                        href={`/pus/${key.toLowerCase()}`}
                         color={'secondary'}
+                        disabled={count < 1}
+                        onClick={() => setLoadingIssue(key)}
+                        loading={loadingIssue === key}
+                        loadingPosition="start"
                         key={key}
-                        variant={key === delim ? 'contained' : 'outlined'} onClick={null}>
-                        {makeStack(label, formatToUnits(count, 1))}
-                    </Button>
+                        variant={key.toLowerCase() === delim.toLowerCase() ? 'contained' : 'outlined'}>
+                        {loadingIssue === key ? 'Fetching...' : makeStack(label, formatToUnits(count, 1))}
+                    </LoadingButton>
                 })
             }
 
         </ButtonGroup>
 
-        {/*<Divider/>*/}
-
-        <Box sx={{mt: 4}} style={{display: 'flex', flexDirection: 'row', flexShrink: 1}}>
+        <Box style={{display: 'flex', flexDirection: 'row', flexShrink: 1, width: '100%'}}>
             <PaginationView  componentId={'pagination-top'} puData={puData} puCodes={puCodes} setPuCode={setPuCode}/>
         </Box>
 
-        <Box sx={{mt: 2, mb: 2}} style={{display: 'flex', flexDirection: 'row', flexGrow: 2, width: '100%'}}>
-            <PollingUnitReviewView puData={puData} puCodes={puCodes}/>
 
+        {isLoadingPuData ?
+            <CircularProgress color={"success"} style={{width: '100%'}} size={200} />
+            :
 
-        </Box>
+            (puData ?
 
-        <Box style={{display: 'flex', flexDirection: 'row', flexShrink: 1}}>
+                    <Box style={{display: 'flex', flexDirection: 'row', flexGrow: 2, width: '100%'}}>
+                        <PollingUnitReviewView puData={puData} currentUser={currentUser}/>
+                    </Box>
+                 :
+            <Typography style={{display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'row', flexGrow: 2, width: '100%'}}>Nothing data to display</Typography>
+            )
+
+        }
+
+        <Box style={{display: 'flex', flexDirection: 'row', flexShrink: 1, width: '100%'}}>
             <PaginationView componentId={'pagination-bottom'} puData={puData} puCodes={puCodes} setPuCode={setPuCode}/>
         </Box>
-    </Box>
+    </Stack>
 }

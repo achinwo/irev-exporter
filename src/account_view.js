@@ -12,7 +12,7 @@ import React from "react";
 import VerifiedSharpIcon from '@mui/icons-material/VerifiedSharp';
 import _ from 'lodash';
 
-function fullValidator(dataOrRole) {
+export function fullValidator(dataOrRole) {
     const roleVal = _.toInteger(_.isPlainObject(dataOrRole) ? dataOrRole.role : dataOrRole) || 0;
     return roleVal >= 2;
 }

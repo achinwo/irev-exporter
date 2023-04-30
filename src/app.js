@@ -25,7 +25,7 @@ import AccountCircle from '@mui/icons-material/AccountCircle';
 import MetaHead from "../src/MetaHead";
 import {DrawerView} from './drawer_view';
 import {MainBody} from './main_view';
-import {ElectionType, KEY_CONTRIBUTOR, KEY_ELECTION_TYPE, STATES} from "./ref_data";
+import {ElectionType, KEY_CONTRIBUTOR, KEY_CONTRIBUTOR_DISPLAYNAME, KEY_ELECTION_TYPE, STATES} from "./ref_data";
 import {AccountDiaglogView} from "./account_view";
 
 export const App = ({stateId: initialStateId, mainComponent, mainComponentProps, electionType: initialElectionType, pageTitle, suppressDrawer}) => {
@@ -79,6 +79,7 @@ export const App = ({stateId: initialStateId, mainComponent, mainComponentProps,
         const contribId = _.trim(newValue)
         const dispNameClean = _.trim(dispName);
         localStorage.setItem(KEY_CONTRIBUTOR, contribId);
+        localStorage.setItem(KEY_CONTRIBUTOR_DISPLAYNAME, dispNameClean);
 
         let user;
 
@@ -93,7 +94,6 @@ export const App = ({stateId: initialStateId, mainComponent, mainComponentProps,
 
         console.log("saved user data:", user);
     }
-
 
     useEffect(async () => {
         const res = await axios.get(`/api/states/stats?electionType=${electionType}`);
@@ -146,6 +146,8 @@ export const App = ({stateId: initialStateId, mainComponent, mainComponentProps,
                 setCurrentUser(resp.data.data);
                 setDisplayName(resp.data.data?.displayName || displayName);
                 setContributorName(resp.data.data?.contributorId || contributor);
+
+                localStorage.setItem(KEY_CONTRIBUTOR_DISPLAYNAME, resp.data.data?.displayName ? _.toString(resp.data.data.displayName) : _.toString(displayName));
             } catch (e) {
                 console.error('Unable to fetch user by conributor id:', contributor, e.stack);
             }

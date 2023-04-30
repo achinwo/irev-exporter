@@ -3,12 +3,21 @@ import * as models from '../../src/orm';
 import { ElectionType } from '../../src/ref_data';
 import _ from 'lodash';
 import {User} from "../../src/orm";
+import moment from "moment";
 
 
 export async function getServerSideProps({params, query, resolvedUrl}) {
     const {delim} = params;
-    const {pu} = query;
-    console.log('[getServerSideProps]', query, params);
+    let {pu, createdAfter, displayName} = query;
+
+    let contributorId = null;
+    if(displayName){
+        const userRes = await models.User.query().select('contributor_id').where('display_name', _.trim(displayName)).first();
+        contributorId = userRes.contributorId;
+    }
+
+    createdAfter = createdAfter ? moment.utc(createdAfter).toDate() : null;
+    console.log('[getServerSideProps]', query, params, {createdAfter, contributorId});
 
     const issueNames = DataQualityIssue.values().map(i => i.toLowerCase());
     let puCode = pu ? pu.replaceAll('-', '/') : null;
@@ -17,13 +26,13 @@ export async function getServerSideProps({params, query, resolvedUrl}) {
     //
 
     if(delim.toLowerCase() === DataQualityIssue.OVER_VOTING.toLowerCase()) {
-        puCodes = await models.PuData.fetchOvervoting({limit: 100});
+        puCodes = await models.PuData.fetchOvervoting({limit: 100, contributorId, createdAfter});
     } else if(delim.toLowerCase() === DataQualityIssue.UNENTERED_VOTES.toLowerCase()){
-        puCodes = await models.PuData.fetchUnenteredVotes({limit: 100});
+        puCodes = await models.PuData.fetchUnenteredVotes({limit: 100, contributorId, createdAfter});
     } else if(delim.toLowerCase() === DataQualityIssue.VOTES_GT_TTL_VOTES.toLowerCase()){
-        puCodes = await models.PuData.fetchInconsistentVotes({limit: 100});
+        puCodes = await models.PuData.fetchInconsistentVotes({limit: 100, contributorId, createdAfter});
     } else if(delim.toLowerCase() === DataQualityIssue.FALSE_ILLEGIBLE.toLowerCase()){
-        puCodes = await models.PuData.fetchFalseIllegibles({limit: 100});
+        puCodes = await models.PuData.fetchFalseIllegibles({limit: 100, contributorId, createdAfter});
     } else {
         puCode = delim.replaceAll('-', '/');
 
@@ -45,7 +54,22 @@ export async function getServerSideProps({params, query, resolvedUrl}) {
         puCode = null;
     }
 
-    puCode = puCode || _.first(puCodes).puCode;
+    puCode = puCode || _.first(puCodes)?.puCode;
+
+    const statsRaw = await models.PuData.fetchDataQualityStats({contributorId, createdAfter});
+    let stats = {};
+
+    for (const [key, count] of _.toPairs(statsRaw)) {
+        stats[key] = {label: DataQualityIssue.labelFor(key), count};
+    }
+
+    if(!puCode){
+        return {
+            props: {...params, stats, puCode: puCode || null, puCodesSerialized: JSON.stringify(puCodes),
+                puSerialized: JSON.stringify(null), puDataSerialized: JSON.stringify(null),
+                query, resolvedUrl},
+        }
+    }
 
     const puObj = await models.IrevPu.query().where('pu_code', puCode).first();
 
@@ -59,13 +83,6 @@ export async function getServerSideProps({params, query, resolvedUrl}) {
 
     puData.contributorUsername = mapping[_.trim(puData.contributorUsername)] || '(unknown)';
     puData.reviewedByContributorId = mapping[_.trim(puData.reviewedByContributorId)] || '(unknown reviewer)';
-
-    const statsRaw = await models.PuData.fetchDataQualityStats();
-    let stats = {};
-
-    for (const [key, count] of _.toPairs(statsRaw)) {
-        stats[key] = {label: DataQualityIssue.labelFor(key), count};
-    }
 
     console.log('[getServerSideProps] puCode:', puCode, stats);
     return {

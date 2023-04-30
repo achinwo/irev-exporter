@@ -6,10 +6,10 @@ export default function MetaHead() {
     <>
       <Head>
         <title>iReV</title>
-        <meta property="og:title" content="iReV-LP" key="title" />
+        <meta property="og:title" content="iReV" key="title" />
         <meta
           property="og:description"
-          content="This is an iReV portal for Obidents/LP"
+          content="Unoffical portal for efficient browsing and transcription of INEC election data"
           key="description"
         />
         <meta

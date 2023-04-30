@@ -8,6 +8,7 @@ export const DataSource = {
 };
 
 export const KEY_CONTRIBUTOR = "contributor-name";
+export const KEY_CONTRIBUTOR_DISPLAYNAME = "contributor-displayname";
 export const KEY_ELECTION_TYPE = "election-type";
 
 export enum ReviewStatus {
