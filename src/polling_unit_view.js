@@ -202,7 +202,7 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
             return <Stack alignItems={'center'} spacing={2}>
                 <Stack direction={'row'} alignItems={'center'} spacing={1}>
                     <Typography sx={{fontStyle: 'italic'}} variant="subtitle1" style={{color: 'grey'}}>
-                        Submitted by {puData.contributorUsername} on {new Date(puData.updatedAt).toLocaleDateString("en-US", options)}
+                        Submitted by {puData.contributorDisplayName} on {new Date(puData.updatedAt).toLocaleDateString("en-US", options)}
                     </Typography>
                     {puData.documentSize === pu.document.size ? null : <WarningIcon title={'detected size mismatch from original submission'} fontSize={'small'} color={'warning'}/>}
 

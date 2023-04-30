@@ -6,8 +6,6 @@ import {User} from "./user";
 import {DataSource, ElectionType, ReviewStatus} from "../ref_data";
 import {DataQualityIssue} from "../review_view";
 
-
-
 export class PuData extends DbModel {
     static tableName = 'pu_data';
 
@@ -74,6 +72,26 @@ export class PuData extends DbModel {
 
     @col(SchemaType.string, {nullable: true, enum: [ReviewStatus.RETURNED, ReviewStatus.VALIDATED]})
     reviewStatus: string;
+
+    contributorDisplayName: string;
+    reviewedByDisplayName: string;
+
+    static async fetchByPuCode(puCode) {
+        let puData = (await PuData.query()
+            .where('pu_code', puCode)
+            .andWhere('election_type', ElectionType.PRESIDENTIAL)
+            .andWhere('source', 'irev').first());
+
+        if(!puData) return null;
+
+        const recs = await User.query().select('display_name', 'contributor_id');
+        const mapping = _.fromPairs(recs.map(r => [r.contributorId, r.displayName]));
+
+        puData.contributorDisplayName = mapping[_.trim(puData.contributorUsername)] || '(unknown)';
+        puData.reviewedByDisplayName = mapping[_.trim(puData.reviewedByContributorId)] || '(unknown reviewer)';
+
+        return puData;
+    }
 
     static async createOrUpdate({pu, puData, contributor}: {pu: any, puData: any, contributor: string}): Promise<PuData>{
         if(puData.id){
@@ -198,7 +216,7 @@ export class PuData extends DbModel {
         return PuData.query()
             .select('pu_code', 'name', 'reviewed_at', 'review_status')
             .whereRaw('votes_cast > voters_accredited')
-            .andWhereRaw(`(review_status is null OR review_status != '${ReviewStatus.VALIDATED}')`)
+            .andWhereRaw(`(review_status is null)`)
             .andWhere(applyCommonFilters(opts, {limit: 100}));
     }
 
@@ -208,6 +226,7 @@ export class PuData extends DbModel {
             .from(
                 PuData.query()
                     .select('id', 'pu_code', 'name', 'reviewed_at', 'review_status', PuData.knex().raw('SUM(COALESCE(votes_lp, 0) + COALESCE(votes_apc, 0) + COALESCE(votes_pdp, 0) + COALESCE(votes_nnpp, 0))'))
+                    .andWhereRaw(`review_status is null`)
                     .andWhere(applyCommonFilters(opts, {limit: 100}))
                     .groupBy('id', 'pu_code', 'name', 'votes_cast', 'reviewed_at', 'review_status')
                     .havingRaw('SUM(COALESCE(votes_lp, 0) + COALESCE(votes_apc, 0) + COALESCE(votes_pdp, 0) + COALESCE(votes_nnpp, 0)) > votes_cast')
@@ -220,8 +239,8 @@ export class PuData extends DbModel {
             .select('pu_code', 'name', 'reviewed_at', 'review_status')
             .whereRaw('(votes_cast is null OR voters_accredited is null)')
             .andWhere('is_result_illegible', false)
-            .andWhereRaw(`(review_status is null OR review_status != '${ReviewStatus.VALIDATED}')`)
-            .andWhere(applyCommonFilters(opts, {limit: 100}));;
+            .andWhereRaw(`(review_status is null)`)
+            .andWhere(applyCommonFilters(opts, {limit: 100}));
     }
 
     static async fetchFalseIllegibles(opts: DqQueryOptions){
@@ -244,6 +263,7 @@ export class PuData extends DbModel {
         const unRes = await PuData.query()
             .count('*', {as: 'unenteredCount'})
             .whereRaw('(votes_cast is null OR voters_accredited is null)')
+            .andWhere('is_result_illegible', false)
             .andWhereRaw(`(review_status is null OR review_status != '${ReviewStatus.VALIDATED}')`)
             .andWhere(applyCommonFilters(opts))
             .first();
@@ -254,6 +274,7 @@ export class PuData extends DbModel {
                     PuData.query()
                         .select('pu_code', 'id', PuData.knex().raw('SUM(COALESCE(votes_lp, 0) + COALESCE(votes_apc, 0) + COALESCE(votes_pdp, 0) + COALESCE(votes_nnpp, 0))'))
                         .where(applyCommonFilters(opts))
+                        .andWhereRaw(`(review_status is null OR review_status != '${ReviewStatus.VALIDATED}')`)
                         .groupBy('id', 'pu_code', 'votes_cast')
                         .havingRaw('SUM(COALESCE(votes_lp, 0) + COALESCE(votes_apc, 0) + COALESCE(votes_pdp, 0) + COALESCE(votes_nnpp, 0)) > votes_cast')
                         .as('tbl')
@@ -263,6 +284,7 @@ export class PuData extends DbModel {
             .count('*', {as: 'illegCount'})
             .where('is_result_illegible', true)
             .andWhere('voters_accredited_bvas', '>', 100)
+            .andWhereRaw(`(review_status is null OR review_status != '${ReviewStatus.VALIDATED}')`)
             .andWhere(applyCommonFilters(opts))
             .first();
 

@@ -1,6 +1,6 @@
 import {App} from './app';
 import * as models from './orm';
-import {ElectionType, KEY_CONTRIBUTOR, KEY_CONTRIBUTOR_DISPLAYNAME, KEY_ELECTION_TYPE} from './ref_data';
+import {ElectionType, KEY_CONTRIBUTOR, KEY_CONTRIBUTOR_DISPLAYNAME, KEY_ELECTION_TYPE, ReviewStatus} from './ref_data';
 import Box from "@mui/material/Box";
 import {
     Button, ButtonGroup,
@@ -29,6 +29,9 @@ import PersonSharpIcon from '@mui/icons-material/PersonSharp';
 import HistoryToggleOffSharpIcon from '@mui/icons-material/HistoryToggleOffSharp';
 import HistorySharpIcon from '@mui/icons-material/HistorySharp';
 import {fullValidator} from "./account_view";
+import {col, SchemaType} from "./lib/model";
+import VerifiedSharpIcon from "@mui/icons-material/VerifiedSharp";
+import ErrorSharpIcon from "@mui/icons-material/ErrorSharp";
 
 
 export enum DataQualityIssue {
@@ -120,8 +123,6 @@ export const AppPuView = function ({stats, puCodesSerialized, puSerialized, puDa
 
     }, [puCode]);
 
-    //console.log('AppPuView:', puCodes);
-
     const pageTitle = <Stack spacing={2} direction={'row'} alignItems={'center'}>
         <IconButton size={'small'} href={'/'}>
             <HomeSharpIcon fontSize={'medium'}/>
@@ -129,7 +130,7 @@ export const AppPuView = function ({stats, puCodesSerialized, puSerialized, puDa
         <Typography variant={'h6'}>Data Review</Typography>
     </Stack>
 
-    return <App suppressDrawer={true} pageTitle={pageTitle} mainComponent={MainView} mainComponentProps={{delim, puData, puCodes, setPuCode, isLoadingPuData, stats, currentUser}} stateId={puObj?.stateId} electionType={ElectionType.PRESIDENTIAL}></App>;
+    return <App suppressDrawer={true} pageTitle={pageTitle} mainComponent={MainView} mainComponentProps={{delim, setPuData, puData, puCodes, setPuCode, isLoadingPuData, stats, currentUser}} stateId={puObj?.stateId} electionType={ElectionType.PRESIDENTIAL}></App>;
 }
 
 function PaginationView({setPuCode, puCodes, puData, componentId}) {
@@ -181,7 +182,7 @@ function PaginationView({setPuCode, puCodes, puData, componentId}) {
     </>
 }
 
-function PollingUnitReviewView({puData, currentUser}: {puData: models.PuData, currentUser: any}) {
+function PollingUnitReviewView({puData, issueFlags, currentUser, isSubmitting, setIsSubmitting, setPuData, setIssueFlags}: {puData: models.PuData, currentUser: any, issueFlags: any, isSubmitting: boolean, setIssueFlags: Function, setIsSubmitting: Function, setPuData: Function}) {
     const options = {
         weekday: 'long',
         year: 'numeric',
@@ -193,7 +194,30 @@ function PollingUnitReviewView({puData, currentUser}: {puData: models.PuData, cu
     // @ts-ignore
     const updatedTxt = `Submitted: ${new Date(puData.createdAt).toLocaleDateString("en-US", options)}`;
     // @ts-ignore
-    const submittedAtTxt = new Date(puData.updatedAt).toLocaleDateString("en-US", options)
+    //const submittedAtTxt = new Date(puData.updatedAt).toLocaleDateString("en-US", options);
+
+    const summedVotes = _.sumBy(['Apc', 'Pdp', 'Lp', 'Nnpp'], (n) => puData[`votes${n}`] || 0);
+
+    const handlePuReview = async (reviewStatus) => {
+        let comment = _.join(_.compact(_.toPairs(issueFlags).map(([label, isValid]) => !isValid ? label : null)), ',');
+
+        const newData = _.assign({}, puData, {
+            reviewStatus, comment,
+            reviewedAt: new Date(),
+            reviewedByContributorId: currentUser.contributorId
+        });
+
+        console.log('ISSUES', newData);
+
+        const url = `/api/pus/${puData.id}`;
+        const resp = await axios.put(url, {data: newData, contributor: currentUser.contributorId});
+
+        console.log('ISSUES RESP:', resp.data);
+        setPuData(resp.data.data);
+    }
+
+    const isValidated = puData.reviewStatus === ReviewStatus.VALIDATED;
+    let ValidationIcon = isValidated ? VerifiedSharpIcon : ErrorSharpIcon;
 
     // @ts-ignore
     return <Card elevation={1} xs={{mt: 20}} style={{width: "100%", minHeight: '50vh'}}>
@@ -201,8 +225,8 @@ function PollingUnitReviewView({puData, currentUser}: {puData: models.PuData, cu
         <CardContent align="center" style={{width: "100%"}}>
             <Typography>{capitalize(`${puData.name}`)}</Typography>
             <Typography>{`PU Code: ${puData.puCode}`}</Typography>
-            <Typography>{`State/LGA: ${puData.stateName} | ${puData.lgaName}`}</Typography>
-            <Typography>{updatedTxt} by <span style={{fontWeight: 'bolder'}}>{puData.contributorUsername}</span></Typography>
+            <Typography>{`State/LGA/Ward: ${puData.stateName}`} / {puData.lgaName} / {puData.wardName}</Typography>
+            <Typography>{updatedTxt} by <span style={{fontWeight: 'bolder'}}>{puData.contributorDisplayName}</span></Typography>
             <Link href={puData.documentUrl} rel="noopener noreferrer" target="_blank" sx={{mb: 4}}>Document
                 Link {puData.documentUrl.endsWith('.pdf') ? '(PDF)' : '(JPG)'}</Link>
             <CardMedia style={{maxWidth: "100%", minHeight: '70vh'}}>
@@ -217,30 +241,56 @@ function PollingUnitReviewView({puData, currentUser}: {puData: models.PuData, cu
 
                             </div>
                             :
-                                <ReactPanZoom
-                                    image={puData.documentUrl}
-                                    alt={`Result for Polling Unit ${puData.puCode}`}
-                                />
+                            <ReactPanZoom
+                                image={puData.documentUrl}
+                                alt={`Result for Polling Unit ${puData.puCode}`}
+                            />
                     }
                     </Box>
 
-                    <PuQuestionnaireView puData={puData}/>
+                    {
+                        !puData.isResultIllegible && <Typography sx={{mt: 2, mb: 2}} color={'gray'}>Sum of votes: <span style={{fontWeight: 'bolder'}}>{summedVotes}</span></Typography>
+                    }
 
-                    <Stack direction={'row'} sx={{mt: 2, mr: 'auto', ml: 'auto'}}>
-                        <Button size={'large'} color={'success'} sx={{m: 4}} disabled={!fullValidator(currentUser)}>
-                            <Stack justifyContent="center" alignItems="center">
-                                <DoneOutlineIcon fontSize={'large'} />
-                                <Typography>Valid</Typography>
-                            </Stack>
-                        </Button>
 
-                        <Button size={'large'} color={'error'} sx={{m: 4}}>
-                            <Stack justifyContent="center" alignItems="center">
-                                <CloseIcon fontSize={'large'} />
-                                <Typography>Return</Typography>
+                    {!puData.reviewStatus ?
+                        <>
+                            <PuQuestionnaireView puData={puData} setIssueFlags={setIssueFlags} issueFlags={issueFlags}/>
+
+
+                            <Stack direction={'row'} sx={{mt: 2, mr: 'auto', ml: 'auto'}}>
+                                <Button size={'large'} color={'success'} sx={{m: 4}} disabled={!fullValidator(currentUser)} onClick={() => handlePuReview(ReviewStatus.VALIDATED)}>
+                                    <Stack justifyContent="center" alignItems="center">
+                                        <DoneOutlineIcon fontSize={'large'} />
+                                        <Typography>Valid</Typography>
+                                    </Stack>
+                                </Button>
+
+                                <Button size={'large'} color={'error'} sx={{m: 4}} onClick={() => handlePuReview(ReviewStatus.RETURNED)}
+                                        disabled={!currentUser || currentUser.contributorId !== puData.contributorUsername}>
+                                    <Stack justifyContent="center" alignItems="center">
+                                        <CloseIcon fontSize={'large'} />
+                                        <Typography>Return</Typography>
+                                    </Stack>
+                                </Button>
                             </Stack>
-                        </Button>
-                    </Stack>
+                        </>
+                        :
+                        <Stack direction={'row'} sx={{mt: 2, mr: 'auto', ml: 'auto'}} alignItems={'center'} >
+                            <ValidationIcon color={isValidated ? 'success' : 'error'} fontSize={'large'} sx={{marginRight: 2}}/>
+                            <Typography variant={'h4'}>{puData.reviewStatus}</Typography>
+                        </Stack>
+
+                    }
+
+
+                    {currentUser && currentUser.contributorId !== puData.contributorUsername &&
+                        <Typography sx={{mt: 2}} color={'gray'}>Submitted by {puData.contributorDisplayName}</Typography>
+                    }
+
+                    {(!fullValidator(currentUser) && !puData.reviewStatus) &&
+                        <Typography sx={{mt: 2}} color={'gray'}>Note: You have LIMITED validation capabilities. You can return your own submissions only.</Typography>}
+
                 </Stack>
             </CardMedia>
         </CardContent>
@@ -249,7 +299,7 @@ function PollingUnitReviewView({puData, currentUser}: {puData: models.PuData, cu
 
 const NOT_ENTERED = 'Not Entered';
 
-function PuQuestionnaireView({puData}) {
+function PuQuestionnaireView({puData, setIssueFlags, issueFlags}) {
     const fields: [string, string, boolean, boolean][] = [
         ['Accredited Votes', 'votersAccredited', false, true],
         ['Accredited Votes (BVAS)', 'votersAccreditedBvas', false, false],
@@ -263,14 +313,16 @@ function PuQuestionnaireView({puData}) {
     const gridArgs = {item: true, xs: 2, sm: 4, md: 3, display: puData.isResultIllegible ? 'none' : 'initial'};
 
     const makeStack = (label, val) => {
-        const [isValidatedLabel, setIsValidatedLabel] = useState<null | boolean>(val === NOT_ENTERED ? false : null);
+        //const [isValidatedLabel, setIsValidatedLabel] = useState<null | boolean>(val === NOT_ENTERED ? false : null);
+
+        const isValidatedLabel = issueFlags[label] === undefined ? null : issueFlags[label];
         const color = isValidatedLabel ? 'success' : (isValidatedLabel === null ? 'inherit' : 'error');
         return <Button
             variant={'outlined'}
             color={color}
             disabled={label === 'Accredited Votes (BVAS)'}
             fullWidth={true}
-            onClick={() => setIsValidatedLabel(isValidatedLabel === null ? false : !isValidatedLabel)}
+            onClick={() => setIssueFlags((prev) => _.assign({}, prev, {[label]: isValidatedLabel === null ? false : !isValidatedLabel}))}
             endIcon={isValidatedLabel ? <DoneIcon/> : (isValidatedLabel === null ? null : <CloseIcon />) }>
             <Stack direction={'row'} divider={<Divider orientation={'vertical'} flexItem={true} sx={{ml: 1, mr: 1}}/>}>
                 <Typography sx={{fontWeight: 'bold'}}>{label}</Typography>
@@ -311,7 +363,7 @@ function formatToUnits(number, precision) {
     return (number / Math.pow(10, order * 3)).toFixed(precision) + suffix;
 }
 
-function MainView({puData, setPuCode, puCodes, isLoadingPuData, stats, delim, currentUser}) {
+function MainView({puData, setPuData, setPuCode, puCodes, isLoadingPuData, stats, delim, currentUser}) {
     // const theme = useTheme();
 
     const [currentContrib, setCurrentContrib] = useState<string>(null);
@@ -324,6 +376,13 @@ function MainView({puData, setPuCode, puCodes, isLoadingPuData, stats, delim, cu
     const [destUrl, setDestUrl] = useState<string>(null);
 
     const [loadingIssue, setLoadingIssue] = useState<string | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+    const [issueFlags, setIssueFlags] = useState<any>({});
+    const [issueBucketUrls, setIssueBucketUrls] = useState<any>({});
+
+    useEffect(() => {
+        setIssueFlags({});
+    }, [puData]);
 
     useEffect(() => {
         const params = new URLSearchParams(globalThis?.window?.location?.search);
@@ -336,6 +395,15 @@ function MainView({puData, setPuCode, puCodes, isLoadingPuData, stats, delim, cu
 
         setCurrentContrib(addressContrib ? 'mine' : '');
         setCurrentCreatedAfter(addressCreatedAfter);
+
+        params.delete('pu');
+
+        let issueUrls = {};
+        for (const [key, {label, count}] of _.toPairs(stats)) {
+            issueUrls[key] = `/pus/${key.toLowerCase()}?${params.toString()}`;
+        }
+
+        setIssueBucketUrls(issueUrls);
     }, [currentContrib, currentCreatedAfter]);
 
     useEffect(() => {
@@ -352,6 +420,8 @@ function MainView({puData, setPuCode, puCodes, isLoadingPuData, stats, delim, cu
         }else {
             params.delete('displayName');
         }
+
+        params.delete('pu');
 
         setDestUrl(`${window.location.pathname}?${params.toString()}`);
     }, [contribId, createdAfter]);
@@ -429,8 +499,9 @@ function MainView({puData, setPuCode, puCodes, isLoadingPuData, stats, delim, cu
                 _.toPairs(stats).map(([key, {label, count}]) => {
 
                     return <LoadingButton
-                        href={`/pus/${key.toLowerCase()}`}
+                        href={issueBucketUrls[key]}
                         color={'secondary'}
+                        title={key}
                         disabled={count < 1}
                         onClick={() => setLoadingIssue(key)}
                         loading={loadingIssue === key}
@@ -458,7 +529,7 @@ function MainView({puData, setPuCode, puCodes, isLoadingPuData, stats, delim, cu
             (puData ?
 
                     <Box style={{display: 'flex', flexDirection: 'row', flexGrow: 2, width: '100%'}}>
-                        <PollingUnitReviewView puData={puData} currentUser={currentUser}/>
+                        <PollingUnitReviewView puData={puData} setPuData={setPuData} currentUser={currentUser} isSubmitting={isSubmitting} setIsSubmitting={setIsSubmitting} issueFlags={issueFlags} setIssueFlags={setIssueFlags}/>
                     </Box>
                  :
             <Typography style={{display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'row', flexGrow: 2, width: '100%'}}>Nothing data to display</Typography>

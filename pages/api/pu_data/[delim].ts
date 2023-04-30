@@ -1,5 +1,6 @@
 import {PuData} from '../../../src/orm';
 import { ElectionType } from '../../../src/ref_data';
+import * as models from "../../../src/orm";
 
 export default async function userHandler(req, res) {
     const {query, method, body, headers} = req;
@@ -7,7 +8,7 @@ export default async function userHandler(req, res) {
     switch (method) {
         case 'GET':
             const puCode = query.delim.replaceAll('-', '/');
-            const puData = await PuData.query().where('pu_code', puCode).andWhere('election_type', ElectionType.PRESIDENTIAL).andWhere('source', 'irev').first();
+            const puData = await models.PuData.fetchByPuCode(puCode);
             res.status(200).json({data: puData});
             break;
         default:

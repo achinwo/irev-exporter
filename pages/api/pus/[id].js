@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import {fetchWardData, STATES} from "../../../src/utils";
-import {PuData} from "../../../src/orm";
+import {PuData, User} from "../../../src/orm";
 import {ElectionType} from "../../../src/ref_data";
 
 export default async function userHandler(req, res) {
@@ -23,15 +23,30 @@ export default async function userHandler(req, res) {
             const existing = await PuData.query().where('pu_code', puCode).andWhere('election_type', electionType || ElectionType.PRESIDENTIAL).first();
 
             if(existing){
-                res.status(400).json({errorMessage: `Submission exists for "${puCode}" by "${_.trim(existing.contributorUsername)}". Refresh the page and try again.`});
+                res.status(400).json({errorMessage: `Submission exists for "${puCode}" by "${_.trim(existing.contributorDisplayName)}". Refresh the page and try again.`});
                 return;
             }
 
             data = await PuData.createOrUpdate(body);
             res.status(200).json({data});
             break;
+        case 'PUT':
+            const recordId = _.toInteger(query.id);
+            console.log(`[PuData] updating record:`, body);
+
+            // const savedPuData = await PuData.query().where({id: recordId}).first();
+            //
+            // const preppedData = _.assign({}, body.data, {reviewedByContributorId: body.contributor, contributorUsername: savedPuData.contributorUsername});
+            const recData = _.assign({}, body.data);
+
+            delete recData['contributorDisplayName'];
+            delete recData['reviewedByDisplayName'];
+
+            const updated = await PuData.query().updateAndFetchById(recordId, recData);
+            res.status(200).json({data: updated});
+            break;
         default:
-            res.setHeader('Allow', ['GET', 'PUT'])
-            res.status(405).end(`Method ${method} Not Allowed`)
+            res.setHeader('Allow', ['GET', 'PUT', 'POST']);
+            res.status(405).end(`Method ${method} Not Allowed`);
     }
 }

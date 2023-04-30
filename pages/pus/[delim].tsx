@@ -73,16 +73,7 @@ export async function getServerSideProps({params, query, resolvedUrl}) {
 
     const puObj = await models.IrevPu.query().where('pu_code', puCode).first();
 
-    puData = puData || (await models.PuData.query()
-        .where('pu_code', puCode)
-        .andWhere('election_type', ElectionType.PRESIDENTIAL)
-        .andWhere('source', 'irev').first());
-
-    const recs = await User.query().select('display_name', 'contributor_id');
-    const mapping = _.fromPairs(recs.map(r => [r.contributorId, r.displayName]));
-
-    puData.contributorUsername = mapping[_.trim(puData.contributorUsername)] || '(unknown)';
-    puData.reviewedByContributorId = mapping[_.trim(puData.reviewedByContributorId)] || '(unknown reviewer)';
+    puData = puData || (await models.PuData.fetchByPuCode(puCode));
 
     console.log('[getServerSideProps] puCode:', puCode, stats);
     return {

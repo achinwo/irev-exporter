@@ -86,13 +86,13 @@ export async function fetchWardData(wardId, opts={includePuData: true, electionT
             const recs = await User.query().select('display_name', 'contributor_id');
             const mapping = _.fromPairs(recs.map(r => [r.contributorId, r.displayName]));
 
-            for (const ward of puData) {
-                const contributor = mapping[_.trim(ward.contributorUsername)];
-                const contributorRev = mapping[_.trim(ward.reviewedByContributorId)];
-                if(!contributor) console.error(`Unable to map contributor username "${ward.contributorUsername}"`);
+            for (const pd of puData) {
+                const contributor = mapping[_.trim(pd.contributorUsername)];
+                const contributorRev = mapping[_.trim(pd.reviewedByContributorId)];
+                if(!contributor) console.error(`Unable to map contributor username "${pd.contributorUsername}"`);
 
-                ward.contributorUsername = contributor || '(unknown)';
-                ward.reviewedByContributorId = contributorRev || '(unknown reviewer)';
+                pd.contributorDisplayName = contributor || '(unknown)';
+                pd.reviewedByDisplayName = contributorRev || '(unknown reviewer)';
             }
 
             data['polling_data'] = _.transform(puData, (result, item) => {

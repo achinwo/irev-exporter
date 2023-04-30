@@ -51,8 +51,8 @@ export default async function handler(req, res) {
             delete row['contributorUsername'];
             delete row['reviewedByContributorId'];
 
-            row.contributorDisplayname = mapping[contribId] || '(unmapped contributor)';
-            row.reviewedByContributorId = contribIdRev ? mapping[contribIdRev] || '(unmapped reviewer)' : null;
+            row.contributorDisplayName = mapping[contribId] || '(unmapped contributor)';
+            row.reviewedByDisplayName = contribIdRev ? mapping[contribIdRev] || '(unmapped reviewer)' : null;
         }
 
         const fileStream = await writeXlsxFile(data, {schema: SCHEMA});
@@ -83,7 +83,7 @@ const SCHEMA = [
     {column: 'Votes Apc', type: Number, value: data => data.votesApc},
     {column: 'Votes Pdp', type: Number, value: data => data.votesPdp},
     {column: 'Votes Nnpp', type: Number, value: data => data.votesNnpp},
-    {column: 'Contributor Display Name', type: String, value: data => data.contributorDisplayname},
+    {column: 'Contributor Display Name', type: String, value: data => data.contributorDisplayName},
     {column: 'Lga Id', type: Number, value: data => data.lgaId},
     {column: 'Lga Name', type: String, value: data => data.lgaName},
     {column: 'Voters Accredited', type: Number, value: data => data.votersAccredited},
@@ -96,7 +96,7 @@ const SCHEMA = [
 
     {column: 'Review Status', type: String, value: data => data.reviewStatus},
     {column: 'Reviewed At', type: Date, value: data => data.reviewedAt, format: 'dd/mm/yyyy hh:mm AM/PM'},
-    {column: 'Reviewer Display Name', type: String, value: data => data.reviewedByContributorId},
+    {column: 'Reviewer Display Name', type: String, value: data => data.reviewedByDisplayName},
 
     {column: 'Election', type: String, value: data => data.electionType},
     {column: 'Data Source', type: String, value: data => data.source},

@@ -23,7 +23,7 @@ import ErrorSharpIcon from '@mui/icons-material/ErrorSharp';
 
 export const WardSummaryView = ({ward, stats, electionType}) => {
     let wardStat = _.find(stats.ward, w => w.wardId === ward._id);
-    console.log('WARD', wardStat, ward);
+
     const getResult = (data) => data[electionType === ElectionType.PRESIDENTIAL ? 'resultCount' : 'resultGuberCount'];
 
     return <Stack direction={'row'} spacing={1}>
@@ -71,7 +71,7 @@ export const DrawerView = ({handleDrawerToggle, state, lga, ward, pu, setWard, s
                 <InputLabel>State</InputLabel>
                 <Select
                     labelId="demo-simple-select-helper-label"
-                    value={stateId ? stateId - 1 : null}
+                    value={stateId ? stateId - 1 : ''}
                     onChange={(event) =>
                         setStateId(
                             event.target.value === ""
@@ -81,7 +81,7 @@ export const DrawerView = ({handleDrawerToggle, state, lga, ward, pu, setWard, s
                     }
                     label="State"
                 >
-                    <MenuItem value="">
+                    <MenuItem value="" key={'tab-menu-nostate'}>
                         <em>None</em>
                     </MenuItem>
 
@@ -128,7 +128,7 @@ export const DrawerView = ({handleDrawerToggle, state, lga, ward, pu, setWard, s
                                     lga.lga.lga_id === selectedLga?.lga.lga_id ? null : lga
                                 )
                             }
-                            key={idx}
+                            key={`lga-level-${idx}`}
                         >
                             <ListItemText primary={
                                 <Stack sx={{pl: containsReturnLga ? 0 : 2 }} spacing={1} direction={'row'}>
@@ -147,14 +147,14 @@ export const DrawerView = ({handleDrawerToggle, state, lga, ward, pu, setWard, s
                             in={lga.lga.lga_id === selectedLga?.lga.lga_id}
                             timeout="auto"
                             unmountOnExit
-                            key={idx}
+                            key={`collapse-${idx}`}
                         >
                             <List component="div" disablePadding={true}>
                                 {lga.wards.map((ward, idx) => {
                                     const containsReturn = (stats.validationReturnedWards || []).includes(ward._id);
                                     return (
                                         <ListItemButton
-                                            key={idx}
+                                            key={`ward-level-${idx}`}
                                             onClick={() => {
                                                 setWard(ward);
                                                 handleDrawerToggle();
