@@ -312,7 +312,7 @@ export const PollingUnitView = ({pollingUnit, puData, setPuData, isSubmitting, s
                     </Stack>
                     <Typography>{`Updated: ${new Date(pu.updated_at).toLocaleDateString("en-US", options)}${priorVersionLabel}`}</Typography>
                     {
-                        puData.reviewStatus && <Typography sx={{fontStyle: 'italic', mb: 2}} style={{color: 'gray'}}>{`Reviewed By: ${puData.reviewedByContributorId}`}</Typography>
+                        puData.reviewStatus && <Typography sx={{fontStyle: 'italic', mb: 2}} style={{color: 'gray'}}>{`Reviewed By: ${puData.reviewedByDisplayName}`}</Typography>
                     }
                 </Stack>
 
