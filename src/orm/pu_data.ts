@@ -247,7 +247,7 @@ export class PuData extends DbModel {
         return PuData.query()
             .select('pu_code', 'name', 'reviewed_at', 'review_status')
             .where('is_result_illegible', true)
-            .andWhere('voters_accredited_bvas', '>', 100)
+            .andWhere('voters_accredited_bvas', '>', 50)
             .andWhere(applyCommonFilters(opts, {limit: 100}));
     }
 
@@ -283,7 +283,7 @@ export class PuData extends DbModel {
         const illegRes = await PuData.query()
             .count('*', {as: 'illegCount'})
             .where('is_result_illegible', true)
-            .andWhere('voters_accredited_bvas', '>', 100)
+            .andWhere('voters_accredited_bvas', '>', 50)
             .andWhereRaw(`(review_status is null OR review_status != '${ReviewStatus.VALIDATED}')`)
             .andWhere(applyCommonFilters(opts))
             .first();
