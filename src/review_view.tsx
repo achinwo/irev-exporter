@@ -230,25 +230,31 @@ function PollingUnitReviewView({puData, issueFlags, currentUser, isSubmitting, s
         border = {border: 1, borderColor: isValidated ? 'success.main' : 'error.main'};
     }
 
+
+    const theme = useTheme();
+    const matchesMd = useMediaQuery(theme.breakpoints.up('md'));
+
+    const header = <Stack alignItems={'center'}>
+        <Typography>{capitalize(`${puData.name}`)}</Typography>
+        <Stack direction={'row'} spacing={1} alignItems={'center'}>
+            <Typography>{`PU Code: ${puData.puCode}`}</Typography>
+            { puData.reviewStatus && <ValidationIcon color={isValidated ? 'success' : 'error'}/>}
+        </Stack>
+        <Typography>{`State/LGA/Ward: ${puData.stateName}`} / {puData.lgaName} / {puData.wardName}</Typography>
+        <Typography>{updatedTxt} by <span style={{fontWeight: 'bolder'}}>{puData.contributorDisplayName}</span></Typography>
+        <Link href={puData.documentUrl} rel="noopener noreferrer" target="_blank" sx={{mb: 4}}>Document
+            Link {puData.documentUrl.endsWith('.pdf') ? '(PDF)' : '(JPG)'}</Link>
+    </Stack>;
+
     // @ts-ignore
     return <Card elevation={1} xs={{mt: 20}} sx={border} style={{width: "100%", minHeight: '50vh'}}>
         {/* @ts-ignore */}
         <CardContent align="center" style={{width: "100%"}}>
-            <Stack alignItems={'center'}>
-                <Typography>{capitalize(`${puData.name}`)}</Typography>
-                <Stack direction={'row'} spacing={1} alignItems={'center'}>
-                    <Typography>{`PU Code: ${puData.puCode}`}</Typography>
-                    { puData.reviewStatus && <ValidationIcon color={isValidated ? 'success' : 'error'}/>}
-                </Stack>
-                <Typography>{`State/LGA/Ward: ${puData.stateName}`} / {puData.lgaName} / {puData.wardName}</Typography>
-                <Typography>{updatedTxt} by <span style={{fontWeight: 'bolder'}}>{puData.contributorDisplayName}</span></Typography>
-                <Link href={puData.documentUrl} rel="noopener noreferrer" target="_blank" sx={{mb: 4}}>Document
-                    Link {puData.documentUrl.endsWith('.pdf') ? '(PDF)' : '(JPG)'}</Link>
-            </Stack>
+            {!matchesMd && header}
             <CardMedia style={{maxWidth: "100%", minHeight: '70vh'}}>
-                <Stack style={{width: '100%'}}>
+                <Stack direction={matchesMd ? 'row' : 'column'} spacing={4} style={{width: '100%'}}>
 
-                    <Box style={{maxWidth: "100%", minHeight: '40vh', position: 'relative', overflow: 'hidden'}}>
+                    <Box sx={{maxWidth: {xs: '100%', md: 800}}} style={{minHeight: '40vh', position: 'relative', overflow: 'hidden'}}>
                     {
                         puData.documentUrl.endsWith('.pdf') ?
                             <div style={{maxWidth: "100%", height: '100%', position: 'relative'}}>
@@ -264,65 +270,71 @@ function PollingUnitReviewView({puData, issueFlags, currentUser, isSubmitting, s
                     }
                     </Box>
 
-                    {
-                        !puData.isResultIllegible && <Typography sx={{mt: 2, mb: 2}} color={'gray'}>Sum of votes: <span style={{fontWeight: 'bolder'}}>{summedVotes}</span></Typography>
-                    }
+                    <Box sx={{maxWidth: {xs: '100%', md: 600}}} style={{display: 'flex', flexDirection: 'column'}}>
+                        {matchesMd && header}
+
+                        <Stack style={{flexGrow: 2, justifyContent: 'end'}}>
+                        {
+                            !puData.isResultIllegible && <Typography sx={{mt: 2, mb: 2}} color={'gray'}>Sum of votes: <span style={{fontWeight: 'bolder'}}>{summedVotes}</span></Typography>
+                        }
 
 
-                    {!puData.reviewStatus ?
-                        <>
-                            <PuQuestionnaireView puData={puData} setIssueFlags={setIssueFlags} issueFlags={issueFlags}/>
+                        {!puData.reviewStatus ?
+                            <>
+                                <PuQuestionnaireView puData={puData} setIssueFlags={setIssueFlags} issueFlags={issueFlags}/>
 
 
-                            <Stack direction={'row'} sx={{mt: 2, mr: 'auto', ml: 'auto'}}>
-                                <LoadingButton
-                                    size={'large'}
-                                    color={'success'}
-                                    sx={{m: 4}}
-                                    loading={isSubmitting}
-                                    loadingPosition="start"
-                                    disabled={!fullValidator(currentUser) || isSubmitting} onClick={() => handlePuReview(ReviewStatus.VALIDATED)}>
-                                    <Stack justifyContent="center" alignItems="center">
-                                        <DoneOutlineIcon fontSize={'large'} />
-                                        <Typography>Valid</Typography>
-                                    </Stack>
-                                </LoadingButton>
+                                <Stack direction={'row'} sx={{mt: 2, mr: 'auto', ml: 'auto'}}>
+                                    <LoadingButton
+                                        size={'large'}
+                                        color={'success'}
+                                        sx={{m: 4}}
+                                        loading={isSubmitting}
+                                        loadingPosition="start"
+                                        disabled={!fullValidator(currentUser) || isSubmitting} onClick={() => handlePuReview(ReviewStatus.VALIDATED)}>
+                                        <Stack justifyContent="center" alignItems="center">
+                                            <DoneOutlineIcon fontSize={'large'} />
+                                            <Typography>Valid</Typography>
+                                        </Stack>
+                                    </LoadingButton>
 
-                                <LoadingButton
-                                    size={'large'}
-                                    color={'error'}
-                                    sx={{m: 4}}
-                                    loading={isSubmitting}
-                                    loadingPosition="start"
-                                    onClick={() => handlePuReview(ReviewStatus.RETURNED)}
-                                    disabled={!currentUser || (currentUser.contributorId !== puData.contributorUsername && !fullValidator(currentUser)) || isSubmitting}>
-                                    <Stack justifyContent="center" alignItems="center">
-                                        <CloseIcon fontSize={'large'} />
-                                        <Typography>Return</Typography>
-                                    </Stack>
-                                </LoadingButton>
+                                    <LoadingButton
+                                        size={'large'}
+                                        color={'error'}
+                                        sx={{m: 4}}
+                                        loading={isSubmitting}
+                                        loadingPosition="start"
+                                        onClick={() => handlePuReview(ReviewStatus.RETURNED)}
+                                        disabled={!currentUser || (currentUser.contributorId !== puData.contributorUsername && !fullValidator(currentUser)) || isSubmitting}>
+                                        <Stack justifyContent="center" alignItems="center">
+                                            <CloseIcon fontSize={'large'} />
+                                            <Typography>Return</Typography>
+                                        </Stack>
+                                    </LoadingButton>
+                                </Stack>
+                            </>
+                            :
+                            <Stack direction={'row'} sx={{mt: 2, mr: 'auto', ml: 'auto'}} alignItems={'center'} >
+                                <ValidationIcon color={isValidated ? 'success' : 'error'} fontSize={'large'} sx={{marginRight: 2}}/>
+                                <Typography variant={'h4'}>{puData.reviewStatus}</Typography>
                             </Stack>
-                        </>
-                        :
-                        <Stack direction={'row'} sx={{mt: 2, mr: 'auto', ml: 'auto'}} alignItems={'center'} >
-                            <ValidationIcon color={isValidated ? 'success' : 'error'} fontSize={'large'} sx={{marginRight: 2}}/>
-                            <Typography variant={'h4'}>{puData.reviewStatus}</Typography>
+
+                        }
+
+
+                        {currentUser && currentUser.contributorId !== puData.contributorUsername &&
+                            <Typography sx={{mt: 2}} color={'gray'}>Submitted by {puData.contributorDisplayName}</Typography>
+                        }
+
+                        {isValidated &&
+                            <Typography sx={{mt: 2}} color={'gray'}>Reviewed by {puData.reviewedByDisplayName}</Typography>
+                        }
+
+                        {(!fullValidator(currentUser) && !puData.reviewStatus) &&
+                            <Typography sx={{mt: 2}} color={'gray'}>Note: You have LIMITED validation capabilities. You can return your own submissions only.</Typography>}
+
                         </Stack>
-
-                    }
-
-
-                    {currentUser && currentUser.contributorId !== puData.contributorUsername &&
-                        <Typography sx={{mt: 2}} color={'gray'}>Submitted by {puData.contributorDisplayName}</Typography>
-                    }
-
-                    {isValidated &&
-                        <Typography sx={{mt: 2}} color={'gray'}>Reviewed by {puData.reviewedByDisplayName}</Typography>
-                    }
-
-                    {(!fullValidator(currentUser) && !puData.reviewStatus) &&
-                        <Typography sx={{mt: 2}} color={'gray'}>Note: You have LIMITED validation capabilities. You can return your own submissions only.</Typography>}
-
+                    </Box>
                 </Stack>
             </CardMedia>
         </CardContent>
@@ -480,7 +492,7 @@ function MainView({puData, setPuData, setPuCode, puCodes, isLoadingPuData, stats
         </Stack>
     }
     //{ mt: 20, ml: {sm: 35, xs: 2}, mr: {sm: 4, xs: 0}}
-    return <Stack spacing={4} alignItems={'center'} sx={{ mt: 20, ml: 4, mr: 4, maxWidth: {xs: '100%', md: 1000}}} style={{display: 'flex', flexDirection: 'column', minHeight: '70vh'}}>
+    return <Stack spacing={4} alignItems={'center'} sx={{ mt: 20, ml: 4, mr: 4, maxWidth: '100%'}} style={{display: 'flex', flexDirection: 'column', minHeight: '70vh'}}>
 
         <Stack direction="row" alignItems={'center'} spacing={2}>
             <Stack direction={'row'} spacing={1} style={{color: 'gray'}} alignItems={'center'}>
