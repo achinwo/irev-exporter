@@ -255,11 +255,11 @@ function PollingUnitReviewView({puData, issueFlags, currentUser, isSubmitting, s
             <CardMedia style={{maxWidth: "100%", minHeight: '70vh'}}>
                 <Stack direction={matchesMd ? 'row' : 'column'} spacing={4} style={{width: '100%'}}>
 
-                    <Box sx={{maxWidth: {xs: '100%', md: 800}}} style={{minHeight: '40vh', position: 'relative', overflow: 'hidden'}}>
+                    <Box sx={{maxWidth: {xs: '100%', md: 800}, minWidth: {xs: '100%', md: 800}}} style={{minHeight: '40vh', position: 'relative', overflow: 'hidden'}}>
                     {
                         puData.documentUrl.endsWith('.pdf') ?
-                            <div style={{maxWidth: "100%", height: '100%', position: 'relative'}}>
-                                <embed width={'90%'} height={'auto'} src={`${puData.documentUrl}#view=Fit&toolbar=1`}
+                            <div style={{width: "100%", height: '100%', position: 'relative'}}>
+                                <embed width={'95%'} height={'auto'} src={`${puData.documentUrl}#view=Fit&toolbar=1`}
                                        style={{height: 'auto', minHeight:'60vh', marginTop: '1em'}}/>
 
                             </div>

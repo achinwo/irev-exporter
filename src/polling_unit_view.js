@@ -113,6 +113,7 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
     }
 
     const legibleResultView = <Box sx={{'& > :not(style)': {m: 1, width: '25ch'},}}>
+        <Typography color={'gray'}>Accredited (BVAS): {puData.votersAccreditedBvas}</Typography>
         {
             partyFields.map((tag, key) => {
                 return <TextField label={tag.toUpperCase()}
