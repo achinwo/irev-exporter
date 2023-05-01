@@ -212,6 +212,13 @@ export class PuData extends DbModel {
         return {state: rows, ward: wardRes, validationReturned};
     }
 
+    static async fetchByReviewStatus(status, opts: DqQueryOptions){
+        return PuData.query()
+            .select('pu_code', 'name', 'reviewed_at', 'review_status')
+            .where('review_status', status)
+            .andWhere(applyCommonFilters(opts, {limit: 100}));
+    }
+
     static async fetchOvervoting(opts: DqQueryOptions){
         return PuData.query()
             .select('pu_code', 'name', 'reviewed_at', 'review_status')

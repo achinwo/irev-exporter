@@ -1,6 +1,6 @@
 import {AppPuView, DataQualityIssue} from "../../src/review_view";
 import * as models from '../../src/orm';
-import { ElectionType } from '../../src/ref_data';
+import {ElectionType, ReviewStatus} from '../../src/ref_data';
 import _ from 'lodash';
 import moment from "moment";
 
@@ -33,6 +33,9 @@ export async function getServerSideProps({params, query, resolvedUrl}) {
         puCodes = await models.PuData.fetchInconsistentVotes({limit: 100, contributorId, createdAfter, excludePdfs});
     } else if(delim.toLowerCase() === DataQualityIssue.FALSE_ILLEGIBLE.toLowerCase()){
         puCodes = await models.PuData.fetchFalseIllegibles({limit: 100, contributorId, createdAfter, excludePdfs});
+    } else if([ReviewStatus.RETURNED.toLowerCase(), ReviewStatus.VALIDATED.toLowerCase()].includes(delim.toLowerCase())){
+        const status = ReviewStatus.RETURNED.toLowerCase() === delim.toLowerCase() ? ReviewStatus.RETURNED : ReviewStatus.VALIDATED;
+        puCodes = await models.PuData.fetchByReviewStatus(status, {limit: 100, contributorId, createdAfter, excludePdfs});
     } else {
         puCode = delim.replaceAll('-', '/');
 

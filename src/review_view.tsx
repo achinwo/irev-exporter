@@ -105,8 +105,8 @@ export const AppPuView = function ({stats, puCodesSerialized, puSerialized, puDa
             .then((resp) => {
                 setPuData(resp.data.data);
 
-                const isDq = DataQualityIssue.values().map(i => i.toLowerCase()).includes(delim.toLowerCase());
-
+                const reviewStatuses = [ReviewStatus.RETURNED.toLowerCase(), ReviewStatus.VALIDATED.toLowerCase()];
+                const isDq = _.concat(DataQualityIssue.values().map(i => i.toLowerCase()), reviewStatuses).includes(delim.toLowerCase());
 
                 const params = new URLSearchParams(location.search);
                 if(isDq){
@@ -114,7 +114,6 @@ export const AppPuView = function ({stats, puCodesSerialized, puSerialized, puDa
                 } else {
                     params.delete('pu');
                 }
-                 //isDq ? `/pus/${delim}?pu=${newDelim}` : `/pus/${newDelim}`);
 
                 const newUrl = `/pus/${isDq ? delim : newDelim}?${params.toString()}`;
 
@@ -412,6 +411,7 @@ function MainView({puData, setPuData, setPuCode, puCodes, isLoadingPuData, stats
     // const theme = useTheme();
 
     const [currentContrib, setCurrentContrib] = useState<string>(null);
+    const [currentContribDisplayName, setCurrentContribDisplayName] = useState<string>(null);
     const [currentCreatedAfter, setCurrentCreatedAfter] = useState<string>(null);
     const [currentDoctType, setCurrentDoctType] = useState<string>(null);
 
@@ -444,6 +444,7 @@ function MainView({puData, setPuData, setPuCode, puCodes, isLoadingPuData, stats
         setcurrentDisplayName(localStorage?.getItem(KEY_CONTRIBUTOR_DISPLAYNAME));
 
         setCurrentContrib(addressContrib ? 'mine' : '');
+        setCurrentContribDisplayName(addressContrib);
         setCurrentCreatedAfter(addressCreatedAfter);
         setCurrentDoctType(addressDocType);
 
@@ -520,7 +521,8 @@ function MainView({puData, setPuData, setPuCode, puCodes, isLoadingPuData, stats
                 <ToggleButton value="mine" >
                     <Stack direction={'row'} spacing={1}>
                         <PersonSharpIcon/>
-                        { matches ? null : <Typography>Mine</Typography>}
+                        { matches ? null : <Typography title={currentContribDisplayName ?? currentUser?.displayName}>
+                            {currentContribDisplayName && currentContribDisplayName !== currentUser?.displayName ? 'Theirs' : 'Mine'}</Typography>}
                     </Stack>
                 </ToggleButton>
             </ToggleButtonGroup>
