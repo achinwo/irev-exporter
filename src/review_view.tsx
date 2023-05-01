@@ -208,28 +208,43 @@ function PollingUnitReviewView({puData, issueFlags, currentUser, isSubmitting, s
             reviewedByContributorId: currentUser.contributorId
         });
 
-        console.log('ISSUES', newData);
+        try {
+            setIsSubmitting(true);
 
-        const url = `/api/pus/${puData.id}`;
-        const resp = await axios.put(url, {data: newData, contributor: currentUser.contributorId});
+            const url = `/api/pus/${puData.id}`;
+            const resp = await axios.put(url, {data: newData, contributor: currentUser.contributorId});
+            console.log('ISSUES RESP:', resp.data);
+            setPuData(resp.data.data);
+        } finally {
+            setIsSubmitting(false);
+        }
 
-        console.log('ISSUES RESP:', resp.data);
-        setPuData(resp.data.data);
     }
+
+    let border = {};
 
     const isValidated = puData.reviewStatus === ReviewStatus.VALIDATED;
     let ValidationIcon = isValidated ? VerifiedSharpIcon : ErrorSharpIcon;
 
+    if(puData.reviewStatus){
+        border = {border: 1, borderColor: isValidated ? 'success.main' : 'error.main'};
+    }
+
     // @ts-ignore
-    return <Card elevation={1} xs={{mt: 20}} style={{width: "100%", minHeight: '50vh'}}>
+    return <Card elevation={1} xs={{mt: 20}} sx={border} style={{width: "100%", minHeight: '50vh'}}>
         {/* @ts-ignore */}
         <CardContent align="center" style={{width: "100%"}}>
-            <Typography>{capitalize(`${puData.name}`)}</Typography>
-            <Typography>{`PU Code: ${puData.puCode}`}</Typography>
-            <Typography>{`State/LGA/Ward: ${puData.stateName}`} / {puData.lgaName} / {puData.wardName}</Typography>
-            <Typography>{updatedTxt} by <span style={{fontWeight: 'bolder'}}>{puData.contributorDisplayName}</span></Typography>
-            <Link href={puData.documentUrl} rel="noopener noreferrer" target="_blank" sx={{mb: 4}}>Document
-                Link {puData.documentUrl.endsWith('.pdf') ? '(PDF)' : '(JPG)'}</Link>
+            <Stack alignItems={'center'}>
+                <Typography>{capitalize(`${puData.name}`)}</Typography>
+                <Stack direction={'row'} spacing={1} alignItems={'center'}>
+                    <Typography>{`PU Code: ${puData.puCode}`}</Typography>
+                    { puData.reviewStatus && <ValidationIcon color={isValidated ? 'success' : 'error'}/>}
+                </Stack>
+                <Typography>{`State/LGA/Ward: ${puData.stateName}`} / {puData.lgaName} / {puData.wardName}</Typography>
+                <Typography>{updatedTxt} by <span style={{fontWeight: 'bolder'}}>{puData.contributorDisplayName}</span></Typography>
+                <Link href={puData.documentUrl} rel="noopener noreferrer" target="_blank" sx={{mb: 4}}>Document
+                    Link {puData.documentUrl.endsWith('.pdf') ? '(PDF)' : '(JPG)'}</Link>
+            </Stack>
             <CardMedia style={{maxWidth: "100%", minHeight: '70vh'}}>
                 <Stack style={{width: '100%'}}>
 
@@ -260,20 +275,32 @@ function PollingUnitReviewView({puData, issueFlags, currentUser, isSubmitting, s
 
 
                             <Stack direction={'row'} sx={{mt: 2, mr: 'auto', ml: 'auto'}}>
-                                <Button size={'large'} color={'success'} sx={{m: 4}} disabled={!fullValidator(currentUser)} onClick={() => handlePuReview(ReviewStatus.VALIDATED)}>
+                                <LoadingButton
+                                    size={'large'}
+                                    color={'success'}
+                                    sx={{m: 4}}
+                                    loading={isSubmitting}
+                                    loadingPosition="start"
+                                    disabled={!fullValidator(currentUser) || isSubmitting} onClick={() => handlePuReview(ReviewStatus.VALIDATED)}>
                                     <Stack justifyContent="center" alignItems="center">
                                         <DoneOutlineIcon fontSize={'large'} />
                                         <Typography>Valid</Typography>
                                     </Stack>
-                                </Button>
+                                </LoadingButton>
 
-                                <Button size={'large'} color={'error'} sx={{m: 4}} onClick={() => handlePuReview(ReviewStatus.RETURNED)}
-                                        disabled={!currentUser || currentUser.contributorId !== puData.contributorUsername}>
+                                <LoadingButton
+                                    size={'large'}
+                                    color={'error'}
+                                    sx={{m: 4}}
+                                    loading={isSubmitting}
+                                    loadingPosition="start"
+                                    onClick={() => handlePuReview(ReviewStatus.RETURNED)}
+                                    disabled={!currentUser || (currentUser.contributorId !== puData.contributorUsername && !fullValidator(currentUser)) || isSubmitting}>
                                     <Stack justifyContent="center" alignItems="center">
                                         <CloseIcon fontSize={'large'} />
                                         <Typography>Return</Typography>
                                     </Stack>
-                                </Button>
+                                </LoadingButton>
                             </Stack>
                         </>
                         :
@@ -287,6 +314,10 @@ function PollingUnitReviewView({puData, issueFlags, currentUser, isSubmitting, s
 
                     {currentUser && currentUser.contributorId !== puData.contributorUsername &&
                         <Typography sx={{mt: 2}} color={'gray'}>Submitted by {puData.contributorDisplayName}</Typography>
+                    }
+
+                    {isValidated &&
+                        <Typography sx={{mt: 2}} color={'gray'}>Reviewed by {puData.reviewedByDisplayName}</Typography>
                     }
 
                     {(!fullValidator(currentUser) && !puData.reviewStatus) &&

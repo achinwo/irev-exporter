@@ -68,7 +68,9 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
 
             let resp;
             if(puData?.createdAt){
-                data.reviewedByContributorId = data.reviewedAt = data.reviewStatus = null;
+                data.reviewedByContributorId = null;
+                data.reviewedAt = null;
+                data.reviewStatus = null;
                 resp = await axios.put(url, {data, contributor: contributor}, {headers});
             } else {
                 resp = await axios.post(url, {pu, puData: data, contributor: contributor}, {headers});
@@ -86,7 +88,7 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
         }
     }
 
-    const legibilityResetButton = <Button onClick={() => setPuData({isResultIllegible: undefined})}>
+    const legibilityResetButton = <Button onClick={() => setPuData({isResultIllegible: undefined, isNoneEceightForm: undefined})}>
         <Stack alignItems={'center'}>
             <UndoSharpIcon/>
             <Typography fontSize={'small'}>Reset</Typography>
@@ -173,7 +175,7 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
             </FormLabel>
             <RadioGroup row name="row-radio-buttons-group" sx={{m: 2}} value={isIllegibleValue} style={{display: 'flex', justifyContent: 'center',
                 alignItems: 'center'}}  onChange={(evt) => {
-                setPuData({[evt.target.value]: !puData[evt.target.value]});
+                setPuData({[evt.target.value]: true});
             }}>
                 <FormControlLabel style={{ width: 'auto' }} sx={{mr: 2}} value="isResultIllegible" control={<Radio  />} label="It is illegible" />
                 <FormControlLabel style={{ width: 'auto' }} sx={{ml: 2}} value="isNoneEceightForm" control={<Radio />} label={`Not a ${(electionType || ElectionType.PRESIDENTIAL).toLowerCase()} EC8`} />
@@ -295,10 +297,6 @@ export const PollingUnitView = ({pollingUnit, puData, setPuData, isSubmitting, s
     const isVisible = useIsVisible(nodeRef, {once: true});
 
     let priorVersionLabel = '';
-
-    if(puData.puCode === '01/01/03/043') {
-        console.log('[PollingUnitView] pudata', puData);
-    }
 
     let border = {};
 

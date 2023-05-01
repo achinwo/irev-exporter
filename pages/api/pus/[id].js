@@ -43,7 +43,9 @@ export default async function userHandler(req, res) {
             delete recData['reviewedByDisplayName'];
 
             const updated = await PuData.query().updateAndFetchById(recordId, recData);
-            res.status(200).json({data: updated});
+            const ret = await PuData.fetchByPuCode(updated.puCode); // re-fetch for data masking
+
+            res.status(200).json({data: ret});
             break;
         default:
             res.setHeader('Allow', ['GET', 'PUT', 'POST']);
