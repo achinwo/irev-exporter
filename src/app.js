@@ -236,7 +236,7 @@ export const App = ({stateId: initialStateId, mainComponent, mainComponentProps,
     return (
         <>
             <MetaHead />
-            <Box sx={{ display: "flex" }}>
+            <Box sx={{ display: "flex", maxWidth: '100%', justifyContent: 'center', alignItems:'center' }}>
                 <CssBaseline />
                 <AppBar component="nav" color={'info'}>
                     <Toolbar>
@@ -350,7 +350,7 @@ export const App = ({stateId: initialStateId, mainComponent, mainComponentProps,
                     sx={{ pb: 18 }}
                     alignItems="center"
                     justifyContent={"center"}
-                    style={{ maxWidth: "100%", height: "100vh", overflowY: "scroll" }}
+                    style={{ maxWidth: "100%", maxHeight: "100vh", overflowY: "scroll" }}
                 >
                     <MainView isLoadingPuData={isLoadingPuData} selectedPu={selectedPu} stats={stats} electionType={electionType} {...(mainComponentProps || {})}/>
                 </Grid>

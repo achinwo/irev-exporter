@@ -8,7 +8,7 @@ import {
     CardContent, CardMedia, Chip, CircularProgress, Divider, FormControl, Grid, IconButton, InputLabel,
     Link,
     MenuItem,
-    Select, Stack, TextField, ToggleButton, ToggleButtonGroup,
+    Select, Stack, ToggleButton, ToggleButtonGroup,
     Typography, useMediaQuery, useTheme
 } from "@mui/material";
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
@@ -494,9 +494,9 @@ function MainView({puData, setPuData, setPuCode, puCodes, isLoadingPuData, stats
         </Stack>
     }
     //{ mt: 20, ml: {sm: 35, xs: 2}, mr: {sm: 4, xs: 0}}
-    return <Stack spacing={4} alignItems={'center'} sx={{ mt: 20, ml: 4, mr: 4, maxWidth: '100%'}} style={{display: 'flex', flexDirection: 'column', minHeight: '70vh'}}>
+    return <Stack spacing={4} alignItems={'center'} sx={{ mt: 20, ml: matches ? 5 : 4, mr: 4, maxWidth: '95%'}} style={{display: 'flex', flexDirection: 'column', minHeight: '100vh'}}>
 
-        <Stack direction="row" alignItems={'center'} spacing={2}>
+        <Stack direction="row" alignItems={'center'} spacing={matches ? 1 : 2}>
             <Stack direction={'row'} spacing={1} style={{color: 'gray'}} alignItems={'center'}>
                 <FilterListSharpIcon/>
                 { matches ? null : <Typography variant={'h6'} style={{flexGrow: 2}}>Filters</Typography>}
@@ -599,23 +599,42 @@ function MainView({puData, setPuData, setPuCode, puCodes, isLoadingPuData, stats
             <PaginationView  componentId={'pagination-top'} puData={puData} puCodes={puCodes} setPuCode={setPuCode}/>
         </Box>
 
+        <Box style={{display: 'flex', flexDirection: 'row', flexGrow: 2, width: '100%', position: 'relative', minHeight: '50vh'}}>
+            {
+                (puData ?
 
-        {isLoadingPuData ?
-            <Box style={{display: 'flex', flexDirection: 'row', justifyContent: 'center', alignItems: 'center', flexGrow: 2, width: '100%'}}>
-                <CircularProgress color={"success"} size={200} />
+
+                        <PollingUnitReviewView puData={puData} setPuData={setPuData} currentUser={currentUser}
+                                               isSubmitting={isSubmitting} setIsSubmitting={setIsSubmitting}
+                                               issueFlags={issueFlags} setIssueFlags={setIssueFlags}/>
+
+                        :
+                        <Typography style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexDirection: 'row',
+                            flexGrow: 2,
+                            width: '100%'
+                        }}>Nothing data to display</Typography>
+                )
+
+
+
+            }
+            <Box style={{
+                display: isLoadingPuData ? 'flex' : 'none',
+                position: 'absolute',
+                background: 'rgba(255,255,255,0.7)',
+                zIndex: 100,
+                flexDirection: 'row', justifyContent: 'center',
+                alignItems: 'center', flexGrow: 2, width: '100%', height: '100%'}}>
+                <Stack alignItems={'center'} spacing={4}>
+                    <CircularProgress color={"success"} size={100} />
+                    <Typography variant={'h4'} color={'gray'}>Loading...</Typography>
+                </Stack>
             </Box>
-            :
-
-            (puData ?
-
-                    <Box style={{display: 'flex', flexDirection: 'row', flexGrow: 2, width: '100%'}}>
-                        <PollingUnitReviewView puData={puData} setPuData={setPuData} currentUser={currentUser} isSubmitting={isSubmitting} setIsSubmitting={setIsSubmitting} issueFlags={issueFlags} setIssueFlags={setIssueFlags}/>
-                    </Box>
-                 :
-            <Typography style={{display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'row', flexGrow: 2, width: '100%'}}>Nothing data to display</Typography>
-            )
-
-        }
+        </Box>
 
         <Box style={{display: 'flex', flexDirection: 'row', flexShrink: 1, width: '100%'}}>
             <PaginationView componentId={'pagination-bottom'} puData={puData} puCodes={puCodes} setPuCode={setPuCode}/>

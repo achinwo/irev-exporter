@@ -81,12 +81,15 @@ export async function fetchWardData(wardId, opts={includePuData: true, electionT
 
     if(opts?.includePuData){
         try{
-            const puData = await PuData.query().where('ward_id', wardId).andWhere('election_type', electionType).andWhere('source', DataSource.IREV);
+            const puDataList = await PuData.query()
+                .where('ward_id', wardId)
+                .andWhere('election_type', electionType)
+                .andWhere('source', DataSource.IREV).orderBy([{column: 'review_status'}, {column: 'pu_code'}]);
 
             const recs = await User.query().select('display_name', 'contributor_id');
             const mapping = _.fromPairs(recs.map(r => [r.contributorId, r.displayName]));
 
-            for (const pd of puData) {
+            for (const pd of puDataList) {
                 const contributor = mapping[_.trim(pd.contributorUsername)];
                 const contributorRev = mapping[_.trim(pd.reviewedByContributorId)];
                 if(!contributor) console.error(`Unable to map contributor username "${pd.contributorUsername}"`);
@@ -95,7 +98,7 @@ export async function fetchWardData(wardId, opts={includePuData: true, electionT
                 pd.reviewedByDisplayName = contributorRev || '(unknown reviewer)';
             }
 
-            data['polling_data'] = _.transform(puData, (result, item) => {
+            data['polling_data'] = _.transform(puDataList, (result, item) => {
                 result[item.puCode] = item;
             }, {});
         }catch (e) {

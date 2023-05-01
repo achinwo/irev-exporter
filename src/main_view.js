@@ -63,7 +63,7 @@ export function MainBody({ isLoadingPuData, selectedPu, stats, electionType}) {
         const puList = _.sortBy(selectedPu.data || [], p => puData[p.pu_code]?.reviewStatus ? '00/00/00/00' : p.pu_code);
 
         return (
-            <Grid xs={12} sm={10} lg={8} item sx={{ml: {sm: 35, xs: 2}, mr: {sm: 4, xs: 0}, maxWidth: {xs: '100%', md: 1000}}} style={{ maxHeight: "100%" }}>
+            <Grid xs={12} sm={10} lg={8} item sx={{ml: {sm: 35, xs: 0}, mr: {sm: 4, xs: 0}, maxWidth: {xs: '100%', md: 1000}}} style={{ maxHeight: "100%" }}>
                 <InfiniteScroll
                     dataLength={selectedPu?.data?.length}
                     next={() => null}
@@ -114,9 +114,6 @@ export function MainBody({ isLoadingPuData, selectedPu, stats, electionType}) {
         return (
             <Grid item xs={12} sm={6} md={8} sx={{ mt: 20, ml: {sm: 35, xs: 2}, mr: {sm: 4, xs: 0}}} style={{}}>
                 <Card>
-                    <CardHeader>
-
-                    </CardHeader>
                     <CardContent>
                         <Typography
                             variant={"h6"}
