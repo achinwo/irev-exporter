@@ -198,9 +198,10 @@ function PollingUnitReviewView({puData, issueFlags, currentUser, isSubmitting, s
     //const submittedAtTxt = new Date(puData.updatedAt).toLocaleDateString("en-US", options);
 
     const summedVotes = _.sumBy(['Apc', 'Pdp', 'Lp', 'Nnpp'], (n) => puData[`votes${n}`] || 0);
+    const issueList = _.compact(_.toPairs(issueFlags).map(([label, isValid]) => !isValid ? label : null));
 
     const handlePuReview = async (reviewStatus) => {
-        let comment = _.join(_.compact(_.toPairs(issueFlags).map(([label, isValid]) => !isValid ? label : null)), ',');
+        let comment = _.join(issueList, ',');
 
         const newData = _.assign({}, puData, {
             reviewStatus, comment,
@@ -291,7 +292,7 @@ function PollingUnitReviewView({puData, issueFlags, currentUser, isSubmitting, s
                                         sx={{m: 4}}
                                         loading={isSubmitting}
                                         loadingPosition="start"
-                                        disabled={!fullValidator(currentUser) || isSubmitting} onClick={() => handlePuReview(ReviewStatus.VALIDATED)}>
+                                        disabled={!fullValidator(currentUser) || isSubmitting || !_.isEmpty(issueList)} onClick={() => handlePuReview(ReviewStatus.VALIDATED)}>
                                         <Stack justifyContent="center" alignItems="center">
                                             <DoneOutlineIcon fontSize={'large'} />
                                             <Typography>Valid</Typography>
