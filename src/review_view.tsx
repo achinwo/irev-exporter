@@ -327,7 +327,7 @@ function PollingUnitReviewView({puData, issueFlags, currentUser, isSubmitting, s
                             <Typography sx={{mt: 2}} color={'gray'}>Submitted by {puData.contributorDisplayName}</Typography>
                         }
 
-                        {isValidated &&
+                        {puData.reviewStatus &&
                             <Typography sx={{mt: 2}} color={'gray'}>Reviewed by {puData.reviewedByDisplayName}</Typography>
                         }
 
