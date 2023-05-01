@@ -223,7 +223,7 @@ export class PuData extends DbModel {
         return PuData.query()
             .select('pu_code', 'name', 'reviewed_at', 'review_status')
             .whereRaw('votes_cast > voters_accredited')
-            .andWhereRaw(`(review_status is null)`)
+            .andWhereRaw(`review_status is null`)
             .andWhere(applyCommonFilters(opts, {limit: 100}));
     }
 
@@ -255,6 +255,7 @@ export class PuData extends DbModel {
             .select('pu_code', 'name', 'reviewed_at', 'review_status')
             .where('is_result_illegible', true)
             .andWhere('voters_accredited_bvas', '>', 50)
+            .andWhereRaw(`review_status is null`)
             .andWhere(applyCommonFilters(opts, {limit: 100}));
     }
 
