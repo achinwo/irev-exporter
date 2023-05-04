@@ -15,6 +15,7 @@ import Box from "@mui/material/Box";
 import {PollingUnitView} from "./polling_unit_view";
 import {Alert} from "@mui/lab";
 import {DataGrid} from "@mui/x-data-grid";
+import {ReviewStatus} from "./ref_data";
 
 
 export function MainBody({ isLoadingPuData, selectedPu, stats, electionType}) {
@@ -59,8 +60,10 @@ export function MainBody({ isLoadingPuData, selectedPu, stats, electionType}) {
     }
 
     if (selectedPu?.data) {
-
-        const puList = _.sortBy(selectedPu.data || [], p => puData[p.pu_code]?.reviewStatus ? '00/00/00/00' : p.pu_code);
+        const returned = _.filter(selectedPu.data || [], p => puData[p.pu_code]?.reviewStatus === ReviewStatus.RETURNED);
+        const validated = _.filter(selectedPu.data || [], p => puData[p.pu_code]?.reviewStatus === ReviewStatus.VALIDATED);
+        const unreviewed = _.filter(selectedPu.data || [], p => !puData[p.pu_code]?.reviewStatus);
+        const puList = _.concat(returned, _.sortBy(unreviewed, p => p.pu_code), validated);
 
         return (
             <Grid xs={12} sm={10} lg={8} item sx={{ml: {sm: 35, xs: 0}, mr: {sm: 4, xs: 0}, maxWidth: {xs: '100%', md: 1000}}} style={{ maxHeight: "100%" }}>
