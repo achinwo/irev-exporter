@@ -70,76 +70,180 @@ function goTo(page, title, url) {
     }
 }
 
-export const AppPuView = function ({stats, puCodesSerialized, puSerialized, puDataSerialized, delim}) {
-    let puObj: models.IrevPu = JSON.parse(puSerialized);
-    let initialPuData: models.PuData = JSON.parse(puDataSerialized);
-    const puCodes: {name: string, puCode: string}[] = JSON.parse(puCodesSerialized);
+type Props = {stats: any, puCodesSerialized: string, puData?: models.PuData, puSerialized: string, puDataSerialized: string, delim: string};
+type State = {
+    puCode: string,
+    puData: models.PuData,
+    isLoadingPuData: boolean,
+    currentUser: models.User,
 
-    const [puCode, setPuCode] = useState(initialPuData?.puCode || null);
-    const [puData, setPuData] = useState<models.PuData>(initialPuData);
-    const [isLoadingPuData, setIsLoadingPuData] = useState<boolean>(false);
-    const [currentUser, setCurrentUser] = useState<any>(null);
+    isSubmitting: boolean,
+    issueFlags: {[key: string]: boolean},
+    puCodes: {name: string, puCode: string}[],
+    puObj: models.IrevPu,
+    stats: any,
+};
 
-    useEffect(() => {
+export class AppPuView extends React.Component<Props, State> {
+
+    constructor(props) {
+        let {stats, puCodesSerialized, puSerialized, puDataSerialized} = props;
+        let initialPuData: models.PuData = JSON.parse(puDataSerialized);
+
+        super({puData: initialPuData, ...props});
+
+        let puObj: models.IrevPu = JSON.parse(puSerialized);
+        const puCodes: {name: string, puCode: string}[] = JSON.parse(puCodesSerialized);
+
+        this.state = {
+            puCode: initialPuData?.puCode || null,
+            puData: initialPuData,
+            isLoadingPuData: false,
+            currentUser: null,
+
+            isSubmitting: false,
+            issueFlags: {},
+            puCodes,
+            puObj,
+            stats
+        }
+    }
+
+    async componentDidUpdate(prevProps: Readonly<Props>, prevState: Readonly<State>, snapshot?: any) {
+        const {puCode} = this.state;
+        const {delim} = prevProps;
+
+        if(prevState.puCode === puCode || !puCode) return;
+
+        const newDelim = puCode.replaceAll('/', '-');
+
+        this.setState({isLoadingPuData: true});
+
+        try {
+            const resp = await axios.get(`/api/pu_data/${newDelim}`)
+            this.setState({puData: resp.data.data});
+            this.setState({issueFlags: {}});
+
+            const reviewStatuses = [ReviewStatus.RETURNED.toLowerCase(), ReviewStatus.VALIDATED.toLowerCase()];
+            const isDq = _.concat(DataQualityIssue.values().map(i => i.toLowerCase()), reviewStatuses).includes(delim.toLowerCase());
+
+            const params = new URLSearchParams(location.search);
+            if (isDq) {
+                params.set('pu', newDelim);
+            } else {
+                params.delete('pu');
+            }
+
+            const newUrl = `/pus/${isDq ? delim : newDelim}?${params.toString()}`;
+
+            goTo(newDelim, `PU - ${resp.data.data?.name}`, newUrl);
+
+        }finally {
+            this.setState({isLoadingPuData: false});
+        }
+    }
+
+    changePuCode(delta) {
+        const {puData, puCodes} = this.state;
+
+        let currentIndex = _.findIndex(puCodes, (p) => p.puCode === puData.puCode);
+        currentIndex = currentIndex < 0 ? 0 : currentIndex;
+
+        const newIdx = currentIndex + delta;
+
+        console.log('REVIEW_APP: changePuCode', currentIndex, newIdx, newIdx > puCodes.length - 1);
+
+        if(currentIndex < 0 || (newIdx < 0 || newIdx > puCodes.length - 1)) return;
+
+        this.setState({puCode: puCodes[currentIndex + delta].puCode});
+    }
+
+    _keyupListener: (event) => {} | undefined
+
+    async componentDidMount() {
+        const handlePuReviewLocal = async () => {
+            console.log(`[REVIEW_APP] validation via key press:`, this.state.puData.puCode);
+
+            if(this.state.isSubmitting || !fullValidator(this.state.currentUser)) return;
+
+            const issueList = _.compact(_.toPairs(this.state.issueFlags).map(([label, isValid]) => !isValid ? label : null));
+            await handlePuReview({
+                puData: this.state.puData,
+                setPuData: (v) => this.setState({puData: v}),
+                setIsSubmitting: (v) => this.setState({isSubmitting: v}),
+                currentUser: this.state.currentUser,
+                reviewStatus: ReviewStatus.VALIDATED, issueList});
+        }
+
+        const keyupListener = async (event) => {
+            console.log('REVIEW_APP: key pressed', event.key, this.state.puData.puCode);
+            if(event.key === 'ArrowRight' || event.key === 'ArrowLeft'){
+                this.changePuCode(event.key === 'ArrowRight' ? 1 : -1);
+            } else if(event.key === 'p'){
+                console.log(`[REVIEW_APP] validation via key press ${event.key}:`, this.state.puData.puCode);
+                await handlePuReviewLocal();
+            }
+        };
+
+        window.addEventListener('keyup', keyupListener);
+        this._keyupListener = keyupListener;
+
+        console.log('REVIEW_APP: registered keyboard event handlers');
+
         const contributor = localStorage.getItem(KEY_CONTRIBUTOR);
 
         if(!contributor) return;
 
-        const resp = axios.get(`/api/users/${encodeURIComponent(_.trim(contributor))}`)
-            .then((resp) => {
-                setCurrentUser(resp.data.data);
-                localStorage.setItem(KEY_CONTRIBUTOR_DISPLAYNAME, resp.data.data?.displayName && _.toString(resp.data.data.displayName) || null);
-            })
-            .catch((e) => {
-                console.error('Unable to fetch user by conributor id:', contributor, e.stack);
-            });
+        try{
+            const resp = await axios.get(`/api/users/${encodeURIComponent(_.trim(contributor))}`)
+            this.setState({currentUser: resp.data.data});
+            localStorage.setItem(KEY_CONTRIBUTOR_DISPLAYNAME, resp.data.data?.displayName && _.toString(resp.data.data.displayName) || null);
+        } catch (e) {
+            console.error('Unable to fetch user by conributor id:', contributor, e.stack);
+        }
+    }
 
-    }, []);
+    componentWillUnmount() {
+        if(!this._keyupListener) return;
+        window.removeEventListener('keyup', this._keyupListener);
+        console.log('REVIEW_APP: unregistered keyboard event handler');
+    }
 
-    useEffect(() => {
-        if(puCode === puData?.puCode || !puCode) return;
+    render() {
+        const pageTitle = <Stack spacing={2} direction={'row'} alignItems={'center'}>
+            <IconButton size={'small'} href={'/'}>
+                <HomeSharpIcon fontSize={'medium'}/>
+            </IconButton>
+            <Typography variant={'h6'}>Data Review</Typography>
+        </Stack>
 
-        const newDelim = puCode.replaceAll('/', '-');
-        setIsLoadingPuData(true);
-        axios.get(`/api/pu_data/${newDelim}`)
-            .then((resp) => {
-                setPuData(resp.data.data);
+        return <App suppressDrawer={true} pageTitle={pageTitle} mainComponent={MainView}
+                    mainComponentProps={{
+                        delim: this.props.delim,
+                        setPuData: (v) => this.setState({puData: v}),
+                        puData:this.state.puData,
+                        isSubmitting: this.state.isSubmitting,
+                        setIsSubmitting: (v) => this.setState({isSubmitting: v}),
+                        setIssueFlags: (v) => typeof v === 'function' ? this.setState({issueFlags: v(this.state.issueFlags)}) : this.setState({issueFlags: v}),
+                        issueFlags: this.state.issueFlags,
+                        puCodes: this.state.puCodes,
+                        setPuCode: (v) => this.setState({puData: v}),
+                        isLoadingPuData: this.state.isLoadingPuData,
+                        stats: this.state.stats,
+                        currentUser: this.state.currentUser}}
+                    stateId={this.state?.puObj?.stateId} electionType={ElectionType.PRESIDENTIAL}></App>;
+    }
 
-                const reviewStatuses = [ReviewStatus.RETURNED.toLowerCase(), ReviewStatus.VALIDATED.toLowerCase()];
-                const isDq = _.concat(DataQualityIssue.values().map(i => i.toLowerCase()), reviewStatuses).includes(delim.toLowerCase());
-
-                const params = new URLSearchParams(location.search);
-                if(isDq){
-                    params.set('pu', newDelim);
-                } else {
-                    params.delete('pu');
-                }
-
-                const newUrl = `/pus/${isDq ? delim : newDelim}?${params.toString()}`;
-
-                goTo(newDelim, `PU - ${resp.data.data?.name}`, newUrl);
-            })
-            .finally(() => setIsLoadingPuData(false));
-
-    }, [puCode]);
-
-    const pageTitle = <Stack spacing={2} direction={'row'} alignItems={'center'}>
-        <IconButton size={'small'} href={'/'}>
-            <HomeSharpIcon fontSize={'medium'}/>
-        </IconButton>
-        <Typography variant={'h6'}>Data Review</Typography>
-    </Stack>
-
-    return <App suppressDrawer={true} pageTitle={pageTitle} mainComponent={MainView} mainComponentProps={{delim, setPuData, puData, puCodes, setPuCode, isLoadingPuData, stats, currentUser}} stateId={puObj?.stateId} electionType={ElectionType.PRESIDENTIAL}></App>;
 }
 
 function PaginationView({setPuCode, puCodes, puData, componentId}) {
 
-    const currentIndex = _.findIndex(puCodes, (p) => p.puCode === puData.puCode);
+    let currentIndex = _.findIndex(puCodes, (p) => p.puCode === puData.puCode);
+    currentIndex = currentIndex < 0 ? 0 : currentIndex;
 
     const changePuCode = (delta) => {
         const newIdx = currentIndex + delta;
-        if(newIdx < 0 || newIdx > puCodes.length - 1) return;
+        if(currentIndex < 0 || newIdx < 0 || newIdx > puCodes.length - 1) return;
         setPuCode(puCodes[currentIndex + delta].puCode);
     }
 
@@ -199,28 +303,6 @@ function PollingUnitReviewView({puData, issueFlags, currentUser, isSubmitting, s
     const summedVotes = _.sumBy(['Apc', 'Pdp', 'Lp', 'Nnpp'], (n) => puData[`votes${n}`] || 0);
     const issueList = _.compact(_.toPairs(issueFlags).map(([label, isValid]) => !isValid ? label : null));
 
-    const handlePuReview = async (reviewStatus) => {
-        let comment = _.join(issueList, ',');
-
-        const newData = _.assign({}, puData, {
-            reviewStatus, comment,
-            reviewedAt: new Date(),
-            reviewedByContributorId: currentUser.contributorId
-        });
-
-        try {
-            setIsSubmitting(true);
-
-            const url = `/api/pus/${puData.id}`;
-            const resp = await axios.put(url, {data: newData, contributor: currentUser.contributorId});
-            console.log('ISSUES RESP:', resp.data);
-            setPuData(resp.data.data);
-        } finally {
-            setIsSubmitting(false);
-        }
-
-    }
-
     let border = {};
 
     const isValidated = puData.reviewStatus === ReviewStatus.VALIDATED;
@@ -245,6 +327,10 @@ function PollingUnitReviewView({puData, issueFlags, currentUser, isSubmitting, s
         <Link href={puData.documentUrl} rel="noopener noreferrer" target="_blank" sx={{mb: 4}}>Document
             Link {puData.documentUrl.endsWith('.pdf') ? '(PDF)' : '(JPG)'}</Link>
     </Stack>;
+
+    async function handlePuReviewLocal(reviewStatus: ReviewStatus) {
+        await handlePuReview({puData, setPuData, setIsSubmitting, currentUser, reviewStatus, issueList});
+    }
 
     // @ts-ignore
     return <Card elevation={1} xs={{mt: 20}} sx={border} style={{width: "100%", minHeight: '50vh'}}>
@@ -291,7 +377,7 @@ function PollingUnitReviewView({puData, issueFlags, currentUser, isSubmitting, s
                                         sx={{m: 4}}
                                         loading={isSubmitting}
                                         loadingPosition="start"
-                                        disabled={!fullValidator(currentUser) || isSubmitting || !_.isEmpty(issueList)} onClick={() => handlePuReview(ReviewStatus.VALIDATED)}>
+                                        disabled={!fullValidator(currentUser) || isSubmitting || !_.isEmpty(issueList)} onClick={() => handlePuReviewLocal(ReviewStatus.VALIDATED)}>
                                         <Stack justifyContent="center" alignItems="center">
                                             <DoneOutlineIcon fontSize={'large'} />
                                             <Typography>Valid</Typography>
@@ -304,7 +390,7 @@ function PollingUnitReviewView({puData, issueFlags, currentUser, isSubmitting, s
                                         sx={{m: 4}}
                                         loading={isSubmitting}
                                         loadingPosition="start"
-                                        onClick={() => handlePuReview(ReviewStatus.RETURNED)}
+                                        onClick={() => handlePuReviewLocal(ReviewStatus.RETURNED)}
                                         disabled={!currentUser || (currentUser.contributorId !== puData.contributorUsername && !fullValidator(currentUser)) || isSubmitting}>
                                         <Stack justifyContent="center" alignItems="center">
                                             <CloseIcon fontSize={'large'} />
@@ -407,7 +493,30 @@ function formatToUnits(number, precision) {
     return (number / Math.pow(10, order * 3)).toFixed(precision) + suffix;
 }
 
-function MainView({puData, setPuData, setPuCode, puCodes, isLoadingPuData, stats, delim, currentUser}) {
+
+const handlePuReview = async ({puData, reviewStatus, issueList, currentUser, setIsSubmitting, setPuData}) => {
+    let comment = _.join(issueList, ',');
+
+    const newData = _.assign({}, puData, {
+        reviewStatus, comment,
+        reviewedAt: new Date(),
+        reviewedByContributorId: currentUser.contributorId
+    });
+
+    try {
+        setIsSubmitting(true);
+
+        const url = `/api/pus/${puData.id}`;
+        const resp = await axios.put(url, {data: newData, contributor: currentUser.contributorId});
+        console.log('ISSUES RESP:', resp.data);
+        setPuData(resp.data.data);
+    } finally {
+        setIsSubmitting(false);
+    }
+
+}
+
+function MainView({puData, setPuData, setPuCode, puCodes, isLoadingPuData, stats, delim, currentUser, isSubmitting, setIsSubmitting, issueFlags, setIssueFlags}) {
     // const theme = useTheme();
 
     const [currentContrib, setCurrentContrib] = useState<string>(null);
@@ -423,13 +532,7 @@ function MainView({puData, setPuData, setPuCode, puCodes, isLoadingPuData, stats
     const [destUrl, setDestUrl] = useState<string>(null);
 
     const [loadingIssue, setLoadingIssue] = useState<string | null>(null);
-    const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-    const [issueFlags, setIssueFlags] = useState<any>({});
     const [issueBucketUrls, setIssueBucketUrls] = useState<any>({});
-
-    useEffect(() => {
-        setIssueFlags({});
-    }, [puData]);
 
     useEffect(() => {
         const params = new URLSearchParams(globalThis?.window?.location?.search);
