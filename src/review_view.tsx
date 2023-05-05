@@ -351,8 +351,8 @@ function PuQuestionnaireView({puData, setIssueFlags, issueFlags}) {
         ['Contains Alteration', 'containsAlterations', true, true],
         ['Incorrect PU Name', 'containsIncorrectPuName', true, true],
         ['INEC Stamp Absent', 'isInecStampAbsent', true, true],
-        ['Can\'t Read Votes', 'isResultIllegible', true, false],
         ['Non-EC8 Form', 'isNoneEceightForm', true, false],
+        ['Can\'t Read Votes', 'isResultIllegible', true, false],
     ]
     const gridArgs = {item: true, xs: 2, sm: 4, md: 3, display: puData.isResultIllegible ? 'none' : 'initial'};
 
