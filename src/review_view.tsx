@@ -120,6 +120,8 @@ export class AppPuView extends React.Component<Props, State> {
         this.setState({isLoadingPuData: true});
 
         try {
+            console.log('fetching new PU Data:', `/api/pu_data/${newDelim}`);
+
             const resp = await axios.get(`/api/pu_data/${newDelim}`)
             this.setState({puData: resp.data.data});
             this.setState({issueFlags: {}});
@@ -227,7 +229,7 @@ export class AppPuView extends React.Component<Props, State> {
                         setIssueFlags: (v) => typeof v === 'function' ? this.setState({issueFlags: v(this.state.issueFlags)}) : this.setState({issueFlags: v}),
                         issueFlags: this.state.issueFlags,
                         puCodes: this.state.puCodes,
-                        setPuCode: (v) => this.setState({puData: v}),
+                        setPuCode: (v) => this.setState({puCode: v}),
                         isLoadingPuData: this.state.isLoadingPuData,
                         stats: this.state.stats,
                         currentUser: this.state.currentUser}}
@@ -243,6 +245,7 @@ function PaginationView({setPuCode, puCodes, puData, componentId}) {
 
     const changePuCode = (delta) => {
         const newIdx = currentIndex + delta;
+
         if(currentIndex < 0 || newIdx < 0 || newIdx > puCodes.length - 1) return;
         setPuCode(puCodes[currentIndex + delta].puCode);
     }
@@ -325,7 +328,7 @@ function PollingUnitReviewView({puData, issueFlags, currentUser, isSubmitting, s
         <Typography>{`State/LGA/Ward: ${puData.stateName}`} / {puData.lgaName} / {puData.wardName}</Typography>
         <Typography>{updatedTxt} by <span style={{fontWeight: 'bolder'}}>{puData.contributorDisplayName}</span></Typography>
         <Link href={puData.documentUrl} rel="noopener noreferrer" target="_blank" sx={{mb: 4}}>Document
-            Link {puData.documentUrl.endsWith('.pdf') ? '(PDF)' : '(JPG)'}</Link>
+            Link {puData.documentType === 'pdf' ? '(PDF)' : '(JPG)'}</Link>
     </Stack>;
 
     async function handlePuReviewLocal(reviewStatus: ReviewStatus) {
@@ -342,7 +345,7 @@ function PollingUnitReviewView({puData, issueFlags, currentUser, isSubmitting, s
 
                     <Box sx={{maxWidth: {xs: '100%', md: 800}, minWidth: {xs: '100%', md: 800}}} style={{minHeight: '40vh', position: 'relative', overflow: 'hidden'}}>
                     {
-                        puData.documentUrl.endsWith('.pdf') ?
+                        puData.documentType === 'pdf' ?
                             <div style={{width: "100%", height: '100%', position: 'relative'}}>
                                 <embed width={'95%'} height={'auto'} src={`${puData.documentUrl}#view=Fit&toolbar=1`}
                                        style={{height: 'auto', minHeight:'60vh', marginTop: '1em'}}/>
