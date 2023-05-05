@@ -646,10 +646,10 @@ function MainView({puData, setPuData, setPuCode, puCodes, isLoadingPuData, stats
                         { matches ? null : <Typography>All Time</Typography>}
                     </Stack>
                 </ToggleButton>
-                <ToggleButton value="2023-04-16">
+                <ToggleButton value="2023-04-10">
                     <Stack direction={'row'} spacing={1}>
                         <HistoryToggleOffSharpIcon/>
-                        { matches ? null : <Typography noWrap={true}>After Apr 16th</Typography>}
+                        { matches ? null : <Typography noWrap={true}>After Apr 10th</Typography>}
                     </Stack>
                 </ToggleButton>
             </ToggleButtonGroup>
