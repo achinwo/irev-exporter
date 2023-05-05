@@ -89,7 +89,7 @@ export const PollingResultQuestionnaireView = ({pollingUnit, puData, setPuData, 
     }
 
     const legibilityResetButton = <Button
-        onClick={() => setPuData({isResultIllegible: undefined, isNoneEceightForm: undefined})}>
+        onClick={() => setPuData({isResultIllegible: undefined, isNoneEceightForm: null})}>
         <Stack alignItems={'center'}>
             <UndoSharpIcon/>
             <Typography fontSize={'small'}>Reset</Typography>
