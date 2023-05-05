@@ -163,13 +163,13 @@ export class AppPuView extends React.Component<Props, State> {
     _keyupListener: (event) => {} | undefined
 
     async componentDidMount() {
-        const handlePuReviewLocal = async () => {
+        const handlePuReviewLocal = async (): Promise<boolean> => {
             console.log(`[REVIEW_APP] validation via key press:`, this.state.puData.puCode);
 
             if(this.state.isSubmitting || !fullValidator(this.state.currentUser)) return;
 
             const issueList = _.compact(_.toPairs(this.state.issueFlags).map(([label, isValid]) => !isValid ? label : null));
-            await handlePuReview({
+            return await handlePuReview({
                 puData: this.state.puData,
                 setPuData: (v) => this.setState({puData: v}),
                 setIsSubmitting: (v) => this.setState({isSubmitting: v}),
@@ -181,9 +181,10 @@ export class AppPuView extends React.Component<Props, State> {
             console.log('REVIEW_APP: key pressed', event.key, this.state.puData.puCode);
             if(event.key === 'ArrowRight' || event.key === 'ArrowLeft'){
                 this.changePuCode(event.key === 'ArrowRight' ? 1 : -1);
-            } else if(event.key === 'p'){
+            } else if(event.key === 'p' || event.key === 'w'){
                 console.log(`[REVIEW_APP] validation via key press ${event.key}:`, this.state.puData.puCode);
-                await handlePuReviewLocal();
+                const status = await handlePuReviewLocal();
+                if(event.key === 'w' && status) this.changePuCode(1);
             }
         };
 
@@ -497,7 +498,7 @@ function formatToUnits(number, precision) {
 }
 
 
-const handlePuReview = async ({puData, reviewStatus, issueList, currentUser, setIsSubmitting, setPuData}) => {
+const handlePuReview = async ({puData, reviewStatus, issueList, currentUser, setIsSubmitting, setPuData}): Promise<boolean> => {
     let comment = _.join(issueList, ',');
 
     const newData = _.assign({}, puData, {
@@ -513,6 +514,10 @@ const handlePuReview = async ({puData, reviewStatus, issueList, currentUser, set
         const resp = await axios.put(url, {data: newData, contributor: currentUser.contributorId});
         console.log('ISSUES RESP:', resp.data);
         setPuData(resp.data.data);
+        return true;
+    } catch (e) {
+        console.log('handlePuReview submission error:', e);
+        return false;
     } finally {
         setIsSubmitting(false);
     }
