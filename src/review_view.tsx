@@ -28,11 +28,12 @@ import FilterListSharpIcon from '@mui/icons-material/FilterListSharp';
 import PersonSharpIcon from '@mui/icons-material/PersonSharp';
 import HistoryToggleOffSharpIcon from '@mui/icons-material/HistoryToggleOffSharp';
 import HistorySharpIcon from '@mui/icons-material/HistorySharp';
-import {fullValidator} from "./account_view";
+import {fullValidator, isSuperValidator} from "./account_view";
 import VerifiedSharpIcon from "@mui/icons-material/VerifiedSharp";
 import ErrorSharpIcon from "@mui/icons-material/ErrorSharp";
 import PictureAsPdfSharpIcon from '@mui/icons-material/PictureAsPdfSharp';
 import InsertPhotoSharpIcon from '@mui/icons-material/InsertPhotoSharp';
+import RestartAltRoundedIcon from '@mui/icons-material/RestartAltRounded';
 
 
 export enum DataQualityIssue {
@@ -166,7 +167,7 @@ export class AppPuView extends React.Component<Props, State> {
         const handlePuReviewLocal = async (): Promise<boolean> => {
             console.log(`[REVIEW_APP] validation via key press:`, this.state.puData.puCode);
 
-            if(this.state.isSubmitting || !fullValidator(this.state.currentUser)) return;
+            if(this.state.isSubmitting || !fullValidator(this.state.currentUser) || this.state.puData.reviewStatus) return;
 
             const issueList = _.compact(_.toPairs(this.state.issueFlags).map(([label, isValid]) => !isValid ? label : null));
             return await handlePuReview({
@@ -380,7 +381,7 @@ function PollingUnitReviewView({puData, issueFlags, currentUser, isSubmitting, s
                                         color={'success'}
                                         sx={{m: 4}}
                                         loading={isSubmitting}
-                                        loadingPosition="start"
+                                        loadingPosition="center"
                                         disabled={!fullValidator(currentUser) || isSubmitting || !_.isEmpty(issueList)} onClick={() => handlePuReviewLocal(ReviewStatus.VALIDATED)}>
                                         <Stack justifyContent="center" alignItems="center">
                                             <DoneOutlineIcon fontSize={'large'} />
@@ -393,7 +394,7 @@ function PollingUnitReviewView({puData, issueFlags, currentUser, isSubmitting, s
                                         color={'error'}
                                         sx={{m: 4}}
                                         loading={isSubmitting}
-                                        loadingPosition="start"
+                                        loadingPosition="center"
                                         onClick={() => handlePuReviewLocal(ReviewStatus.RETURNED)}
                                         disabled={!currentUser || (currentUser.contributorId !== puData.contributorUsername && !fullValidator(currentUser)) || isSubmitting}>
                                         <Stack justifyContent="center" alignItems="center">
@@ -404,11 +405,27 @@ function PollingUnitReviewView({puData, issueFlags, currentUser, isSubmitting, s
                                 </Stack>
                             </>
                             :
-                            <Stack direction={'row'} sx={{mt: 2, mr: 'auto', ml: 'auto'}} alignItems={'center'} >
-                                <ValidationIcon color={isValidated ? 'success' : 'error'} fontSize={'large'} sx={{marginRight: 2}}/>
-                                <Typography variant={'h4'}>{puData.reviewStatus}</Typography>
-                            </Stack>
-
+                            <>
+                                <Stack direction={'row'} sx={{mt: 2, mr: 'auto', ml: 'auto'}} alignItems={'center'} >
+                                    <ValidationIcon color={isValidated ? 'success' : 'error'} fontSize={'large'} sx={{marginRight: 2}}/>
+                                    <Typography variant={'h4'}>{puData.reviewStatus}</Typography>
+                                </Stack>
+                                { isSuperValidator(currentUser) &&
+                                <LoadingButton
+                                    size={'small'}
+                                    color={'warning'}
+                                    sx={{m: 1}}
+                                    loading={isSubmitting}
+                                    loadingPosition="center"
+                                    onClick={() => handlePuReviewLocal(null)}
+                                    disabled={isSubmitting}>
+                                    <Stack justifyContent="center" alignItems="center">
+                                        <RestartAltRoundedIcon fontSize={'small'} />
+                                        <Typography>Reset</Typography>
+                                    </Stack>
+                                </LoadingButton>
+                                }
+                            </>
                         }
 
 
@@ -502,9 +519,10 @@ const handlePuReview = async ({puData, reviewStatus, issueList, currentUser, set
     let comment = _.join(issueList, ',');
 
     const newData = _.assign({}, puData, {
-        reviewStatus, comment,
-        reviewedAt: new Date(),
-        reviewedByContributorId: currentUser.contributorId
+        reviewStatus,
+        comment: reviewStatus === null ? null : comment,
+        reviewedAt: reviewStatus === null ? null : new Date(),
+        reviewedByContributorId: reviewStatus === null ? null : currentUser.contributorId
     });
 
     try {

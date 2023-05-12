@@ -17,6 +17,11 @@ export function fullValidator(dataOrRole) {
     return roleVal >= 2;
 }
 
+export function isSuperValidator(dataOrRole) {
+    const roleVal = _.toInteger(_.isPlainObject(dataOrRole) ? dataOrRole.role : dataOrRole) || 0;
+    return roleVal >= 4;
+}
+
 export const AccountDiaglogView = ({handleClose, isOpen, setIsOpen, displayName, contributorName, setDisplayName, setContributorName, isContribFormValid, saveContributorName, currentUser}) => {
     console.log('CURRENT_USER', currentUser);
     return <Dialog onClose={handleClose} open={isOpen}>
