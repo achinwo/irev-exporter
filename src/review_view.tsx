@@ -1,6 +1,13 @@
 import {App} from './app';
 import * as models from './orm';
-import {ElectionType, KEY_CONTRIBUTOR, KEY_CONTRIBUTOR_DISPLAYNAME, KEY_ELECTION_TYPE, ReviewStatus} from './ref_data';
+import {
+    ElectionType,
+    KEY_CONTRIBUTOR,
+    KEY_CONTRIBUTOR_DISPLAYNAME,
+    KEY_ELECTION_TYPE,
+    ReviewStatus,
+    STATES
+} from './ref_data';
 import Box from "@mui/material/Box";
 import {
     Button, ButtonGroup,
@@ -549,6 +556,7 @@ function MainView({puData, setPuData, setPuCode, puCodes, isLoadingPuData, stats
     const [currentContribDisplayName, setCurrentContribDisplayName] = useState<string>(null);
     const [currentCreatedAfter, setCurrentCreatedAfter] = useState<string>(null);
     const [currentDoctType, setCurrentDoctType] = useState<string>(null);
+    const [currentStateName, setCurrentStateName] = useState<string>(null);
 
     const [currentDisplayName, setcurrentDisplayName] = useState<string>(null);
 
@@ -556,6 +564,7 @@ function MainView({puData, setPuData, setPuCode, puCodes, isLoadingPuData, stats
     const [createdAfter, setCreatedAfter] = useState<string>(null);
     const [docType, setDoctType] = useState<'' | 'imagesOnly' | null>(null);
     const [destUrl, setDestUrl] = useState<string>(null);
+    const [stateName, setStateName] = useState<string>(null);
 
     const [loadingIssue, setLoadingIssue] = useState<string | null>(null);
     const [issueBucketUrls, setIssueBucketUrls] = useState<any>({});
@@ -565,10 +574,12 @@ function MainView({puData, setPuData, setPuCode, puCodes, isLoadingPuData, stats
         const addressContrib = params.get('displayName') || '';
         const addressCreatedAfter = params.get('createdAfter') || '';
         const addressDocType = params.get('docType') || '';
+        const stateName = params.get('stateName') || '';
 
         setCreatedAfter(addressCreatedAfter);
         setContribId(addressContrib ? 'mine' : '');
         setDoctType(addressDocType as '' | 'imagesOnly');
+        setStateName(stateName);
 
         setcurrentDisplayName(localStorage?.getItem(KEY_CONTRIBUTOR_DISPLAYNAME));
 
@@ -576,6 +587,7 @@ function MainView({puData, setPuData, setPuCode, puCodes, isLoadingPuData, stats
         setCurrentContribDisplayName(addressContrib);
         setCurrentCreatedAfter(addressCreatedAfter);
         setCurrentDoctType(addressDocType);
+        setCurrentStateName(stateName);
 
         params.delete('pu');
 
@@ -608,10 +620,16 @@ function MainView({puData, setPuData, setPuCode, puCodes, isLoadingPuData, stats
             params.delete('docType');
         }
 
+        if(stateName) {
+            params.set('stateName', stateName);
+        }else {
+            params.delete('stateName');
+        }
+
         params.delete('pu');
 
         setDestUrl(`${window.location.pathname}?${params.toString()}`);
-    }, [contribId, createdAfter, docType]);
+    }, [contribId, createdAfter, docType, stateName]);
 
     const theme = useTheme();
     const matches = useMediaQuery(theme.breakpoints.down('sm'));
@@ -622,83 +640,112 @@ function MainView({puData, setPuData, setPuCode, puCodes, isLoadingPuData, stats
             <Chip label={chip} sx={{display: {sx: 'none'}, ml: 1}} />
         </Stack>
     }
+
+
+
     //{ mt: 20, ml: {sm: 35, xs: 2}, mr: {sm: 4, xs: 0}}
     return <Stack spacing={4} alignItems={'center'} sx={{ mt: 20, ml: matches ? 5 : 4, mr: 4, maxWidth: '95%'}} style={{display: 'flex', flexDirection: 'column', minHeight: '100vh'}}>
 
-        <Stack direction="row" alignItems={'center'} spacing={matches ? 1 : 2}>
-            <Stack direction={'row'} spacing={1} style={{color: 'gray'}} alignItems={'center'}>
-                <FilterListSharpIcon/>
-                { matches ? null : <Typography variant={'h6'} style={{flexGrow: 2}}>Filters</Typography>}
+        <Stack direction={matches ? 'column' : 'row'} alignItems={'center'} spacing={matches ? 1 : 2}>
+            <Stack direction="row" alignItems={'center'} spacing={matches ? 1 : 2}>
+                <Stack direction={'row'} spacing={1} style={{color: 'gray'}} alignItems={'center'}>
+                    <FilterListSharpIcon/>
+                    { matches ? null : <Typography variant={'h6'} style={{flexGrow: 2}}>Filters</Typography>}
+                </Stack>
+                <ToggleButtonGroup
+                    size={'small'}
+                    value={contribId}
+                    disabled={!currentDisplayName}
+                    exclusive
+                    onChange={(evt, value) => {
+                        if (value === contribId || value == null) return;
+                        setContribId(value);
+                    }}
+                    aria-label="text alignment"
+                >
+                    <ToggleButton value="">
+                        <Stack direction={'row'} spacing={1}>
+                            <GroupsSharpIcon/>
+                            {matches ? null : <Typography>Everyone</Typography>}
+                        </Stack>
+                    </ToggleButton>
+                    <ToggleButton value="mine">
+                        <Stack direction={'row'} spacing={1}>
+                            <PersonSharpIcon/>
+                            {matches ? null : <Typography title={currentContribDisplayName ?? currentUser?.displayName}>
+                                {currentContribDisplayName && currentContribDisplayName !== currentUser?.displayName ? 'Theirs' : 'Mine'}</Typography>}
+                        </Stack>
+                    </ToggleButton>
+                </ToggleButtonGroup>
+
+                <ToggleButtonGroup
+                    size={'small'}
+                    value={docType}
+                    exclusive={true}
+                    onChange={(evt, value) => {
+                        if (value === docType || value == null) return;
+                        setDoctType(value);
+                    }}>
+                    <ToggleButton value="">
+                        <Stack direction={'row'} spacing={1}>
+                            <PictureAsPdfSharpIcon/>
+                            {matches ? null : <Typography>All</Typography>}
+                        </Stack>
+                    </ToggleButton>
+                    <ToggleButton value="imagesOnly">
+                        <Stack direction={'row'} spacing={1}>
+                            <InsertPhotoSharpIcon/>
+                            {matches ? null : <Typography>JPG</Typography>}
+                        </Stack>
+                    </ToggleButton>
+                </ToggleButtonGroup>
+
+                <ToggleButtonGroup
+                    size={'small'}
+                    value={createdAfter}
+                    exclusive={true}
+                    onChange={(evt, value) => {
+                        if(value === createdAfter || value == null) return;
+                        setCreatedAfter(value);
+                    }}>
+                    <ToggleButton value="">
+                        <Stack direction={'row'} spacing={1}>
+                            <HistorySharpIcon/>
+                            { matches ? null : <Typography>All Time</Typography>}
+                        </Stack>
+                    </ToggleButton>
+                    <ToggleButton value="2023-04-10">
+                        <Stack direction={'row'} spacing={1}>
+                            <HistoryToggleOffSharpIcon/>
+                            { matches ? null : <Typography noWrap={true}>After Apr 10th</Typography>}
+                        </Stack>
+                    </ToggleButton>
+                </ToggleButtonGroup>
+
+
             </Stack>
 
-            <ToggleButtonGroup
-                value={contribId}
-                disabled={!currentDisplayName}
-                exclusive
-                onChange={(evt, value) => {
-                    if(value === contribId || value == null) return;
-                    setContribId(value);
-                }}
-                aria-label="text alignment"
-            >
-                <ToggleButton value="" >
-                    <Stack direction={'row'} spacing={1}>
-                        <GroupsSharpIcon/>
-                        { matches ? null : <Typography>Everyone</Typography>}
-                    </Stack>
-                </ToggleButton>
-                <ToggleButton value="mine" >
-                    <Stack direction={'row'} spacing={1}>
-                        <PersonSharpIcon/>
-                        { matches ? null : <Typography title={currentContribDisplayName ?? currentUser?.displayName}>
-                            {currentContribDisplayName && currentContribDisplayName !== currentUser?.displayName ? 'Theirs' : 'Mine'}</Typography>}
-                    </Stack>
-                </ToggleButton>
-            </ToggleButtonGroup>
+            <FormControl sx={{minWidth: 120}} fullWidth={matches} size="small">
+                <InputLabel id="filter-state-name-label">State</InputLabel>
+                <Select
+                    labelId="filter-state-name-label"
+                    id="filter-state-name"
+                    value={stateName}
+                    label="State"
+                    onChange={(event) => {
+                        setStateName(event.target.value);
+                    }}
+                >
+                    <MenuItem value="">
+                        <em>ALL</em>
+                    </MenuItem>
+                    {STATES.map((s) => {
+                        return <MenuItem value={s.name} key={s.id}>{s.name}</MenuItem>;
+                    })}
+                </Select>
+            </FormControl>
 
-            <ToggleButtonGroup
-                value={createdAfter}
-                exclusive={true}
-                onChange={(evt, value) => {
-                    if(value === createdAfter || value == null) return;
-                    setCreatedAfter(value);
-                }}>
-                <ToggleButton value="">
-                    <Stack direction={'row'} spacing={1}>
-                        <HistorySharpIcon/>
-                        { matches ? null : <Typography>All Time</Typography>}
-                    </Stack>
-                </ToggleButton>
-                <ToggleButton value="2023-04-10">
-                    <Stack direction={'row'} spacing={1}>
-                        <HistoryToggleOffSharpIcon/>
-                        { matches ? null : <Typography noWrap={true}>After Apr 10th</Typography>}
-                    </Stack>
-                </ToggleButton>
-            </ToggleButtonGroup>
-
-            <ToggleButtonGroup
-                value={docType}
-                exclusive={true}
-                onChange={(evt, value) => {
-                    if(value === docType || value == null) return;
-                    setDoctType(value);
-                }}>
-                <ToggleButton value="">
-                    <Stack direction={'row'} spacing={1}>
-                        <PictureAsPdfSharpIcon/>
-                        { matches ? null : <Typography>All</Typography>}
-                    </Stack>
-                </ToggleButton>
-                <ToggleButton value="imagesOnly">
-                    <Stack direction={'row'} spacing={1}>
-                        <InsertPhotoSharpIcon/>
-                        { matches ? null : <Typography>JPG</Typography>}
-                    </Stack>
-                </ToggleButton>
-            </ToggleButtonGroup>
-
-            <Button size={'large'} disabled={currentContrib === contribId && currentCreatedAfter === createdAfter && currentDoctType === docType} href={destUrl}>
+            <Button size={'large'} disabled={stateName === currentStateName && currentContrib === contribId && currentCreatedAfter === createdAfter && currentDoctType === docType} href={destUrl}>
                 Apply
             </Button>
         </Stack>

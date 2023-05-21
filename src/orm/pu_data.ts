@@ -307,13 +307,14 @@ export class PuData extends DbModel {
 
 }
 
-type DqQueryOptions = {contributorId?: string, createdAfter?: Date, limit?: number, excludePdfs?: boolean};
+type DqQueryOptions = {contributorId?: string, stateName?: string, createdAfter?: Date, limit?: number, excludePdfs?: boolean};
 
 const applyCommonFilters = (opts: DqQueryOptions, defaultOpts?: DqQueryOptions) => {
     return function() {
         this.andWhere('election_type', ElectionType.PRESIDENTIAL);
         this.andWhere('source', 'irev');
         if (opts?.contributorId ?? defaultOpts?.contributorId) this.andWhere('contributor_username', opts.contributorId ?? defaultOpts?.contributorId);
+        if (opts?.stateName ?? defaultOpts?.stateName) this.andWhere('state_name', opts.stateName ?? defaultOpts?.stateName);
         if (opts?.excludePdfs ?? defaultOpts?.excludePdfs) this.andWhere('document_type', '!=', 'pdf');
         if (opts?.createdAfter ?? defaultOpts?.createdAfter) this.andWhere('created_at', '>', opts.createdAfter ?? defaultOpts?.createdAfter);
         if (opts?.limit ?? defaultOpts?.limit) this.limit(opts.limit ?? defaultOpts?.limit);
