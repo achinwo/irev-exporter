@@ -38,7 +38,7 @@ export const CACHE = {};
 export const resolveBaseUrl = async (stateName, electionType) => {
     electionType = electionType || ElectionType.PRESIDENTIAL;
 
-    if(electionType === ElectionType.PRESIDENTIAL) return 'https://lv001-g.inecelectionresults.ng/api/v1/elections/63f8f25b594e164f8146a213/pus';
+    if(electionType === ElectionType.PRESIDENTIAL) return 'https://ncka74vel8.execute-api.eu-west-2.amazonaws.com/abuja-prod/elections/63f8f25b594e164f8146a213/pus';
 
     const baseUrl = 'https://ncka74vel8.execute-api.eu-west-2.amazonaws.com/abuja-prod/elections';
     const elections = require(`./data_elections.json`).data;
